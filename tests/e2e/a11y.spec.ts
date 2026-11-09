@@ -36,6 +36,9 @@ test("keyboard-only: a full game can be played without a pointer", async ({ page
   for (let i = 0; i < 5; i++) {
     // Focus moves to the question on each new round.
     await expect(page.locator("#q")).toBeFocused();
+    await page.keyboard.press("Tab"); // − (nudge down)
+    await expect(page.locator("#nudgeDown")).toBeFocused();
+    await page.keyboard.press("Tab"); // + (nudge up)
     await page.keyboard.press("Tab");
     await expect(page.locator("#slider")).toBeFocused();
     await page.keyboard.press("PageUp"); // +0.1
@@ -43,9 +46,7 @@ test("keyboard-only: a full game can be played without a pointer", async ({ page
     await page.keyboard.press("ArrowRight"); // +0.205
     await expect(page.locator("#slider")).toHaveValue("0.205");
     await expect(page.locator("#slider")).toHaveAttribute("aria-valuetext", "1.6 times bigger");
-    await page.keyboard.press("Tab"); // − a bit
-    await page.keyboard.press("Tab"); // + a bit
-    await page.keyboard.press("Tab"); // Lock it in
+    await page.keyboard.press("Tab"); // Lock in
     await expect(page.locator("#lockBtn")).toBeFocused();
     await page.keyboard.press("Enter");
     // Focus moves to the verdict; the result is announced.
@@ -68,7 +69,7 @@ test("arrow keys step away from 0 (no snap), nudges move 0.05", async ({ page })
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ArrowLeft");
   await expect(page.locator("#slider")).toHaveValue("-0.005");
-  await page.getByRole("button", { name: "+ a bit" }).click();
+  await page.getByRole("button", { name: "Nudge up" }).click();
   await expect(page.locator("#slider")).toHaveValue("0.045");
   await expect(page.locator("#slider")).toHaveAttribute("aria-valuetext", "1.1 times bigger");
 });

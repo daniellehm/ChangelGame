@@ -24,8 +24,8 @@ export default function HowToPlay() {
       <p>Every day there are five rounds. Each one shows a real number from the past, like the world&apos;s population in 1975, and asks how big it is now.</p>
       <ul className="rules">
         <li><span>1</span>Drag the slider: right means it went up, left means it went down. The middle means no change.</li>
-        <li><span>2</span>The slider works in multiples: from a thousand times smaller (÷1000) to a thousand times bigger (×1000). Use “− a bit” and “+ a bit” to fine-tune.</li>
-        <li><span>3</span>Tap “Lock it in”. The closer your multiplier, the more points, up to 100 a round and 500 a day.</li>
+        <li><span>2</span>The slider works in multiples: from a thousand times smaller (÷1000) to a thousand times bigger (×1000). Use the − and + buttons to fine-tune.</li>
+        <li><span>3</span>Tap “Lock in”. The closer your multiplier, the more points, up to 100 a round and 500 a day.</li>
         <li><span>4</span>Guess the wrong direction and you score nothing. Some numbers barely moved, so “same” can be the right answer.</li>
       </ul>
       <h2>Scoring</h2>

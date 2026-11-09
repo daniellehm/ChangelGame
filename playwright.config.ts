@@ -25,12 +25,12 @@ export default defineConfig({
   projects: [
     {
       name: "e2e",
-      testIgnore: /parity\.spec\.ts/,
+      testIgnore: /visual\.spec\.ts/,
       use: { ...mobile, permissions: ["clipboard-read", "clipboard-write"] },
     },
     {
-      name: "parity",
-      testMatch: /parity\.spec\.ts/,
+      name: "visual",
+      testMatch: /visual\.spec\.ts/,
     },
   ],
   webServer: {

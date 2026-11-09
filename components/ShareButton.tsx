@@ -29,7 +29,7 @@ export function ShareButton({ text, onToast }: Props) {
   return (
     <>
       <button className="btn" id="shareBtn" type="button" onClick={share}>
-        Share result
+        Share
       </button>
       <textarea
         ref={boxRef}

@@ -23,7 +23,7 @@ export async function setSlider(page: Page, value: number) {
 /** Play one round at `guess`, verify the reveal, and return the expected points. */
 export async function playRound(page: Page, date: string, i: number, guess: number) {
   const q = roundsFor(date)[i]!;
-  await expect(page.locator("#cat")).toHaveText(`Round ${i + 1} of 5 · ${q.cat}`, { ignoreCase: true });
+  await expect(page.locator("#cat")).toHaveText(`Round ${i + 1} of 5, ${q.cat}`, { ignoreCase: true });
   await expect(page.locator("#q")).toHaveText(q.q);
   await setSlider(page, guess);
   await page.locator("#lockBtn").click();

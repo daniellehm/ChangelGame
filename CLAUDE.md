@@ -12,7 +12,7 @@ PROGRESS.md says where we are and what's next. DECISIONS.md records every choice
 ## Working rules
 
 - Build one milestone at a time, in the order in SPEC.md section 12. At the end of each milestone, stop and wait for Dani's go-ahead.
-- Match the prototype exactly for look, feel and scoring.
+- Scoring must match the prototype exactly. For look and feel, the prototype was the M1 baseline. Since the 2026-11-09 design pass, the reference is the current app, guarded by the visual baselines in `tests/e2e/visual.spec.ts-snapshots/`. Any further visual departure needs Dani's OK and a DECISIONS.md entry.
 - Write the tests the spec lists as you go. Run them before calling a task done.
 - Commit to git after each completed task with a clear message (e.g. "M2: add puzzle date-window check"), then push. Each milestone has its own branch (e.g. `m1-scaffold-visuals`), pushed to GitHub after every commit and merged into `main` when Dani approves the milestone. Never commit straight to `main`.
 - Never put secrets in client code or commit them. Use .env.local and keep .env.example current.
@@ -39,7 +39,7 @@ _Filled in as they come to exist._
 | Dev server | `npm run dev` (http://localhost:3000) |
 | Unit tests | `npm test` (Vitest, `tests/unit/**/*.test.ts`) |
 | E2E tests | `npm run test:e2e` (Playwright, `tests/e2e`) |
-| Visual parity vs prototype | `npm run test:parity` (side-by-side PNGs in `test-results/parity/`) |
+| Visual regression | `npm run test:visual` (after an intended visual change: `npm run test:visual -- --update-snapshots`, then review the PNGs) |
 | Typecheck + lint + unit | `npm run check` (run before every commit) |
 | Migrations | _TBD (M2)_ |
 | Deploy | Push a branch → Vercel preview (project `changel`, id `prj_4qiuH4a01M4Il52WrKi8zd75EjCS`, team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Node 22, functions syd1). Merge to `main` → production. Previews are behind Vercel Authentication. |

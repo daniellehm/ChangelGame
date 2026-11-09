@@ -87,6 +87,12 @@ describe("multLabel / pctChange", () => {
     expect(multLabel(-0.01).sub).toBe("2.3% smaller");
   });
 
+  it("has a trimmed short label", () => {
+    expect(multLabel(0).short).toBe("same");
+    expect(multLabel(Math.log10(2.4)).short).toBe("+140%");
+    expect(multLabel(-Math.log10(3.1)).short).toBe("−68%"); // U+2212 minus
+  });
+
   it("matches the prototype across the whole slider range", () => {
     for (let i = -600; i <= 600; i++) {
       const l = i * 0.005;

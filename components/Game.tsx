@@ -22,6 +22,7 @@ import { Final } from "./Final";
 import { Header } from "./Header";
 import { Intro } from "./Intro";
 import { Round } from "./Round";
+import { useReducedMotion } from "./motion";
 import { Toast } from "./Toast";
 
 type Phase = "boot" | "intro" | "round" | "final";
@@ -37,6 +38,8 @@ interface State {
   /** Guess slider value (log10 multiplier). */
   guess: number;
   pending: boolean;
+  /** True only when the final screen was reached by finishing round 5 just now (drives count-up/flip). */
+  justFinished: boolean;
 }
 
 type Action =
@@ -48,7 +51,7 @@ type Action =
   | { type: "lockFailed" }
   | { type: "next" };
 
-const initial: State = { phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], idx: 0, guess: 0, pending: false };
+const initial: State = { phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], idx: 0, guess: 0, pending: false, justFinished: false };
 
 function reducer(s: State, a: Action): State {
   switch (a.type) {
@@ -68,7 +71,7 @@ function reducer(s: State, a: Action): State {
       return { ...s, pending: false };
     case "next":
       if (s.idx + 1 < ROUNDS) return { ...s, idx: s.idx + 1, guess: 0 };
-      return { ...s, phase: "final" };
+      return { ...s, phase: "final", justFinished: true };
   }
 }
 
@@ -127,6 +130,7 @@ function newPlay(puzzle: Puzzle, tz: string, startedAt: string): StoredPlay {
 export function Game({ launch }: { launch: string }) {
   const source = useMemo(() => createFixtureSource(launch), [launch]);
   const [s, dispatch] = useReducer(reducer, initial);
+  const motion = !useReducedMotion();
   const [toast, setToast] = useState({ message: "Copied to clipboard", show: false });
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -219,29 +223,29 @@ export function Game({ launch }: { launch: string }) {
   );
 
   const round = s.puzzle?.rounds[s.idx];
-  const result = s.results[s.idx] ?? null;
 
   return (
     <>
       <div className="wrap">
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
-          <Intro theme={s.puzzle?.theme ?? null} onPlay={start} disabled={s.phase === "boot"} />
+          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot"} />
         )}
         {s.phase === "round" && round && (
           <Round
             round={round}
             index={s.idx}
             guess={s.guess}
-            result={result}
+            results={s.results}
             pending={s.pending}
+            motion={motion}
             onGuess={(value) => dispatch({ type: "guess", value })}
             onLock={lockIn}
             onNext={next}
           />
         )}
         {s.phase === "final" && s.puzzle && stats && (
-          <Final puzzle={s.puzzle} results={s.results} stats={stats} onToast={showToast} />
+          <Final puzzle={s.puzzle} results={s.results} stats={stats} animate={s.justFinished && motion} onToast={showToast} />
         )}
       </div>
       <Toast message={toast.message} show={toast.show} />

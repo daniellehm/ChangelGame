@@ -30,10 +30,11 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .btn.ghost{background:transparent;color:var(--ink)}
 .card{background:var(--card);border:2px solid var(--ink);border-radius:20px;padding:22px 20px;box-shadow:5px 5px 0 var(--ink)}
 .progress{display:flex;gap:6px;margin-bottom:14px}
-.progress i{flex:1;height:6px;border-radius:6px;background:var(--line)}
+.progress i{flex:1;height:6px;border-radius:6px;background:var(--line);transition:background .3s}
 .progress i.done{background:var(--ink)}
 .progress i.now{background:var(--up)}
 .cat{font-family:var(--font-mono-stack);font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.round-cat{display:flex;align-items:center;gap:10px;min-height:26px}
 .q{font-size:25px;font-weight:800;line-height:1.15;margin:6px 0 18px;letter-spacing:-.4px}
 .q:focus{outline:none}
 .q:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:4px}
@@ -43,8 +44,9 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .yr .v{font-size:22px;font-weight:800;margin-top:2px}
 .yr.unknown .v{color:var(--muted)}
 .arrow{font-size:22px;font-weight:800}
-.guess{text-align:center;margin-bottom:8px}
-.mult{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1;transition:color .15s}
+.guess{text-align:center;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:12px}
+.guess-mid{flex:1;min-width:0}
+.mult{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1;transition:color .15s;font-variant-numeric:tabular-nums}
 .mult.up{color:var(--up)} .mult.down{color:var(--down)}
 .mult-sub{font-family:var(--font-mono-stack);font-size:13px;color:var(--muted);margin-top:6px;min-height:18px}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;margin:10px 0 2px;touch-action:none}
@@ -56,15 +58,13 @@ input[type=range]:focus{outline:none}
 input[type=range]:focus-visible::-webkit-slider-thumb{outline:3px solid var(--up);outline-offset:2px}
 input[type=range]:focus-visible::-moz-range-thumb{outline:3px solid var(--up);outline-offset:2px}
 .ticks{display:flex;justify-content:space-between;font-family:var(--font-mono-stack);font-size:11px;color:var(--muted);margin-bottom:20px}
-.nudge{display:flex;gap:8px;margin-bottom:14px}
-.nudge button{flex:1;font:inherit;font-weight:800;border:2px solid var(--line);background:transparent;border-radius:10px;padding:8px 0;cursor:pointer;color:var(--ink)}
 .reveal{display:none}
 .reveal.show{display:block;animation:pop .35s ease}
 @keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
 .verdict{display:flex;align-items:center;justify-content:space-between;border-radius:14px;padding:14px 16px;margin:4px 0 14px;color:var(--on-accent);font-weight:800;font-size:20px}
 .verdict:focus{outline:none}
 .verdict:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-.verdict .pts{font-family:var(--font-mono-stack);font-size:22px}
+.verdict .pts{font-family:var(--font-mono-stack);font-size:22px;font-variant-numeric:tabular-nums}
 .bar{position:relative;height:56px;margin:8px 0 16px}
 .bar .track{position:absolute;left:0;right:0;top:24px;height:8px;border-radius:8px;background:var(--line)}
 .bar .mid{position:absolute;left:50%;top:16px;width:2px;height:24px;background:var(--muted)}
@@ -74,16 +74,18 @@ input[type=range]:focus-visible::-moz-range-thumb{outline:3px solid var(--up);ou
 .pin.real{top:auto;bottom:-6px} .pin.real b{margin:0 auto 3px}
 .fact{font-size:15px;line-height:1.45;color:var(--ink-2);border-left:3px solid var(--ink);padding-left:12px;margin:0 0 18px}
 .src{font-family:var(--font-mono-stack);font-size:11px;color:var(--muted);margin:-10px 0 18px}
+.final .title{display:inline-block}
 .src a{color:inherit}
 .intro h1{font-size:40px;line-height:1;letter-spacing:-1.5px;margin:6px 0 12px}
 .intro p{font-size:17px;line-height:1.45;color:var(--ink-2);margin:0 0 14px}
 .rules{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:10px}
 .rules li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
 .rules li span{flex:0 0 26px;height:26px;border-radius:8px;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:13px}
-.final .score{font-size:72px;font-weight:800;letter-spacing:-3px;line-height:1}
+.final .score{font-size:72px;font-weight:800;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums}
 .final .of{font-family:var(--font-mono-stack);color:var(--muted)}
 .final .title{font-weight:800;font-size:20px;margin-bottom:6px}
-.grid{font-size:30px;letter-spacing:4px;margin:14px 0}
+.grid{font-size:30px;letter-spacing:4px;margin:14px 0;perspective:400px}
+.grid span{display:inline-block}
 .rows{display:grid;gap:8px;margin:12px 0 20px}
 .row{display:flex;justify-content:space-between;gap:12px;font-size:14px;border-bottom:1px dashed var(--line);padding-bottom:8px}
 .row .r{font-family:var(--font-mono-stack);white-space:nowrap}
@@ -137,6 +139,39 @@ html[data-returning] #intro{visibility:hidden}
 .strip i.played{background:var(--ink)}
 .stats.two{grid-template-columns:repeat(2,1fr)}
 .page p.note,.note{font-family:var(--font-mono-stack);font-size:12px;line-height:1.5;color:var(--muted);margin-top:14px}
+
+/* ---------- Design pass (DECISIONS.md 2026-11-09) ---------- */
+
+/* − / + beside the multiplier */
+.side{flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;font:inherit;font-weight:800;font-size:22px;line-height:1;color:var(--ink);background:var(--card);border:2px solid var(--ink);border-radius:50%;padding:0;cursor:pointer;box-shadow:2px 2px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.side:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+.side:focus{outline:none}
+.side:focus-visible{outline:3px solid var(--up);outline-offset:2px}
+
+/* Sticker look */
+.sticker{display:inline-block;font-family:var(--font-mono-stack);font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--ink);background:var(--st,var(--y));padding:4px 10px;border:2px solid var(--ink);border-radius:8px;transform:rotate(var(--tilt,-2deg));box-shadow:2px 2px 0 var(--ink);white-space:nowrap}
+.btn{box-shadow:4px 4px 0 var(--up);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--up)}
+.btn.ghost{box-shadow:4px 4px 0 var(--ink)}
+.btn.ghost:active{box-shadow:0 0 0 var(--ink)}
+.btn:disabled{cursor:default}
+.btn:focus{outline:none}
+.btn:focus-visible{outline:3px solid var(--up);outline-offset:3px}
+.yr{border-color:var(--ink)}
+.yr.unknown{border-style:dashed}
+.verdict{border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);transform:rotate(-1deg)}
+.final .title{background:var(--y);border:2px solid var(--ink);border-radius:8px;padding:2px 10px;transform:rotate(-1.5deg);box-shadow:2px 2px 0 var(--ink);margin-bottom:12px}
+.stats div{border-color:var(--ink)}
+
+/* Motion & juice (all of it is switched off by the reduced-motion block below) */
+.pin{transition:left .85s cubic-bezier(.34,1.56,.64,1)}
+.mult.pop{animation:mult-pop .22s ease}
+@keyframes mult-pop{50%{transform:scale(1.14)}}
+.verdict{animation:verdict-slam .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes verdict-slam{from{transform:scale(.8) rotate(-4deg);opacity:0}}
+.grid.animate span{animation:tile-flip .5s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--i) * .14s + .2s)}
+@keyframes tile-flip{from{transform:rotateX(90deg) scale(.6);opacity:0}}
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
