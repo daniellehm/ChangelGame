@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.8 done. Next: task 1.9, extra screens (menu pages: How to play, Stats, Account, About).
+**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.9 done. Next: task 1.10, visual parity test vs the prototype.
 
 ## Needs from Dani
 
@@ -44,7 +44,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
   *Accept:* the full 5-round game plays end to end on hard-coded data; copy is identical to the prototype; share text is exact; the clipboard → selectable-box fallback works; refreshing after finishing shows the final screen.
 - [x] **1.8 Slider accessibility.** Arrows ±0.005, Page Up/Down ±0.1, `aria-valuetext` ("2.4 times bigger"), snap to 0 within ±0.01, 44 px target, focus to the verdict on reveal and to the question on a new round.
   *Accept:* a Playwright keyboard-only run completes a game; axe shows no violations other than the documented prototype colour-contrast items.
-- [ ] **1.9 Extra screens.** Header menu (How to play, Stats, Account, About), `/how-to-play`, `/stats` (hard-coded local stats), Account and About placeholders, all in prototype style.
+- [x] **1.9 Extra screens.** Header menu (How to play, Stats, Account, About), `/how-to-play`, `/stats` (hard-coded local stats), Account and About placeholders, all in prototype style.
   *Accept:* reachable by keyboard and mouse at 390 px; no layout break at 320 px.
 - [ ] **1.10 Visual parity test.** A Playwright spec that opens `reference/prototype.html` and the app with the same frozen clock, plays the same slider values, and screenshots intro, round (slider at 0 and at +0.38), reveal and final at 390 px and 1280 px. It also writes side-by-side PNGs to `test-results/parity/`.
   *Accept:* every pair is within a 0.5% pixel-diff threshold (emoji glyph AA allowed); Dani has reviewed the side-by-sides.
@@ -128,6 +128,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.9 Extra screens: header menu (keyboard + outside-click + Escape), `/how-to-play`, `/stats` (local stats: played/avg/best, current + max streak, tier distribution with labels, 30-day strip), `/account` and `/about` placeholders via `PageShell`. E2E: menu by mouse/keyboard, no horizontal scroll at 320 px, stats after a game (18 E2E total).
 - 2026-11-09: 1.8 Slider accessibility: pure `lib/slider.ts` (keyboard steps without snap, pointer snap ±0.01, nudges), persistent live region for results, nudge labels fixed for WCAG 2.5.3. E2E: keyboard-only full game, 44 px target, axe clean on intro/round/reveal/final except the known prototype contrast (header meta, verdict bar; fixed in M6).
 - 2026-11-09: 1.7 Game screens: Header/Menu/Intro/Round/Slider/Reveal/Final/ShareButton/Toast + `Game` state machine; `lib/streaks.ts` (date-line rule, 9 tests), `lib/game/storage.ts` (local mirror), `lib/game/share.ts`. Playwright (mobile 390 px, Sydney tz, frozen clock): 7 E2E tests pass, covering full game, exact share text, clipboard fallback, resume mid-game, midnight crossing, returning player streak = 2, and no console errors.
 - 2026-11-09: 1.6 Hard-coded data: `lib/fixtures/prototype-pool.ts` (verbatim pool + seeded shuffle), `lib/game/types.ts` (API-shaped Puzzle/RoundResult + `GameSource` interface), `lib/game/fixture-source.ts`; tests prove identical pool, order and daily picks vs the prototype.

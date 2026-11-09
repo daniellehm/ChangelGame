@@ -122,7 +122,7 @@ html[data-returning] #intro{visibility:hidden}
 .page h1{font-size:34px;line-height:1.05;letter-spacing:-1.2px;margin:6px 0 14px}
 .page h2{font-size:20px;letter-spacing:-.3px;margin:22px 0 8px}
 .page p{font-size:16px;line-height:1.5;color:var(--ink-2);margin:0 0 12px}
-.page .back{display:inline-block;margin-top:8px;text-align:center;text-decoration:none}
+.back{display:block;margin-top:18px;text-align:center;text-decoration:none}
 .tiers{list-style:none;padding:0;margin:0 0 6px;display:grid;gap:8px}
 .tiers li{display:flex;align-items:center;gap:10px;font-size:15px}
 .tiers .sw{flex:0 0 auto;font-family:var(--font-mono-stack);font-size:12px;font-weight:700;color:var(--on-accent);border-radius:8px;padding:4px 8px;min-width:64px;text-align:center}
@@ -132,8 +132,8 @@ html[data-returning] #intro{visibility:hidden}
 .strip{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:8px 0 4px}
 .strip i{aspect-ratio:1;border-radius:5px;background:var(--line);display:block}
 .strip i.played{background:var(--ink)}
-.stats.four{grid-template-columns:repeat(2,1fr)}
-.note{font-family:var(--font-mono-stack);font-size:12px;color:var(--muted)}
+.stats.two{grid-template-columns:repeat(2,1fr)}
+.page p.note,.note{font-family:var(--font-mono-stack);font-size:12px;line-height:1.5;color:var(--muted);margin-top:14px}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
