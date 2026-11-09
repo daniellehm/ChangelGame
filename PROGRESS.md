@@ -164,6 +164,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Stats page note no longer says accounts are "coming soon" (requested by Dani). Signed in: "Your stats are saved to your account, so they follow you to any device you sign in on." Not signed in: "Stats are kept on this device. Add your email (link to /account) to keep your streak on any device." The note waits for the account check, so the wrong one never flashes. Branch `fix-stats-sync-note`. `npm run check` and the pages E2E pass.
 - 2026-11-09: 5.2 Claude wrapper + data sources:
   - `lib/content/llm.ts` (`ClaudeLlm`):
     - refuses to call Claude once the month reaches the $50 cap;
@@ -174,7 +175,7 @@ _Newest first._
   - `lib/content/ledger.ts`: month spend and recording.
   - `lib/content/sources.ts`: World Bank + OWID fetchers, with recorded fixtures in `tests/fixtures/content/`.
   - 12 unit tests (217 total). `CONTENT` settings live in `lib/config.ts`.
-  - Note: a second Claude session (Dani's, for a UI fix) briefly committed these files on its branch `fix-stats-sync-note` and then removed them. That branch is otherwise separate (Stats note only) and not merged.
+  - Note: a second Claude session (Dani's, for a UI fix) briefly committed these files on its branch `fix-stats-sync-note` and then removed them. That branch was otherwise separate (Stats note only); Dani merged it to `main`.
 - 2026-11-09: 5.1 Pipeline tables: migration `content_pipeline_tables`.
   - New tables: `content_runs` (+ atomic `lease_content_run`), `llm_calls` spend ledger (+ `llm_spend_since`), `alerts_sent`.
   - Question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`, `source_data`; `reports.invalid_reason`.
