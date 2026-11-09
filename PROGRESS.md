@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M2 in progress on branch `m2-database-api`.** 2.1–2.4 done. Next: 2.5, date window in `lib/dates.ts` + the full edge-case table.
+**M2 in progress on branch `m2-database-api`.** 2.1–2.5 done. Next: 2.6, `GET /api/puzzle` + `POST /api/reveal`.
 
 ## Needs from Dani
 
@@ -66,7 +66,7 @@ Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 - [x] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
 - [x] 2.3 RLS policies per SPEC section 6. *Accept:* the anon/authenticated roles cannot read questions/puzzle_rounds; a player can read only their own plays/guesses; advisors clean.
 - [x] 2.4 `content/questions.csv` + import script; seed the 20 prototype questions as candidates. *Accept:* re-runnable (idempotent) import; seed puzzles available for dev dates.
-- [ ] 2.5 `lib/dates.ts` window check + every row of the SPEC section 4 edge-case table. *Accept:* all date tests pass with fixed clocks and time zones.
+- [x] 2.5 `lib/dates.ts` window check + every row of the SPEC section 4 edge-case table. *Accept:* all date tests pass with fixed clocks and time zones.
 - [ ] 2.6 `GET /api/puzzle?date=D` + stateless `POST /api/reveal` (DECISIONS 2026-11-09) (Zod, error envelope, 403 `puzzle_not_available`, edge cache 5 min). *Accept:* the response has no end_value/fact/source; out-of-window dates return 403; the client shows "Check your device clock".
 - [ ] 2.7 Client switched from the fixture to the API; fixture deleted. *Accept:* a Playwright network spy finds no answer fields in any response before lock-in.
 
@@ -134,6 +134,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 2.5 Date window: `puzzleWindow`, `isWindowOpen`, `isGuessAcceptable` (6 h grace), `servableDates` in `lib/dates.ts`; `tests/unit/dates-window.test.ts` covers the window boundaries, that every real local date in UTC−12…+14 is always servable, and all 7 rows of the SPEC §4 edge-case table. 172 unit tests pass.
 - 2026-11-09: 2.4 Content: migration `question_slug_puzzle_number_optional`; `lib/content/csv.ts` (RFC 4180 parser), `lib/content/questions.ts` (Zod schema mirroring DB checks, 3 s.f. rounding), `content/questions.csv` (20 prototype questions), `scripts/import-questions.ts` (`npm run content:import`, idempotent by slug, `--dry-run`), `lib/content/dev-seed.ts` + `scripts/seed-dev-puzzles.ts` (`npm run content:seed-dev`, 4 ready puzzles 2026-11-09…12). Imported + seeded; second runs are no-ops. 161 unit tests pass.
 - 2026-11-09: 2.3 RLS + grants: migrations `rls_and_grants` (revoke client defaults incl. TRUNCATE, service_role data access, authenticated read-own on players/plays/guesses via 3 policies, safe default privileges for future tables), `service_role_no_truncate`, `lock_rls_auto_enable` (advisor WARN on Supabase's auto-RLS function). Verified: privilege matrix correct, public API returns 42501 on every table, security advisor shows only the intentional 'RLS enabled, no policy' notices. Per-user row isolation is tested in M3 with real users.
 - 2026-11-09: 2.2 Core schema: migrations `20261109035556_core_schema` (players + auth trigger, questions incl. `flagged`/`checks`, puzzles incl. `rerun_of`, puzzle_rounds with question-once, plays incl. `source`, insert-only guesses incl. `question_id`, round_stats counters with derived avg/pct, merge_tokens (hashed), question_edits, reports) and `20261109040519_questions_change_check_guard` (a division-by-zero bug found by the tests). `supabase/tests/schema_constraints.sql`: 15/15 pass, rolled back. Checks needing an auth user moved to M3 (Claude Code's permission check blocks SQL writes to auth.users).
