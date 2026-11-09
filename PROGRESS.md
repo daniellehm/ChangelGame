@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). **1.11 blocked**: MCP access granted, but the Vercel account has no GitHub login connection, so Vercel can't link the repo (400). Waiting for Dani to connect GitHub (see Needs from Dani). Then: run `create_git_project` (repo `daniellehm/ChangelGame`, name `changel`, teamId `team_aHOu0Tqfx6VbGGGipjmx66jE`, deploy false), set Node 22.x, push to trigger the branch preview, verify, then stop for M1 review. Branch `m1-scaffold-visuals` is pushed to GitHub.
+**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). **1.11 blocked**: MCP access + GitHub login connection are done, but the Vercel GitHub app is installed for selected repos only and `ChangelGame` isn't one of them (400). Waiting for Dani to add the repo (see Needs from Dani). Then: run `create_git_project` (repo `daniellehm/ChangelGame`, name `changel`, teamId `team_aHOu0Tqfx6VbGGGipjmx66jE`, deploy false), set Node 22.x, push to trigger the branch preview, verify, then stop for M1 review. Branch `m1-scaffold-visuals` is pushed to GitHub.
 
 ## Needs from Dani
 
@@ -10,7 +10,8 @@
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
 - [x] Approve the Vercel MCP connection for the `releasedani` scope, and confirm it's the right account (done 2026-11-09)
-- [ ] **Blocks 1.11:** connect GitHub to the Vercel account (Account Settings → Authentication → Login Connections → GitHub), and let the Vercel GitHub app access `daniellehm/ChangelGame`
+- [x] Connect GitHub to the Vercel account (done 2026-11-09)
+- [ ] **Blocks 1.11:** add `ChangelGame` to the Vercel GitHub app's repository access (github.com/settings/installations → Vercel → Configure → Repository access)
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
@@ -129,6 +130,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.11: GitHub login connected. Retry failed with "install the GitHub integration first". The app is restricted to selected repos and `search_repo` can't see ChangelGame.
 - 2026-11-09: 1.11: Dani approved MCP access and confirmed the Vercel account. The retry failed: "add a Login Connection to your GitHub account first".
 - 2026-11-09: 1.11 started: no existing "changel" project on Vercel. `create_git_project` was refused with 403, because the MCP connection isn't granted to the account scope. Blocked on Dani's consent.
 - 2026-11-09: 1.10 Visual parity: `tests/e2e/parity.spec.ts` (`npm run test:parity`) diffs the app against `reference/prototype.html` at 390 and 1280 px across 7 steps (intro → final). It found and fixed two real differences: next/font's Arial fallback (→, ≈ glyphs) and the prototype rendering bold at 800. Result: **0 differing pixels on all 14 screenshots**, threshold tightened to 0.1%. Side-by-sides in `test-results/parity/`. Also started pushing the branch to GitHub after each commit (Dani's request).
