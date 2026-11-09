@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { next, playRound, syd } from "./helpers";
+import { next, playRound, syd, setClock } from "./helpers";
 
 const PAGES = [
   { label: "How to play", path: "/how-to-play", h1: "Guess the change." },
@@ -8,7 +8,7 @@ const PAGES = [
 ];
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(syd("2026-11-10T09:00:00"));
+  await setClock(page, syd("2026-11-10T09:00:00"));
 });
 
 for (const p of PAGES) {

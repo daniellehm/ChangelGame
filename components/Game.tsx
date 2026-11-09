@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ROUNDS } from "@/lib/config";
 import { daysBetween, deviceTimeZone, localDate } from "@/lib/dates";
-import { createFixtureSource } from "@/lib/game/fixture-source";
+import { createApiSource, PuzzleLoadError, type LoadErrorKind } from "@/lib/game/api-source";
 import {
   getActiveDate,
   isComplete,
@@ -21,11 +21,12 @@ import type { GameSource, Puzzle, RoundResult } from "@/lib/game/types";
 import { Final } from "./Final";
 import { Header } from "./Header";
 import { Intro } from "./Intro";
+import { LoadError } from "./LoadError";
 import { Round } from "./Round";
 import { useReducedMotion } from "./motion";
 import { Toast } from "./Toast";
 
-type Phase = "boot" | "intro" | "round" | "final";
+type Phase = "boot" | "intro" | "round" | "final" | "error";
 
 interface State {
   phase: Phase;
@@ -40,10 +41,14 @@ interface State {
   pending: boolean;
   /** True only when the final screen was reached by finishing round 5 just now (drives count-up/flip). */
   justFinished: boolean;
+  /** Why the puzzle couldn't load (phase "error"). */
+  errorKind: LoadErrorKind | null;
 }
 
 type Action =
   | { type: "loaded"; puzzle: Puzzle; tz: string; startedAt: string | null; results: RoundResult[]; phase: Phase }
+  | { type: "failed"; kind: LoadErrorKind }
+  | { type: "retry" }
   | { type: "start"; startedAt: string }
   | { type: "guess"; value: number }
   | { type: "lockPending" }
@@ -51,7 +56,7 @@ type Action =
   | { type: "lockFailed" }
   | { type: "next" };
 
-const initial: State = { phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], idx: 0, guess: 0, pending: false, justFinished: false };
+const initial: State = { phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], idx: 0, guess: 0, pending: false, justFinished: false, errorKind: null };
 
 function reducer(s: State, a: Action): State {
   switch (a.type) {
@@ -59,6 +64,10 @@ function reducer(s: State, a: Action): State {
       const idx = Math.min(a.results.length, ROUNDS - 1);
       return { ...initial, phase: a.phase, puzzle: a.puzzle, tz: a.tz, startedAt: a.startedAt, results: a.results, idx };
     }
+    case "failed":
+      return { ...initial, phase: "error", errorKind: a.kind };
+    case "retry":
+      return { ...initial };
     case "start":
       return { ...s, phase: "round", startedAt: a.startedAt, idx: 0, guess: 0 };
     case "guess":
@@ -128,7 +137,7 @@ function newPlay(puzzle: Puzzle, tz: string, startedAt: string): StoredPlay {
 }
 
 export function Game({ launch }: { launch: string }) {
-  const source = useMemo(() => createFixtureSource(launch), [launch]);
+  const source = useMemo(() => createApiSource(), []);
   const [s, dispatch] = useReducer(reducer, initial);
   const motion = !useReducedMotion();
   const [toast, setToast] = useState({ message: "Copied to clipboard", show: false });
@@ -142,7 +151,14 @@ export function Game({ launch }: { launch: string }) {
 
   const load = useCallback(
     async (opts?: { preferIntro?: boolean }) => {
-      const b = await boot(source, opts);
+      let b: Booted;
+      try {
+        b = await boot(source, opts);
+      } catch (e) {
+        dispatch({ type: "failed", kind: e instanceof PuzzleLoadError ? e.kind : "network" });
+        delete document.documentElement.dataset.returning;
+        return;
+      }
       // Returning players going straight to round 1 start their play now.
       if (b.phase === "round" && !b.startedAt) {
         const startedAt = new Date().toISOString();
@@ -206,9 +222,9 @@ export function Game({ launch }: { launch: string }) {
         setActiveDate(null);
       }
       dispatch({ type: "locked", result });
-    } catch {
+    } catch (e) {
       dispatch({ type: "lockFailed" });
-      showToast("Couldn't lock that in. Try again.");
+      showToast(e instanceof PuzzleLoadError && e.kind === "clock" ? "Check your device clock" : "Couldn't lock that in. Try again.");
     }
   };
 
@@ -230,6 +246,15 @@ export function Game({ launch }: { launch: string }) {
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
           <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot"} />
+        )}
+        {s.phase === "error" && s.errorKind && (
+          <LoadError
+            kind={s.errorKind}
+            onRetry={() => {
+              dispatch({ type: "retry" });
+              void load();
+            }}
+          />
         )}
         {s.phase === "round" && round && (
           <Round

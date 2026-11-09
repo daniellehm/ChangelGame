@@ -2,11 +2,14 @@
 
 ## Current status
 
-**Design pass approved by Dani and merged to `main` (2026-11-09). Next: Milestone 2 (Database + puzzle API) on branch `m2-database-api`.** First step is task 2.1: Supabase CLI + migrations set-up and `.env.local`. That needs the Supabase service-role key from Dani.
+**M2 approved by Dani and merged to `main` (2026-11-09).** Next: M3 (anonymous play + server scoring) on branch `m3-anonymous-play`, once Dani gives the go-ahead. M3 first needs: Supabase auth settings (personal access token or dashboard checklist) and Cloudflare Turnstile keys.
 
 ## Needs from Dani
 
 **Now:**
+- [x] Review M2 (approved 2026-11-09)
+- [ ] Go-ahead for M3, plus a choice for Supabase auth settings: a personal access token, or a dashboard checklist
+- [x] Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel (done by Dani 2026-11-09; Sensitive, all environments)
 - [x] Review M1 (approved 2026-11-09)
 - [x] Pick which design-playground ideas to keep (2026-11-09: all five, but keep the round label; see DECISIONS)
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
@@ -16,7 +19,7 @@
 - [x] Add `ChangelGame` to the Vercel GitHub app's repository access (done 2026-11-09)
 
 **Later (not blocking yet, listed so nothing surprises us):**
-- [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
+- [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M3: Supabase auth settings (anonymous sign-ins, captcha, rate limits, redirect URLs, custom SMTP). The MCP has no auth-config tool. Either Dani gives a Supabase personal access token (scoped use: Management API for project "changel" only), or follows a short dashboard checklist that I'll write.
 - [ ] M3: Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
 - [ ] M4: DNS records for changel.app at the registrar (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
@@ -24,6 +27,7 @@
 - [ ] M5: Anthropic API key
 - [ ] M6: Sentry account/DSN; PostHog or Plausible account
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
+- [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
 
 ---
 
@@ -60,14 +64,15 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
 
 Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 **Milestone accepted when:** answers are absent from every network response before lock-in, and all date unit tests pass.
+**Status:** both met (E2E `tests/e2e/api.spec.ts` spies on every response; all date tests pass). Preview verified live (sin1). ✅ Approved by Dani and merged to `main` on 2026-11-09.
 
-- [ ] 2.1 Supabase CLI + `supabase/migrations` set-up; `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
-- [ ] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
-- [ ] 2.3 RLS policies per SPEC section 6. *Accept:* the anon/authenticated roles cannot read questions/puzzle_rounds; a player can read only their own plays/guesses; advisors clean.
-- [ ] 2.4 `content/questions.csv` + import script; seed the 20 prototype questions as candidates. *Accept:* re-runnable (idempotent) import; seed puzzles available for dev dates.
-- [ ] 2.5 `lib/dates.ts` window check + every row of the SPEC section 4 edge-case table. *Accept:* all date tests pass with fixed clocks and time zones.
-- [ ] 2.6 `GET /api/puzzle?date=D` (Zod, error envelope, 403 `puzzle_not_available`, edge cache 5 min). *Accept:* the response has no end_value/fact/source; out-of-window dates return 403; the client shows "Check your device clock".
-- [ ] 2.7 Client switched from the fixture to the API; fixture deleted. *Accept:* a Playwright network spy finds no answer fields in any response before lock-in.
+- [x] 2.1 `supabase/migrations` set-up (applied via MCP, see DECISIONS); `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
+- [x] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
+- [x] 2.3 RLS policies per SPEC section 6. *Accept:* the anon/authenticated roles cannot read questions/puzzle_rounds; a player can read only their own plays/guesses; advisors clean.
+- [x] 2.4 `content/questions.csv` + import script; seed the 20 prototype questions as candidates. *Accept:* re-runnable (idempotent) import; seed puzzles available for dev dates.
+- [x] 2.5 `lib/dates.ts` window check + every row of the SPEC section 4 edge-case table. *Accept:* all date tests pass with fixed clocks and time zones.
+- [x] 2.6 `GET /api/puzzle?date=D` + stateless `POST /api/reveal` (DECISIONS 2026-11-09) (Zod, error envelope, 403 `puzzle_not_available`, edge cache 5 min). *Accept:* the response has no end_value/fact/source; out-of-window dates return 403; the client shows "Check your device clock".
+- [x] 2.7 Client switched from the fixture to the API; fixture deleted. *Accept:* a Playwright network spy finds no answer fields in any response before lock-in.
 
 ## Milestone 3: Anonymous play + scoring on the server
 
@@ -77,7 +82,7 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 - [ ] 3.1 Supabase auth config: anonymous sign-ins, Turnstile captcha. *Accept:* anonymous sign-in works from localhost and preview.
 - [ ] 3.2 Session creation on the first Play click, via `@supabase/ssr` HTTP-only cookies. *Accept:* no user row on a page load without Play.
 - [ ] 3.3 `POST /api/play` (start/resume). *Accept:* idempotent; returns answered rounds.
-- [ ] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
+- [ ] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. **Also cover the DB checks deferred from 2.2:** player-row trigger, account-delete cascade, one play per puzzle, insert-only guesses, guess tier/wrong-way check. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
 - [ ] 3.5 Resume mid-game + midnight crossing. *Accept:* a refresh resumes at the next unplayed round; the started puzzle persists past midnight.
 - [ ] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
 - [ ] 3.7 `player_stats` view, server streaks (date-line rule), `GET /api/me`. *Accept:* streak unit tests, including n−2 with a tz change.
@@ -133,6 +138,16 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M2 approved by Dani and merged into `main`.
+- 2026-11-09: M2 preview verified on Vercel (functions in sin1): `/api/puzzle` 200 without answers for an open date, 403 `puzzle_not_available` for a future date, 400 for an invalid date. **M2 complete.**
+- 2026-11-09: Dani added `SUPABASE_SERVICE_ROLE_KEY` to Vercel (Sensitive; production, preview, development). All 4 env vars are mirrored.
+- 2026-11-09: 2.7 Client on the API: `lib/game/api-source.ts` (GET /api/puzzle, POST /api/reveal, typed load errors), `components/LoadError.tsx` (device clock / no puzzle / offline, with retry). Fixture + fixture source deleted (no answers in JS bundles). E2E pins the server clock to the browser clock (`setClock`, dev server runs with `ALLOW_TEST_CLOCK=1`). New `tests/e2e/api.spec.ts`: no answer in any document/script/API response before its lock-in, one reveal per lock-in, clock-error and no-puzzle screens. Visual baselines refreshed (values now rounded to 3 s.f.). 166 unit + 24 integration + 21 E2E + 2 visual pass. Vercel env: URL, publishable key, LAUNCH_DATE set; the secret key is pending (Dani).
+- 2026-11-09: 2.6 API: `GET /api/puzzle` (Zod, window 403, 404 if not ready, 5-min edge cache on 200s only, number from LAUNCH_DATE, rerun-aware) and `POST /api/reveal` (window + 6 h grace, clamp, one round's answer + score, no-store). `lib/puzzles/repo.ts` selects public columns and answers in separate functions. Test clock header (`ALLOW_TEST_CLOCK=1`, never on Vercel production). New `npm run test:integration` (real DB): 24 pass, incl. no answer fields or values in any puzzle response. 176 unit tests pass.
+- 2026-11-09: 2.5 Date window: `puzzleWindow`, `isWindowOpen`, `isGuessAcceptable` (6 h grace), `servableDates` in `lib/dates.ts`; `tests/unit/dates-window.test.ts` covers the window boundaries, that every real local date in UTC−12…+14 is always servable, and all 7 rows of the SPEC §4 edge-case table. 172 unit tests pass.
+- 2026-11-09: 2.4 Content: migration `question_slug_puzzle_number_optional`; `lib/content/csv.ts` (RFC 4180 parser), `lib/content/questions.ts` (Zod schema mirroring DB checks, 3 s.f. rounding), `content/questions.csv` (20 prototype questions), `scripts/import-questions.ts` (`npm run content:import`, idempotent by slug, `--dry-run`), `lib/content/dev-seed.ts` + `scripts/seed-dev-puzzles.ts` (`npm run content:seed-dev`, 4 ready puzzles 2026-11-09…12). Imported + seeded; second runs are no-ops. 161 unit tests pass.
+- 2026-11-09: 2.3 RLS + grants: migrations `rls_and_grants` (revoke client defaults incl. TRUNCATE, service_role data access, authenticated read-own on players/plays/guesses via 3 policies, safe default privileges for future tables), `service_role_no_truncate`, `lock_rls_auto_enable` (advisor WARN on Supabase's auto-RLS function). Verified: privilege matrix correct, public API returns 42501 on every table, security advisor shows only the intentional 'RLS enabled, no policy' notices. Per-user row isolation is tested in M3 with real users.
+- 2026-11-09: 2.2 Core schema: migrations `20261109035556_core_schema` (players + auth trigger, questions incl. `flagged`/`checks`, puzzles incl. `rerun_of`, puzzle_rounds with question-once, plays incl. `source`, insert-only guesses incl. `question_id`, round_stats counters with derived avg/pct, merge_tokens (hashed), question_edits, reports) and `20261109040519_questions_change_check_guard` (a division-by-zero bug found by the tests). `supabase/tests/schema_constraints.sql`: 15/15 pass, rolled back. Checks needing an auth user moved to M3 (Claude Code's permission check blocks SQL writes to auth.users).
+- 2026-11-09: 2.1: Supabase project found in Singapore. Dani chose to move Vercel functions to `sin1`. `.env.local` filled in (URL, publishable key, LAUNCH_DATE) and the secret key verified with an admin call (HTTP 200). The DB was empty.
 - 2026-11-09: Design pass approved by Dani and merged into `main`.
 - 2026-11-09: Design pass: About removed and merged into How to play (redirect `/about` → `/how-to-play`, menu item removed). How to play rebuilt as an example round + 3 step tiles + tier stickers + "The deal". 141 unit + 18 E2E + 2 visual tests pass.
 - 2026-11-09: Design pass: How to play page cleaned up (Dani's request). Trimmed rules, score tiers shown as stickers, titles list dropped (players discover them), new visual baseline `7-how-to-play`.

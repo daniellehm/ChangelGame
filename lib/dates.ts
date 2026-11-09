@@ -101,3 +101,51 @@ export function formatCountdown(ms: number): string {
 export function headerDate(date: string, locale?: string): string {
   return new Date(`${date}T12:00:00Z`).toLocaleDateString(locale, { day: "numeric", month: "short", timeZone: "UTC" });
 }
+
+/* ---------------------------------------------------------------------------
+ * Server date window (SPEC §4). Date D exists somewhere on Earth from
+ * D 00:00 at UTC+14 to D 24:00 at UTC−12, so puzzle D is served while
+ *   (D − 1) 10:00 UTC ≤ now < (D + 1) 12:00 UTC.
+ * ------------------------------------------------------------------------- */
+
+const HOUR_MS = 3_600_000;
+/** Extra time to finish a play started inside the window (DECISIONS item 6). */
+export const GUESS_GRACE_MS = 6 * HOUR_MS;
+
+export interface PuzzleWindow {
+  /** First instant the puzzle may be served (ms since epoch). */
+  opensAt: number;
+  /** First instant it may no longer be served (exclusive). */
+  closesAt: number;
+}
+
+export function puzzleWindow(date: string): PuzzleWindow {
+  const midnightUtc = dayIndex(date) * DAY_MS;
+  return { opensAt: midnightUtc - 14 * HOUR_MS, closesAt: midnightUtc + 36 * HOUR_MS };
+}
+
+/** May puzzle `date` be served (and a new play started) at `now`? */
+export function isWindowOpen(date: string, now: Date | number): boolean {
+  const t = typeof now === "number" ? now : now.getTime();
+  const w = puzzleWindow(date);
+  return t >= w.opensAt && t < w.closesAt;
+}
+
+/**
+ * May a guess on puzzle `date` be accepted? The play must have started inside
+ * the window, and the guess must arrive before the window closes plus a grace
+ * period, so a game started at 23:58 in UTC−11/−12 can still be finished.
+ */
+export function isGuessAcceptable(date: string, now: Date | number, playStartedAt: Date | number): boolean {
+  const t = typeof now === "number" ? now : now.getTime();
+  const s = typeof playStartedAt === "number" ? playStartedAt : playStartedAt.getTime();
+  const w = puzzleWindow(date);
+  return isWindowOpen(date, s) && t >= w.opensAt && t < w.closesAt + GUESS_GRACE_MS;
+}
+
+/** Dates whose window is open at `now` (always 2 or 3 consecutive dates). */
+export function servableDates(now: Date | number): string[] {
+  const t = typeof now === "number" ? now : now.getTime();
+  const utcToday = new Date(t).toISOString().slice(0, 10);
+  return [-1, 0, 1, 2].map((d) => addDays(utcToday, d)).filter((d) => isWindowOpen(d, t));
+}
