@@ -200,6 +200,8 @@ html[data-returning] #intro{visibility:hidden}
 .save-title{font-weight:800;font-size:18px;letter-spacing:-.2px}
 .save-form{display:grid;gap:10px}
 .save-blurb{margin:0;font-size:14px;line-height:1.45;color:var(--ink-2)}
+.save-or{display:flex;align-items:center;gap:10px;font-family:var(--font-mono-stack);font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.save-or::before,.save-or::after{content:"";flex:1;height:0;border-top:1px dashed var(--line)}
 .field{font:inherit;font-size:17px;width:100%;padding:12px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--card);color:var(--ink)}
 .field:focus{outline:none}
 .field:focus-visible{outline:3px solid var(--up);outline-offset:2px}
