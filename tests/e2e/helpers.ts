@@ -11,9 +11,9 @@ export const syd = (local: string) => new Date(`${local}+11:00`);
  * Freeze the browser clock AND pin the server's clock to the same instant
  * (the dev server runs with ALLOW_TEST_CLOCK=1), so the date window agrees.
  */
-export async function setClock(page: Page, when: Date) {
+export async function setClock(page: Page, when: Date, extra: Record<string, string> = {}) {
   await page.clock.setFixedTime(when);
-  await page.setExtraHTTPHeaders({ [TEST_CLOCK_HEADER]: when.toISOString(), "x-forwarded-for": fakeIp(page) });
+  await page.setExtraHTTPHeaders({ [TEST_CLOCK_HEADER]: when.toISOString(), "x-forwarded-for": fakeIp(page), ...extra });
 }
 
 /**

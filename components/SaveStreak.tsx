@@ -8,7 +8,25 @@ interface Props {
   mode: "save" | "signin" | "change";
   title?: string;
   blurb?: string;
-  onDone: (email: string) => void;
+  /** `note` explains what happened to this device's games (shown by the caller if this card goes away). */
+  onDone: (email: string, note: string) => void | Promise<void>;
+}
+
+/** Tell the player what happened to this device's games (one play per day; the first attempt counts). */
+export function mergeNote(m: { merged: number; kept: number; replaced: number } | null): string {
+  if (!m) return "Done. You're signed in on this browser.";
+  const added = m.merged - m.replaced;
+  const parts: string[] = [];
+  if (added > 0) parts.push(`${added} game${added === 1 ? "" : "s"} from this device ${added === 1 ? "was" : "were"} added to your account.`);
+  if (m.kept > 0) {
+    parts.push(
+      m.kept === 1
+        ? "You'd already played that day on your account, so your first score stands. This device's replay was discarded."
+        : `You'd already played ${m.kept} of those days on your account, so your first scores stand. This device's replays were discarded.`,
+    );
+  }
+  if (m.replaced > 0) parts.push(`${m.replaced === 1 ? "One game" : `${m.replaced} games`} on this device started before the account's, so ${m.replaced === 1 ? "it counts" : "they count"} as the first attempt.`);
+  return parts.length ? `Signed in. ${parts.join(" ")}` : "Done. You're signed in on this browser.";
 }
 
 const COPY = {
@@ -72,9 +90,9 @@ export function SaveStreak({ mode, title, blurb, onDone }: Props) {
     setBusy(false);
     if (!r.ok) return setError(r.message);
     setStep("done");
-    const n = r.merged?.merged ?? 0;
-    setNote(n > 0 ? `Done. ${n} game${n === 1 ? "" : "s"} from this device ${n === 1 ? "was" : "were"} added to your account.` : "Done. You're signed in on this browser.");
-    onDone(r.email);
+    const n = mergeNote(r.merged);
+    setNote(n);
+    await onDone(r.email, n);
   };
 
   const c = COPY[mode];

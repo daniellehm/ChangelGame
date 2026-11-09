@@ -194,3 +194,26 @@ export function clearLocalGameData(): void {
     /* ignore */
   }
 }
+
+/** Overwrite this device's record of `play`'s date with it (e.g. the account's result after sign-in). */
+export function replaceCompleted(play: StoredPlay): void {
+  const stats = loadStats();
+  stats.plays = stats.plays.filter((e) => e.date !== play.puzzle.date);
+  write(STORAGE_KEYS.stats, stats);
+  if (isComplete(play)) recordCompleted(play);
+}
+
+/** Dates this device has a stored play for. */
+export function storedPlayDates(): string[] {
+  const out: string[] = [];
+  try {
+    const ls = window.localStorage;
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i);
+      if (k?.startsWith(PLAY_PREFIX)) out.push(k.slice(PLAY_PREFIX.length));
+    }
+  } catch {
+    /* ignore */
+  }
+  return out;
+}

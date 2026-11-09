@@ -22,7 +22,9 @@ interface Props {
   offerSave: boolean;
   /** Open the save form straight away (from the 2nd completed game, SPEC §5). */
   saveOpen: boolean;
-  onSaved: () => void;
+  onSaved: (note: string) => void;
+  /** Shown after signing in from this screen (what happened to this device's games). */
+  note: string | null;
   onToast: (message: string) => void;
 }
 
@@ -45,7 +47,7 @@ function useCountdown(): string {
   return text;
 }
 
-export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, onToast }: Props) {
+export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, note, onToast }: Props) {
   const [saveExpanded, setSaveExpanded] = useState(saveOpen);
   const total = totalOf(results.map((r) => r.points));
   const shown = useCountUp(total, animate, 900);
@@ -54,6 +56,7 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
 
   return (
     <section id="final" className="card final">
+      {note && <p className="banner" id="savedNote" role="status">{note}</p>}
       <div className="cat" id="finalCat">{`Changel #${puzzle.number}`}</div>
       <div className="gap" />
       <div>
@@ -90,7 +93,7 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
               mode="save"
               title={stats.streak > 1 ? `Save your ${stats.streak}-day streak` : "Save your streak"}
               blurb="Enter your email to keep your games on any device, or to sign in if you already have an account. No password."
-              onDone={onSaved}
+              onDone={(_email, n) => onSaved(n)}
             />
           ) : (
             <button className="btn ghost" id="saveBtn" type="button" onClick={() => setSaveExpanded(true)}>

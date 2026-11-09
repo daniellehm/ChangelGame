@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { deleteAccount, fetchAccount, signOut, type ServerStats } from "@/lib/game/session-client";
 import { clearLocalGameData } from "@/lib/game/storage";
+import { refreshFromAccount } from "@/lib/game/sync";
+import { deviceTimeZone } from "@/lib/dates";
 import { SaveStreak } from "./SaveStreak";
 
 type State = { kind: "loading" } | { kind: "none" } | { kind: "error" } | { kind: "anon"; me: ServerStats } | { kind: "account"; me: ServerStats };
@@ -67,14 +69,14 @@ export function AccountView() {
       {state.kind === "none" && (
         <>
           <p>You don&apos;t need an account to play. If you&apos;ve saved your streak before, sign in to get it back on this browser.</p>
-          <SaveStreak mode="signin" title="Sign in" onDone={() => void refresh()} />
+          <SaveStreak mode="signin" title="Sign in" onDone={async () => { await refreshFromAccount(deviceTimeZone()); void refresh(); }} />
         </>
       )}
 
       {state.kind === "anon" && (
         <>
           <p>You&apos;re playing without an account. Your games are saved on this browser.</p>
-          <SaveStreak mode="save" onDone={() => void refresh()} />
+          <SaveStreak mode="save" onDone={async () => { await refreshFromAccount(deviceTimeZone()); void refresh(); }} />
           <p className="note">Already saved your streak on another device? Enter that email above. Your games from here will be added to it.</p>
         </>
       )}
