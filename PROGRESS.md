@@ -7,6 +7,7 @@
 ## Needs from Dani
 
 **Now:**
+- [ ] **GoDaddy DNS for changel.app:** follow `docs/setup/godaddy-dns.md` (delete 3 parking records, add 8). Unblocks the sign-in emails and the changel.app website.
 - [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
 - [x] Go-ahead for M4 (2026-11-09): email-only, no Google; stay logged in
 - [x] Review M2 (approved 2026-11-09)
@@ -24,7 +25,6 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M4: DNS records for changel.app at GoDaddy (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
 - [ ] M5: Anthropic API key
 - [ ] M6: Sentry account/DSN; PostHog or Plausible account
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
@@ -140,6 +140,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 4.1 (part): Resend domain `changel.app` created (sending only, ap-northeast-1, no tracking; the other Resend domain untouched); sending-only key restricted to changel.app in `.env.local` + Vercel (Sensitive). `changel.app` + `www` (308 → apex) added to the Vercel project. DNS instructions for Dani: `docs/setup/godaddy-dns.md`.
 - 2026-11-09: M4 started (branch `m4-login-merge`). Dani: email-only login, no Google; players must stay logged in; DNS is at GoDaddy; don't touch other Resend domains or keys.
 - 2026-11-09: M3 approved by Dani and merged into `main`. Dani's preview game verified in the DB (Nov 9, 423, anonymous, server-scored). With Dani's OK, deleted 16 untagged test players from the earliest real-sign-in E2E runs (cascaded 18 plays). The DB now holds just Dani's player and play.
 - 2026-11-09: M3 preview check: `/api/puzzle` 200 from sin1 (rate limiter loads with the Vercel Upstash env), `/api/me` 401 without a session (body not visible to the fetch tool). **M3 complete**, awaiting Dani's review.
