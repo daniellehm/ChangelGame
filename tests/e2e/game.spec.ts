@@ -8,18 +8,18 @@ test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(syd(`${DAY1}T09:00:00`));
 });
 
-test("intro copy matches the prototype", async ({ page }) => {
+test("intro shows the trimmed copy", async ({ page }) => {
   await page.goto("/");
   const intro = page.locator("#intro");
-  await expect(intro.locator(".cat")).toHaveText("Daily · 5 rounds · ~2 min");
+  await expect(intro.locator(".cat")).toHaveText("Daily · 5 rounds · 2 min");
   await expect(intro.locator("h1")).toHaveText("How much did it change?");
-  await expect(intro.locator("p")).toHaveText("We show you a number from the past. You guess how much it's grown or shrunk since. Sounds easy. It isn't.");
+  await expect(intro.locator("p")).toHaveText("One number from the past. How big is it now?");
   await expect(intro.locator(".rules li")).toHaveText([
-    "1Drag the slider: right means it went up, left means it went down.",
-    "2The closer your multiplier, the more points (100 max per round).",
-    "3Guess the wrong direction and you score nothing. Some barely moved.",
+    "1Slide right if it grew, left if it shrank.",
+    "2Closer guess, more points.",
+    "3Wrong direction scores 0.",
   ]);
-  await expect(page.locator("#startBtn")).toHaveText("Play today's Changel");
+  await expect(page.locator("#startBtn")).toHaveText("Play #2");
   await expect(page.locator("#meta")).toContainText("#2");
   await expect(page.locator("#meta")).toContainText("Nov 10");
 });
@@ -33,7 +33,8 @@ test("full game → exact share text → refresh shows the final screen", async 
     const s = await playRound(page, DAY1, i, GUESSES[i]!);
     total += s.points;
     tiers.push({ nailed: "🟩", close: "🟨", meh: "🟧", off: "🟥", wrong: "🟥" }[s.tier]);
-    await expect(page.locator("#nextBtn")).toHaveText(i === 4 ? "See my score" : "Next");
+    await expect(page.locator("#nextBtn")).toHaveText(i === 4 ? "Score" : "Next");
+    if (i < 4) await expect(page.locator(`#progress i:nth-child(${i + 1})`)).toHaveAttribute("style", /background/);
     await next(page);
   }
 
@@ -44,7 +45,7 @@ test("full game → exact share text → refresh shows the final screen", async 
   await expect(page.locator("#stPlayed")).toHaveText("1");
   await expect(page.locator("#stStreak")).toHaveText("1");
   await expect(page.locator("#stBest")).toHaveText(String(total));
-  await expect(page.locator("#countdown")).toHaveText("Next Changel in 15:00:00");
+  await expect(page.locator("#countdown")).toHaveText("Next in 15:00:00");
 
   await page.locator("#shareBtn").click();
   await expect(page.locator("#toast")).toHaveText("Copied to clipboard");

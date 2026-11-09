@@ -74,3 +74,24 @@ Each item is applied in the milestone where it comes up.
 - `next/font` runs with `adjustFontFallback: false`, and its fallbacks are the prototype's stacks (`system-ui, sans-serif` / `monospace`).
 - Bricolage text that is "bold" (700) is set to 800: `h1`–`h3`, `b`, `strong`, `.btn`, `.nudge button`, `.toast`. JetBrains Mono keeps 700, because it has a real 700 face.
 **Why:** Found by the parity test. (1) → and ≈ aren't in either font's subsets. The prototype falls back to `system-ui` for them, but `next/font`'s auto fallback is a metric-adjusted Arial, which drew a thin arrow and shifted the year cards. (2) The prototype's Google Fonts request declares only 400/600/800 faces, so the browser renders every 700 at 800. With both fixed, all 14 parity screenshots differ by 0 pixels. Cost: no metric-matched fallback during font swap. The fonts are preloaded, so any layout shift is rare. We'll re-check it in the M6 Lighthouse pass.
+
+### 2026-11-09: Design pass before M2. The prototype becomes a baseline, not a constraint
+**Decision:** With M1 approved, Dani asked for UX improvements beyond the prototype: less text, keep the chunky weights, and more fun/funky. The ideas are trialled in an interactive playground first. Whatever Dani picks becomes the new visual reference: the parity test then guards the new look instead of the prototype, and each departure is listed here.
+**Why:** Dani's instruction overrides "match the prototype exactly". The playground lets Dani judge ideas by playing them rather than from descriptions.
+
+### 2026-11-09: Design pass, Dani's picks from the playground
+**Decision:** Build into the app:
+1. **Trimmed copy**: shorter intro ("One number from the past. How big is it now?") and rules. Buttons read "Play #N", "Lock in", "Next" / "Score" and "Share". The readout is "+140% · ≈ 75,935". The source line has no "Source:" prefix, and the countdown reads "Next in h:mm:ss".
+2. **Round screen**: keep the "Round 1 of 5" label (Dani: "we should still show what round we are in"), and move − / + beside the big multiplier as 44 px round buttons. The separate nudge row is removed.
+3. **Live progress**: each finished progress segment takes its round's tier colour.
+4. **Sticker look**: the category is a tilted sticker (colour and tilt fixed per category). Primary buttons get a 4 px `--up` hard shadow and press flat, and ghost/secondary buttons get an ink shadow. The verdict bar and final title are tilted stickers, and the year cards and stat tiles get ink borders, with a dashed border for the unknown year.
+5. **Motion & juice**: pins drop with an overshoot, points and the final score count up, the result emoji flip in one by one, confetti plays on "Nailed it", and the multiplier pops (plus an 8 ms vibration where supported) each time the slider crosses a ×10/÷10 boundary. All of it is off under `prefers-reduced-motion`.
+**Why:** Dani tried each idea in the playground and chose these.
+
+### 2026-11-09: Prototype parity test replaced by visual regression baselines
+**Decision:** `tests/e2e/parity.spec.ts`, which diffed against `reference/prototype.html`, is removed together with pixelmatch/pngjs. `tests/e2e/visual.spec.ts` uses Playwright's `toHaveScreenshot` to check 6 key screens at 390 and 1280 px against committed baselines, with reduced motion so animations settle. The baselines are macOS (`-darwin`) for now; CI will need Linux baselines when it is set up.
+**Why:** After the design pass the app deliberately differs from the prototype, so parity is no longer the goal. The check that matters now is that the approved look doesn't drift.
+
+### 2026-11-09: About merged into How to play
+**Decision:** The About page is removed, and its content is now "The deal" on How to play: same five for everyone, new puzzle at midnight, free with no account, every number sourced. `/about` permanently redirects to `/how-to-play`, and the menu now has How to play, Stats and Account. How to play is rebuilt as a worked example round (scored with the real `lib/scoring`), three step tiles, tier stickers and the deal list.
+**Why:** Dani asked to drop About, fold it into How to play, and make that page more fun and less wordy.

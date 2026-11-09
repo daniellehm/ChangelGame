@@ -1,47 +1,101 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
-import { FINAL_TITLES, TIER_CUTOFFS } from "@/lib/config";
-import { TIERS, type TierId } from "@/lib/scoring";
+import { TIER_CUTOFFS } from "@/lib/config";
+import { formatValue, multLabel } from "@/lib/format";
+import { actualLog, scoreRound, TIERS, type TierId } from "@/lib/scoring";
+import { stickerFor } from "@/lib/sticker";
 
 export const metadata: Metadata = {
   title: "How to play · Changel",
-  description: "How Changel works: guess how many times bigger or smaller a number is now.",
+  description: "Guess how many times bigger or smaller a number from the past is now. Five rounds a day, free, no account.",
 };
 
-const TIER_RULES: Array<[TierId, string]> = [
-  ["nailed", `${TIER_CUTOFFS.NAILED}+ points`],
-  ["close", `${TIER_CUTOFFS.CLOSE}–${TIER_CUTOFFS.NAILED - 1} points`],
-  ["meh", `${TIER_CUTOFFS.MEH}–${TIER_CUTOFFS.CLOSE - 1} points`],
-  ["off", `under ${TIER_CUTOFFS.MEH} points`],
-  ["wrong", "guessed the wrong direction: 0 points"],
+/* A worked example, scored with the real scoring module. */
+const EXAMPLE = { cat: "People", prompt: "World population", y0: 1975, v0: 4.07e9, y1: 2025, v1: 8.2e9, guess: Math.log10(2) };
+const exActual = actualLog(EXAMPLE.v0, EXAMPLE.v1);
+const exScore = scoreRound(EXAMPLE.guess, exActual);
+const exSticker = stickerFor(EXAMPLE.cat);
+
+const STEPS = [
+  { title: "Slide", body: "Right if it grew. Left if it shrank." },
+  { title: "Lock in", body: "Closer guess, more points." },
+  { title: "Wrong way?", body: "That's 0 points." },
+];
+
+const TIER_CHIPS: Array<[TierId, string, number]> = [
+  ["nailed", `${TIER_CUTOFFS.NAILED}+`, -2],
+  ["close", `${TIER_CUTOFFS.CLOSE}+`, 1.5],
+  ["meh", `${TIER_CUTOFFS.MEH}+`, -1],
+  ["off", `under ${TIER_CUTOFFS.MEH}`, 2],
+  ["wrong", "0", -1.5],
+];
+
+const DEAL = [
+  "Same five numbers for everyone",
+  "New puzzle at midnight, your time",
+  "Free, and no account needed",
+  "Every number has a source",
 ];
 
 export default function HowToPlay() {
   return (
     <PageShell>
       <div className="cat">How to play</div>
-      <h1>How much did it change?</h1>
-      <p>Every day there are five rounds. Each one shows a real number from the past, like the world&apos;s population in 1975, and asks how big it is now.</p>
-      <ul className="rules">
-        <li><span>1</span>Drag the slider: right means it went up, left means it went down. The middle means no change.</li>
-        <li><span>2</span>The slider works in multiples: from a thousand times smaller (÷1000) to a thousand times bigger (×1000). Use “− a bit” and “+ a bit” to fine-tune.</li>
-        <li><span>3</span>Tap “Lock it in”. The closer your multiplier, the more points, up to 100 a round and 500 a day.</li>
-        <li><span>4</span>Guess the wrong direction and you score nothing. Some numbers barely moved, so “same” can be the right answer.</li>
-      </ul>
-      <h2>Scoring</h2>
-      <p>Being off by 2× scores about 60. Off by about 5.6× scores 0.</p>
-      <ul className="tiers">
-        {TIER_RULES.map(([id, rule]) => (
+      <h1>Guess the change.</h1>
+      <p>A number from the past. How many times bigger or smaller is it now?</p>
+
+      <figure className="demo" aria-label="Example round">
+        <div className="round-cat cat">
+          <span>Example</span>
+          <span className="sticker" style={{ "--st": exSticker.color, "--tilt": `${exSticker.tiltDeg}deg` } as CSSProperties}>
+            {EXAMPLE.cat}
+          </span>
+        </div>
+        <div className="demo-q">{EXAMPLE.prompt}</div>
+        <div className="years">
+          <div className="yr"><div className="y">{EXAMPLE.y0}</div><div className="v">{formatValue(EXAMPLE.v0, "big")}</div></div>
+          <div className="arrow" aria-hidden="true">→</div>
+          <div className="yr"><div className="y">{EXAMPLE.y1}</div><div className="v">{formatValue(EXAMPLE.v1, "big")}</div></div>
+        </div>
+        <div className="demo-result">
+          <span>You: <b>{multLabel(EXAMPLE.guess).big}</b></span>
+          <span>Real: <b>{multLabel(exActual).big}</b></span>
+          <span className="sticker" style={{ "--st": TIERS[exScore.tier].color, "--tilt": "-2deg" } as CSSProperties}>
+            {TIERS[exScore.tier].label} +{exScore.points}
+          </span>
+        </div>
+      </figure>
+
+      <ol className="steps">
+        {STEPS.map((s, i) => (
+          <li key={s.title}>
+            <span className="step-n">{i + 1}</span>
+            <b>{s.title}</b>
+            <span>{s.body}</span>
+          </li>
+        ))}
+      </ol>
+
+      <h2>Points</h2>
+      <p>Up to 100 a round, 500 a day.</p>
+      <ul className="tier-chips">
+        {TIER_CHIPS.map(([id, pts, tilt]) => (
           <li key={id}>
-            <span className="sw" style={{ background: TIERS[id].color }}>{TIERS[id].emoji} {TIERS[id].label}</span>
-            {rule}
+            <span className="sticker" style={{ "--st": TIERS[id].color, "--tilt": `${tilt}deg` } as CSSProperties}>
+              {TIERS[id].emoji} {TIERS[id].label}
+            </span>
+            <span className="tier-rule">{pts}</span>
           </li>
         ))}
       </ul>
-      <h2>Daily reset</h2>
-      <p>Everyone gets the same puzzle on the same date. A new one arrives at midnight where you are. One attempt per day. If you start just before midnight, you can still finish that puzzle.</p>
-      <h2>Titles</h2>
-      <p>{FINAL_TITLES.map((t) => t.title).join(" · ")}</p>
+
+      <h2>The deal</h2>
+      <ul className="deal">
+        {DEAL.map((d) => (
+          <li key={d}>{d}</li>
+        ))}
+      </ul>
     </PageShell>
   );
 }

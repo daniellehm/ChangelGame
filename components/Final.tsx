@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { MAX_TOTAL } from "@/lib/config";
 import { formatCountdown, nextLocalMidnight } from "@/lib/dates";
 import { multLabel } from "@/lib/format";
@@ -8,12 +8,15 @@ import { shareText } from "@/lib/game/share";
 import type { StatsSummary } from "@/lib/game/storage";
 import type { Puzzle, RoundResult } from "@/lib/game/types";
 import { finalTitle, TIERS, totalOf } from "@/lib/scoring";
+import { useCountUp } from "./motion";
 import { ShareButton } from "./ShareButton";
 
 interface Props {
   puzzle: Puzzle;
   results: RoundResult[];
   stats: StatsSummary;
+  /** Count up the score and flip in the grid (only when arriving from the last reveal). */
+  animate: boolean;
   onToast: (message: string) => void;
 }
 
@@ -24,7 +27,7 @@ function useCountdown(): string {
     const tick = () => {
       const now = Date.now();
       if (now >= target) target = nextLocalMidnight(new Date(now));
-      setText(`Next Changel in ${formatCountdown(target - now)}`);
+      setText(`Next in ${formatCountdown(target - now)}`);
     };
     const first = requestAnimationFrame(tick);
     const id = setInterval(tick, 1000);
@@ -36,8 +39,9 @@ function useCountdown(): string {
   return text;
 }
 
-export function Final({ puzzle, results, stats, onToast }: Props) {
+export function Final({ puzzle, results, stats, animate, onToast }: Props) {
   const total = totalOf(results.map((r) => r.points));
+  const shown = useCountUp(total, animate, 900);
   const countdown = useCountdown();
   const tiers = results.map((r) => r.tier);
 
@@ -46,11 +50,13 @@ export function Final({ puzzle, results, stats, onToast }: Props) {
       <div className="cat" id="finalCat">{`Changel #${puzzle.number}`}</div>
       <div className="gap" />
       <div>
-        <span className="score" id="finalScore">{total}</span>{" "}
+        <span className="score" id="finalScore">{shown}</span>{" "}
         <span className="of">{`/ ${MAX_TOTAL}`}</span>
       </div>
-      <div className="grid" id="finalGrid" role="img" aria-label={tiers.map((t) => TIERS[t].label).join(", ")}>
-        {tiers.map((t) => TIERS[t].emoji).join("")}
+      <div className={animate ? "grid animate" : "grid"} id="finalGrid" role="img" aria-label={tiers.map((t) => TIERS[t].label).join(", ")}>
+        {tiers.map((t, i) => (
+          <span key={i} style={{ "--i": i } as CSSProperties}>{TIERS[t].emoji}</span>
+        ))}
       </div>
       <div className="title" id="finalTitle">{finalTitle(total)}</div>
       <div className="rows" id="finalRows">

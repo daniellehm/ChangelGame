@@ -7,7 +7,6 @@ const ITEMS = [
   { href: "/how-to-play", label: "How to play" },
   { href: "/stats", label: "Stats" },
   { href: "/account", label: "Account" },
-  { href: "/about", label: "About" },
 ] as const;
 
 export function Menu() {

@@ -2,13 +2,13 @@
 
 ## Current status
 
-**M1 approved by Dani and merged to `main` (2026-11-09).** Next: a design pass (sleeker, lighter text, more fun) that Dani asked for before M2. Direction is being agreed in chat; then it's built on branch `design-pass`. After that: M2 on branch `m2-database-api`.
+**Design pass approved by Dani and merged to `main` (2026-11-09). Next: Milestone 2 (Database + puzzle API) on branch `m2-database-api`.** First step is task 2.1: Supabase CLI + migrations set-up and `.env.local`. That needs the Supabase service-role key from Dani.
 
 ## Needs from Dani
 
 **Now:**
 - [x] Review M1 (approved 2026-11-09)
-- [ ] Agree the design-pass direction (asked in chat 2026-11-09)
+- [x] Pick which design-playground ideas to keep (2026-11-09: all five, but keep the round label; see DECISIONS)
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
 - [x] Approve the Vercel MCP connection for the `releasedani` scope, and confirm it's the right account (done 2026-11-09)
@@ -133,6 +133,11 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Design pass approved by Dani and merged into `main`.
+- 2026-11-09: Design pass: About removed and merged into How to play (redirect `/about` → `/how-to-play`, menu item removed). How to play rebuilt as an example round + 3 step tiles + tier stickers + "The deal". 141 unit + 18 E2E + 2 visual tests pass.
+- 2026-11-09: Design pass: How to play page cleaned up (Dani's request). Trimmed rules, score tiers shown as stickers, titles list dropped (players discover them), new visual baseline `7-how-to-play`.
+- 2026-11-09: Design pass built: trimmed copy, round label + category sticker, − / + beside the multiplier (SVG icons, 44 px), tier-coloured live progress, sticker look (orange-shadow press buttons, tilted verdict/title, ink-bordered cards), motion (bouncy pins, count-ups, flip-in grid, confetti on Nailed it, pop + buzz at ×10), all off under reduced motion. New `lib/sticker.ts`, `components/motion.ts`, `MultLabel.short`. Parity test replaced by `npm run test:visual` (12 baselines). 141 unit + 18 E2E + 2 visual tests pass.
+- 2026-11-09: Design pass: Dani chose "less text" (keep weights) and to do it before M2, and was unsure about the fun ideas. Published an interactive playground with each idea switchable.
 - 2026-11-09: M1 approved by Dani and merged into `main`. Dani asked for UX improvements beyond the prototype (lighter text, sleeker, fun/funky).
 - 2026-11-09: 1.11 Preview deploy: first build green on Vercel (26 s, 6 static routes, syd1). Preview verified live (200, intro HTML, fonts preloaded, noindex). **M1 complete.**
 - 2026-11-09: 1.11: Vercel project `changel` created and linked to `daniellehm/ChangelGame` (prj_4qiuH4a01M4Il52WrKi8zd75EjCS), with Node 22.x, Next.js preset and functions in syd1. Previews are behind Vercel Authentication.
@@ -140,7 +145,7 @@ _Newest first._
 - 2026-11-09: 1.11: Dani approved MCP access and confirmed the Vercel account. The retry failed: "add a Login Connection to your GitHub account first".
 - 2026-11-09: 1.11 started: no existing "changel" project on Vercel. `create_git_project` was refused with 403, because the MCP connection isn't granted to the account scope. Blocked on Dani's consent.
 - 2026-11-09: 1.10 Visual parity: `tests/e2e/parity.spec.ts` (`npm run test:parity`) diffs the app against `reference/prototype.html` at 390 and 1280 px across 7 steps (intro → final). It found and fixed two real differences: next/font's Arial fallback (→, ≈ glyphs) and the prototype rendering bold at 800. Result: **0 differing pixels on all 14 screenshots**, threshold tightened to 0.1%. Side-by-sides in `test-results/parity/`. Also started pushing the branch to GitHub after each commit (Dani's request).
-- 2026-11-09: 1.9 Extra screens: header menu (keyboard + outside-click + Escape), `/how-to-play`, `/stats` (local stats: played/avg/best, current + max streak, tier distribution with labels, 30-day strip), `/account` and `/about` placeholders via `PageShell`. E2E: menu by mouse/keyboard, no horizontal scroll at 320 px, stats after a game (18 E2E total).
+- 2026-11-09: 1.9 Extra screens: header menu (keyboard + outside-click + Escape), `/how-to-play`, `/stats` (local stats: played/avg/best, current + max streak, tier distribution with labels, 30-day strip), `/account` and `/about` placeholders via `PageShell` (About later merged into How to play). E2E: menu by mouse/keyboard, no horizontal scroll at 320 px, stats after a game (18 E2E total).
 - 2026-11-09: 1.8 Slider accessibility: pure `lib/slider.ts` (keyboard steps without snap, pointer snap ±0.01, nudges), persistent live region for results, nudge labels fixed for WCAG 2.5.3. E2E: keyboard-only full game, 44 px target, axe clean on intro/round/reveal/final except the known prototype contrast (header meta, verdict bar; fixed in M6).
 - 2026-11-09: 1.7 Game screens: Header/Menu/Intro/Round/Slider/Reveal/Final/ShareButton/Toast + `Game` state machine; `lib/streaks.ts` (date-line rule, 9 tests), `lib/game/storage.ts` (local mirror), `lib/game/share.ts`. Playwright (mobile 390 px, Sydney tz, frozen clock): 7 E2E tests pass, covering full game, exact share text, clipboard fallback, resume mid-game, midnight crossing, returning player streak = 2, and no console errors.
 - 2026-11-09: 1.6 Hard-coded data: `lib/fixtures/prototype-pool.ts` (verbatim pool + seeded shuffle), `lib/game/types.ts` (API-shaped Puzzle/RoundResult + `GameSource` interface), `lib/game/fixture-source.ts`; tests prove identical pool, order and daily picks vs the prototype.

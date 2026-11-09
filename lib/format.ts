@@ -76,6 +76,8 @@ export interface MultLabel {
   big: string;
   /** "+140% bigger", "68% smaller" or "no change" */
   sub: string;
+  /** Trimmed readout (design pass): "+140%", "−68%" or "same" */
+  short: string;
   /** CSS class for the readout colour ("" when no change). */
   cls: "" | "up" | "down";
   direction: Direction;
@@ -84,9 +86,10 @@ export interface MultLabel {
 /** Label for a log10 multiplier l. */
 export function multLabel(l: number): MultLabel {
   const m = Math.pow(10, l);
-  if (Math.abs(l) < SCORING.EPSILON) return { big: "×1", sub: "no change", cls: "", direction: "same" };
-  if (l > 0) return { big: "×" + prettyMultiplier(m), sub: "+" + pctChange(m) + " bigger", cls: "up", direction: "up" };
-  return { big: "÷" + prettyMultiplier(1 / m), sub: pctChange(m) + " smaller", cls: "down", direction: "down" };
+  if (Math.abs(l) < SCORING.EPSILON) return { big: "×1", sub: "no change", short: "same", cls: "", direction: "same" };
+  const p = pctChange(m);
+  if (l > 0) return { big: "×" + prettyMultiplier(m), sub: "+" + p + " bigger", short: "+" + p, cls: "up", direction: "up" };
+  return { big: "÷" + prettyMultiplier(1 / m), sub: p + " smaller", short: "−" + p, cls: "down", direction: "down" };
 }
 
 /** Screen-reader text for the slider, e.g. "2.4 times bigger" (SPEC §9). */
