@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { apiError, invalid } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
+import { TEST_CLOCK_HEADER, testClockEnabled } from "@/lib/api/clock";
 import { isValidTimeZone } from "@/lib/dates";
 import { adminClient } from "@/lib/supabase/admin";
 import { supabaseForRequest } from "@/lib/supabase/request";
@@ -43,7 +44,9 @@ export async function POST(req: Request) {
   }
 
   const sb = supabaseForRequest(req, { secret: true });
-  const { data, error } = await sb.client.auth.signInAnonymously();
+  // Test runs (test clock on, never in production) tag their users so cleanup can find them.
+  const isTestRun = testClockEnabled() && req.headers.has(TEST_CLOCK_HEADER);
+  const { data, error } = await sb.client.auth.signInAnonymously(isTestRun ? { options: { data: { e2e: true } } } : undefined);
   if (error || !data.user) {
     if (error?.status === 429 || error?.code === "over_request_rate_limit") {
       return apiError("rate_limited", "Too many new players from your network. Try again later.", 429);

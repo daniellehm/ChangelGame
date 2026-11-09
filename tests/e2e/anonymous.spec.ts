@@ -6,6 +6,7 @@
  * otherwise. Test users are deleted afterwards.
  */
 import { expect, test, type Page } from "@playwright/test";
+import { TEST_CLOCK_HEADER } from "@/lib/api/clock";
 import { adminClient } from "@/lib/supabase/admin";
 import { next, playRound, setClock, syd } from "./helpers";
 
@@ -34,7 +35,11 @@ test.afterAll(async () => {
 test("anonymous player: play, resume, finish, share, next day streak 2", async ({ page }) => {
   trackUsers(page);
   await setClock(page, syd(`${DAY1}T09:00:00`));
-  const probe = await page.request.post("/api/session", { data: { tz: "Australia/Sydney" } });
+  // page.request doesn't inherit page headers, so pass the test clock + a fake client IP explicitly.
+  const probe = await page.request.post("/api/session", {
+    data: { tz: "Australia/Sydney" },
+    headers: { [TEST_CLOCK_HEADER]: syd(`${DAY1}T09:00:00`).toISOString(), "x-forwarded-for": "198.18.250.250" },
+  });
   test.skip(probe.status() === 503, "Anonymous sign-ins are off in Supabase (Dani's checklist)");
   expect(probe.status()).toBe(200);
   const probeBody = await probe.json();
@@ -89,11 +94,14 @@ test("anonymous player: play, resume, finish, share, next day streak 2", async (
 
 test("a browser that won't keep cookies falls back to local play", async ({ page }) => {
   await setClock(page, syd(`${DAY1}T09:00:00`));
-  // Drop every Set-Cookie, like a browser blocking cookies: /api/play then has no session.
+  // Act like a browser that refuses cookies: whatever /api/session sets is thrown
+  // away (route.fetch stores cookies in the context, so clear them), and the
+  // reply carries no Set-Cookie. /api/play then has no session.
   await page.route("**/api/session", async (route) => {
     const res = await route.fetch();
     const body = await res.json().catch(() => ({}));
     if (body?.created && body?.user_id) created.add(body.user_id);
+    await page.context().clearCookies();
     const headers = { ...res.headers() };
     delete headers["set-cookie"];
     await route.fulfill({ status: res.status(), headers, json: body });

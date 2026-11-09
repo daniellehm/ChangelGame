@@ -15,6 +15,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
+  // Deletes the anonymous players the run created (tagged e2e by /api/session in test mode).
+  globalTeardown: "./tests/e2e/global-teardown.ts",
   use: {
     baseURL: `http://localhost:${PORT}`,
     browserName: "chromium",
