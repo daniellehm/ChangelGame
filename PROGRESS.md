@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M3 in progress on branch `m3-anonymous-play` (go-ahead 2026-11-09).** Server routes done and tested (`/api/session`, `/api/play`, `/api/guess`, `/api/me`). Next: switch the client to them (3.5) + offline fallback/sync (3.6), then rate limits (3.8). The E2E (3.9) and the real anonymous sign-in test wait for Dani's checklist (anonymous sign-ins are still off).
+**M3 in progress on branch `m3-anonymous-play` (go-ahead 2026-11-09).** Server routes + client modes done. Next: 3.8 rate limits (Upstash). The E2E (3.9) needs Dani's checklist (anonymous sign-ins are still off, so the game currently runs in local mode).
 
 ## Needs from Dani
 
@@ -83,8 +83,8 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 - [ ] 3.2 `POST /api/session` on the first Play click: server-side `signInAnonymously` with the secret key + `Sb-Forwarded-For`, `@supabase/ssr` HTTP-only cookies. *Accept:* no user row on a page load without Play; sign-ups are rate-limited per player IP.
 - [x] 3.3 `POST /api/play` (start/resume). *Accept:* idempotent; returns answered rounds.
 - [x] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. **Also cover the DB checks deferred from 2.2:** player-row trigger, account-delete cascade, one play per puzzle, insert-only guesses, guess tier/wrong-way check. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
-- [ ] 3.5 Resume mid-game + midnight crossing. *Accept:* a refresh resumes at the next unplayed round; the started puzzle persists past midnight.
-- [ ] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
+- [x] 3.5 Resume mid-game + midnight crossing. *Accept:* a refresh resumes at the next unplayed round; the started puzzle persists past midnight.
+- [x] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
 - [x] 3.7 `player_stats` view, server streaks (date-line rule), `GET /api/me`. *Accept:* streak unit tests, including n−2 with a tz change.
 - [ ] 3.8 Upstash Redis "changel" (Sydney) + rate limits. *Accept:* limits from SPEC section 7 enforced, with tests.
 - [ ] 3.9 E2E anonymous flow (mobile viewport): full game → refresh resumes → finish → share text exact → next day (mocked clock) new puzzle, streak = 2.
@@ -138,6 +138,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 3.5/3.6 Client modes: `lib/game/session-client.ts`; `Game` starts via /api/session + /api/play (server mode) or falls back to local mode via /api/reveal; resumes from the server's answered rounds; handles out_of_order / question_changed / unauthorized mid-game; final screen uses /api/me stats. `POST /api/sync` uploads finished local plays (server re-scores, source='local', server wins, ≤7 days). 46 integration, 169 unit, 21 E2E, 2 visual pass. E2E currently runs in local mode (anonymous sign-ins off).
 - 2026-11-09: 3.3/3.4/3.7: `POST /api/play` (start needs an open window, resume allowed through grace, returns answered rounds), `POST /api/guess` (lib/scoring + `submit_guess`; 401/404/403/409 out_of_order/already_answered with stored result/question_changed), `GET /api/me` (player_stats view + TS streaks with the date-line rule). Public rounds now carry `question_id`. Integration tests on a throwaway 2099-03-01 puzzle (cleaned up): 41 pass, including a concurrent double-tap (1 stored) and the 2.2 deferred checks (player trigger, insert-only guesses, delete cascade). Test players use the email fallback until anonymous sign-ins are on.
 - 2026-11-09: M3 groundwork: `lib/supabase/request.ts` (request-scoped @supabase/ssr client, HTTP-only Lax cookies, `clientIp`), `lib/api/auth.ts` (`sessionUser` via getClaims), `POST /api/session` (reuse or server-side anonymous sign-in with Sb-Forwarded-For; 429/503 mapping). Migration `submit_guess_and_player_stats` (atomic guess function, service-role only; `player_stats` view; plays index). Advisors clean. End-to-end sign-in tests wait for Dani's checklist.
 - 2026-11-09: M3 started (branch `m3-anonymous-play`). Dani chose the Supabase dashboard checklist and deferred Turnstile to M6. Sign-up design changed to forward the player IP to Supabase (see DECISIONS).

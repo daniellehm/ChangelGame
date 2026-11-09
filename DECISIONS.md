@@ -129,3 +129,14 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: Guess transaction and stats split
 **Decision:** `POST /api/guess` scores in TypeScript (`lib/scoring.ts`, the only scoring code), then calls `public.submit_guess`. That Postgres function (execute: service_role only) locks the play row and, in one transaction, rejects duplicates and out-of-order positions, inserts the guess, increments `round_stats` (server-scored plays only), and completes the play on round 5. The `player_stats` view holds games played, best, average and tier counts. **Streaks are computed in TypeScript** from the player's plays with `lib/streaks.ts`, because the date-line n−2 rule needs each play's time zone.
 **Why:** Keeps one scoring implementation while getting real transactional guarantees, which a double-tap can't break. Streak logic in SQL would duplicate `lib/streaks.ts` and risk the two disagreeing.
+
+### 2026-11-09: Client modes and offline sync
+**Decision:**
+- On Play the client calls `/api/session`, then `/api/play`. If either fails (sign-in off, cookies blocked, rate-limited, offline), the game runs in **local mode**: each round is revealed via `/api/reveal` and saved in localStorage.
+- Server-mode lock-ins use `/api/guess`. On a refresh, the server's answered rounds win. Edge cases:
+  - `out_of_order`: another tab moved ahead, so the game resyncs from the server.
+  - `question_changed`: the round was swapped, so the game reloads the rounds and keeps what's answered.
+  - `unauthorized`: the session was lost mid-game, so the game finishes in local mode.
+- Finished local plays are uploaded with `POST /api/sync` the next time a session exists. The server re-scores from `guess_log`, stores `source='local'` (no crowd stats), ignores the upload if it already has a play for that date (server wins), and refuses anything older than 7 days. Partly played local games aren't synced.
+- Server mode shows `/api/me` stats (games played, streak, best) on the final screen, with local stats as the fallback.
+**Why:** It implements SPEC §5's fallback with the M2 reveal design, so the game always works while server records stay authoritative and honest.

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { ROUNDS } from "@/lib/config";
 import { daysBetween, deviceTimeZone, localDate } from "@/lib/dates";
 import { createApiSource, PuzzleLoadError, type LoadErrorKind } from "@/lib/game/api-source";
+import { beginPlay, ensureSession, fetchMe, submitGuess, syncLocalPlay, type ServerStats } from "@/lib/game/session-client";
 import {
   getActiveDate,
   isComplete,
@@ -15,6 +16,8 @@ import {
   savePlay,
   setActiveDate,
   summarize,
+  unsyncedLocalPlays,
+  type StatsSummary,
   type StoredPlay,
 } from "@/lib/game/storage";
 import type { GameSource, Puzzle, RoundResult } from "@/lib/game/types";
@@ -27,6 +30,8 @@ import { useReducedMotion } from "./motion";
 import { Toast } from "./Toast";
 
 type Phase = "boot" | "intro" | "round" | "final" | "error";
+/** "server": session-backed (/api/play, /api/guess). "local": offline fallback (/api/reveal), synced later. */
+type Mode = "server" | "local";
 
 interface State {
   phase: Phase;
@@ -34,42 +39,69 @@ interface State {
   tz: string;
   startedAt: string | null;
   results: RoundResult[];
+  mode: Mode | null;
+  playId: string | null;
   /** Index of the round on screen (0-based). */
   idx: number;
   /** Guess slider value (log10 multiplier). */
   guess: number;
+  /** A lock-in or start request is in flight. */
   pending: boolean;
   /** True only when the final screen was reached by finishing round 5 just now (drives count-up/flip). */
   justFinished: boolean;
-  /** Why the puzzle couldn't load (phase "error"). */
   errorKind: LoadErrorKind | null;
+  /** Authoritative stats from /api/me (server mode). */
+  serverStats: ServerStats | null;
+}
+
+interface PlayInfo {
+  puzzle: Puzzle;
+  tz: string;
+  startedAt: string | null;
+  results: RoundResult[];
+  mode: Mode | null;
+  playId: string | null;
 }
 
 type Action =
-  | { type: "loaded"; puzzle: Puzzle; tz: string; startedAt: string | null; results: RoundResult[]; phase: Phase }
+  | ({ type: "loaded"; phase: Phase } & PlayInfo)
   | { type: "failed"; kind: LoadErrorKind }
   | { type: "retry" }
-  | { type: "start"; startedAt: string }
+  | { type: "startPending" }
+  | { type: "start"; startedAt: string; mode: Mode; playId: string | null; results: RoundResult[] }
   | { type: "guess"; value: number }
   | { type: "lockPending" }
   | { type: "locked"; result: RoundResult }
   | { type: "lockFailed" }
+  | { type: "resync"; results: RoundResult[] }
+  | { type: "puzzleUpdated"; puzzle: Puzzle }
+  | { type: "modeLocal" }
+  | { type: "serverStats"; stats: ServerStats }
   | { type: "next" };
 
-const initial: State = { phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], idx: 0, guess: 0, pending: false, justFinished: false, errorKind: null };
+const initial: State = {
+  phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], mode: null, playId: null,
+  idx: 0, guess: 0, pending: false, justFinished: false, errorKind: null, serverStats: null,
+};
+
+/** Where a play with `results` should be: the next unplayed round (or the last one when all 5 are in). */
+const roundIdx = (results: RoundResult[]) => Math.min(results.length, ROUNDS - 1);
 
 function reducer(s: State, a: Action): State {
   switch (a.type) {
-    case "loaded": {
-      const idx = Math.min(a.results.length, ROUNDS - 1);
-      return { ...initial, phase: a.phase, puzzle: a.puzzle, tz: a.tz, startedAt: a.startedAt, results: a.results, idx };
-    }
+    case "loaded":
+      return { ...initial, phase: a.phase, puzzle: a.puzzle, tz: a.tz, startedAt: a.startedAt, results: a.results, mode: a.mode, playId: a.playId, idx: roundIdx(a.results) };
     case "failed":
       return { ...initial, phase: "error", errorKind: a.kind };
     case "retry":
       return { ...initial };
+    case "startPending":
+      return { ...s, pending: true };
     case "start":
-      return { ...s, phase: "round", startedAt: a.startedAt, idx: 0, guess: 0 };
+      return {
+        ...s, pending: false, startedAt: a.startedAt, mode: a.mode, playId: a.playId, results: a.results,
+        phase: a.results.length >= ROUNDS ? "final" : "round", idx: roundIdx(a.results), guess: 0,
+      };
     case "guess":
       return s.pending ? s : { ...s, guess: a.value };
     case "lockPending":
@@ -78,32 +110,34 @@ function reducer(s: State, a: Action): State {
       return { ...s, pending: false, results: [...s.results, a.result] };
     case "lockFailed":
       return { ...s, pending: false };
+    case "resync":
+      return { ...s, pending: false, results: a.results, idx: roundIdx(a.results), guess: 0, phase: a.results.length >= ROUNDS ? "final" : s.phase };
+    case "puzzleUpdated":
+      return { ...s, puzzle: a.puzzle };
+    case "modeLocal":
+      return { ...s, mode: "local", playId: null };
+    case "serverStats":
+      return { ...s, serverStats: a.stats };
     case "next":
       if (s.idx + 1 < ROUNDS) return { ...s, idx: s.idx + 1, guess: 0 };
       return { ...s, phase: "final", justFinished: true };
   }
 }
 
-interface Booted {
-  puzzle: Puzzle;
-  tz: string;
-  startedAt: string | null;
-  results: RoundResult[];
-  phase: Phase;
-}
-
-function fromPlay(p: StoredPlay): Booted {
+function fromPlay(p: StoredPlay): PlayInfo & { phase: Phase } {
   return {
     puzzle: p.puzzle,
     tz: p.tz,
     startedAt: p.started_at,
     results: p.results,
+    mode: p.mode ?? "local",
+    playId: p.play_id ?? null,
     // Refreshing mid-game resumes at the next unplayed round (SPEC §2).
     phase: isComplete(p) ? "final" : "round",
   };
 }
 
-async function boot(source: GameSource, opts: { preferIntro?: boolean } = {}): Promise<Booted> {
+async function boot(source: GameSource, opts: { preferIntro?: boolean } = {}): Promise<PlayInfo & { phase: Phase }> {
   const tz = deviceTimeZone();
   const today = localDate(new Date(), tz);
   pruneOldPlays(today);
@@ -129,12 +163,50 @@ async function boot(source: GameSource, opts: { preferIntro?: boolean } = {}): P
   const puzzle = await source.loadPuzzle(today);
   // Returning players skip the intro and go straight to round 1 (SPEC §9).
   const phase: Phase = !opts.preferIntro && isReturningPlayer() ? "round" : "intro";
-  return { puzzle, tz, startedAt: null, results: [], phase };
+  return { puzzle, tz, startedAt: null, results: [], mode: null, playId: null, phase };
 }
 
-function newPlay(puzzle: Puzzle, tz: string, startedAt: string): StoredPlay {
-  return { v: 1, puzzle, tz, started_at: startedAt, completed_at: null, results: [] };
+function toStored(p: { puzzle: Puzzle; tz: string; startedAt: string; results: RoundResult[]; mode: Mode; playId: string | null }): StoredPlay {
+  return {
+    v: 1,
+    puzzle: p.puzzle,
+    tz: p.tz,
+    started_at: p.startedAt,
+    completed_at: p.results.length >= ROUNDS ? new Date().toISOString() : null,
+    results: p.results,
+    mode: p.mode,
+    play_id: p.playId ?? undefined,
+  };
 }
+
+/** Start (or resume) the play on the server; fall back to local-only mode if no session is possible. */
+async function beginOnServer(puzzle: Puzzle, tz: string): Promise<{ mode: Mode; playId: string | null; startedAt: string; results: RoundResult[] }> {
+  if (await ensureSession(tz)) {
+    const b = await beginPlay(puzzle.date, tz);
+    if (b.ok) return { mode: "server", playId: b.playId, startedAt: b.startedAt, results: b.answered };
+  }
+  return { mode: "local", playId: null, startedAt: new Date().toISOString(), results: [] };
+}
+
+/** Upload finished local-only plays once a session exists (SPEC §5). Quiet on failure. */
+async function syncPending(tz: string): Promise<void> {
+  const pending = unsyncedLocalPlays().filter(isComplete);
+  if (!pending.length || !(await ensureSession(tz))) return;
+  for (const p of pending) {
+    const r = await syncLocalPlay(p.puzzle.date, p.tz || tz, p.started_at, p.results);
+    if (r.ok) savePlay({ ...p, synced: true, play_id: r.playId, results: r.answered.length === ROUNDS ? r.answered : p.results });
+    else if (r.permanent) savePlay({ ...p, synced: true });
+  }
+}
+
+const toSummary = (s: ServerStats, local: StatsSummary): StatsSummary => ({
+  ...local,
+  played: s.games_played,
+  streak: s.current_streak,
+  maxStreak: s.max_streak,
+  best: s.best_total ?? 0,
+  average: s.avg_total ?? 0,
+});
 
 export function Game({ launch }: { launch: string }) {
   const source = useMemo(() => createApiSource(), []);
@@ -149,9 +221,14 @@ export function Game({ launch }: { launch: string }) {
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), 1800);
   }, []);
 
+  const loadServerStats = useCallback(async (date: string, tz: string) => {
+    const stats = await fetchMe(date, tz);
+    if (stats) dispatch({ type: "serverStats", stats });
+  }, []);
+
   const load = useCallback(
     async (opts?: { preferIntro?: boolean }) => {
-      let b: Booted;
+      let b: PlayInfo & { phase: Phase };
       try {
         b = await boot(source, opts);
       } catch (e) {
@@ -159,19 +236,31 @@ export function Game({ launch }: { launch: string }) {
         delete document.documentElement.dataset.returning;
         return;
       }
-      // Returning players going straight to round 1 start their play now.
+
       if (b.phase === "round" && !b.startedAt) {
-        const startedAt = new Date().toISOString();
-        savePlay(newPlay(b.puzzle, b.tz, startedAt));
+        // Returning player going straight to round 1: start the play now.
+        const started = await beginOnServer(b.puzzle, b.tz);
+        b = { ...b, ...started, phase: started.results.length >= ROUNDS ? "final" : "round" };
+        savePlay(toStored({ ...b, startedAt: started.startedAt, mode: started.mode }));
         setActiveDate(b.puzzle.date);
-        b.startedAt = startedAt;
+      } else if (b.phase === "round" && b.mode === "server") {
+        // Resuming a server play: the server is the source of truth for answered rounds.
+        const r = await beginPlay(b.puzzle.date, b.tz);
+        if (r.ok && r.answered.length >= b.results.length) {
+          b = { ...b, results: r.answered, playId: r.playId, phase: r.answered.length >= ROUNDS ? "final" : "round" };
+          savePlay(toStored({ ...b, startedAt: b.startedAt ?? r.startedAt, mode: "server" }));
+        } else if (!r.ok && r.reason === "unauthorized") {
+          b = { ...b, mode: "local", playId: null }; // session lost: finish locally, sync later
+        }
       }
+
       dispatch({ type: "loaded", ...b });
       // The pre-paint script (app/page.tsx) hid the intro; React owns visibility from here.
       delete document.documentElement.dataset.returning;
       window.scrollTo(0, 0);
+      if (b.phase === "final" && b.mode === "server") void loadServerStats(b.puzzle.date, b.tz);
     },
-    [source],
+    [source, loadServerStats],
   );
 
   useEffect(() => {
@@ -195,37 +284,76 @@ export function Game({ launch }: { launch: string }) {
     };
   }, [phase, puzzleDate, load]);
 
-  const start = () => {
-    if (!s.puzzle) return;
-    const startedAt = new Date().toISOString();
-    savePlay(newPlay(s.puzzle, s.tz, startedAt));
+  const start = async () => {
+    if (!s.puzzle || s.pending) return;
+    dispatch({ type: "startPending" });
+    const started = await beginOnServer(s.puzzle, s.tz);
+    savePlay(toStored({ puzzle: s.puzzle, tz: s.tz, ...started }));
     setActiveDate(s.puzzle.date);
-    dispatch({ type: "start", startedAt });
+    dispatch({ type: "start", ...started });
     window.scrollTo(0, 0);
+    if (started.mode === "server") void syncPending(s.tz); // upload any earlier offline games
   };
 
   const lockIn = async () => {
-    if (!s.puzzle || s.pending || s.results.length > s.idx) return;
+    const round = s.puzzle?.rounds[s.idx];
+    if (!s.puzzle || !round || s.pending || s.results.length > s.idx) return;
     dispatch({ type: "lockPending" });
+    const position = s.idx + 1;
+    let mode: Mode = s.mode ?? "local";
+    let result: RoundResult | null = null;
+
     try {
-      const result = await source.lockIn(s.puzzle, s.idx + 1, s.guess);
-      const results = [...s.results, result];
-      const done = results.length >= ROUNDS;
-      const play: StoredPlay = {
-        ...newPlay(s.puzzle, s.tz, s.startedAt ?? new Date().toISOString()),
-        results,
-        completed_at: done ? new Date().toISOString() : null,
-      };
-      savePlay(play);
-      if (done) {
-        recordCompleted(play);
-        setActiveDate(null);
+      if (mode === "server" && s.playId) {
+        const g = await submitGuess(s.playId, position, s.guess, round.question_id);
+        if (g.kind === "ok" || g.kind === "already") {
+          result = g.result;
+        } else if (g.kind === "out_of_order") {
+          // Another tab moved on: take the server's answered rounds.
+          const r = await beginPlay(s.puzzle.date, s.tz);
+          if (r.ok) {
+            savePlay(toStored({ puzzle: s.puzzle, tz: s.tz, startedAt: s.startedAt ?? r.startedAt, results: r.answered, mode: "server", playId: r.playId }));
+            dispatch({ type: "resync", results: r.answered });
+          } else dispatch({ type: "lockFailed" });
+          return;
+        } else if (g.kind === "question_changed") {
+          // Same-day swap (SPEC §8): load the updated rounds, keep what's answered.
+          const fresh = await source.loadPuzzle(s.puzzle.date);
+          dispatch({ type: "puzzleUpdated", puzzle: fresh });
+          dispatch({ type: "lockFailed" });
+          showToast("This round was just updated");
+          return;
+        } else if (g.kind === "unauthorized") {
+          mode = "local"; // session lost mid-game: finish locally, sync later
+          dispatch({ type: "modeLocal" });
+        } else if (g.kind === "closed") {
+          dispatch({ type: "lockFailed" });
+          showToast("This puzzle has closed");
+          return;
+        } else {
+          dispatch({ type: "lockFailed" });
+          showToast("Couldn't lock that in. Try again.");
+          return;
+        }
       }
-      dispatch({ type: "locked", result });
+      if (!result) result = await source.lockIn(s.puzzle, position, s.guess);
     } catch (e) {
       dispatch({ type: "lockFailed" });
       showToast(e instanceof PuzzleLoadError && e.kind === "clock" ? "Check your device clock" : "Couldn't lock that in. Try again.");
+      return;
     }
+
+    const results = [...s.results, result];
+    const done = results.length >= ROUNDS;
+    const stored = toStored({ puzzle: s.puzzle, tz: s.tz, startedAt: s.startedAt ?? new Date().toISOString(), results, mode, playId: mode === "server" ? s.playId : null });
+    savePlay(stored);
+    if (done) {
+      recordCompleted(stored);
+      setActiveDate(null);
+    }
+    dispatch({ type: "locked", result });
+    if (done && mode === "server") void loadServerStats(s.puzzle.date, s.tz);
+    if (done && mode === "local") void syncPending(s.tz);
   };
 
   const next = () => {
@@ -233,10 +361,11 @@ export function Game({ launch }: { launch: string }) {
     window.scrollTo(0, 0);
   };
 
-  const stats = useMemo(
-    () => (phase === "final" && s.puzzle ? summarize(loadStats(), { number: s.puzzle.number, tz: s.tz }) : null),
-    [phase, s.puzzle, s.tz],
-  );
+  const stats = useMemo(() => {
+    if (phase !== "final" || !s.puzzle) return null;
+    const local = summarize(loadStats(), { number: s.puzzle.number, tz: s.tz });
+    return s.serverStats ? toSummary(s.serverStats, local) : local;
+  }, [phase, s.puzzle, s.tz, s.serverStats]);
 
   const round = s.puzzle?.rounds[s.idx];
 
@@ -245,7 +374,7 @@ export function Game({ launch }: { launch: string }) {
       <div className="wrap">
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
-          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot"} />
+          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot" || s.pending} />
         )}
         {s.phase === "error" && s.errorKind && (
           <LoadError
