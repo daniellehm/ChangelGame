@@ -2,14 +2,15 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). Next: task 1.11, Vercel project + preview deploy. Branch `m1-scaffold-visuals` is pushed to GitHub.
+**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). **1.11 blocked**: the Vercel MCP connection lacks access to the account scope (403). Waiting for Dani to approve a consent link (see Needs from Dani). Then: run `create_git_project` (repo `daniellehm/ChangelGame`, name `changel`, teamId `team_aHOu0Tqfx6VbGGGipjmx66jE`, deploy false), set Node 22.x, push to trigger the branch preview, verify, then stop for M1 review. Branch `m1-scaffold-visuals` is pushed to GitHub.
 
 ## Needs from Dani
 
 **Now (blocks M1 or its plan):**
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
-- [ ] Only if task 1.11 hits it: grant Vercel's GitHub app access to `daniellehm/ChangelGame`
+- [ ] **Blocks 1.11:** approve the Vercel MCP connection for the account scope `releasedani` (team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Hobby plan, login `releasedani@gmail.com`). Consent links expire after 10 minutes and work once, so ask Claude for a fresh one when you're ready. Also confirm this is the right Vercel account for Changel.
+- [ ] Possibly, after that: grant Vercel's GitHub app access to `daniellehm/ChangelGame` if linking the repo fails
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
@@ -128,6 +129,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.11 started: no existing "changel" project on Vercel. `create_git_project` was refused with 403, because the MCP connection isn't granted to the account scope. Blocked on Dani's consent.
 - 2026-11-09: 1.10 Visual parity: `tests/e2e/parity.spec.ts` (`npm run test:parity`) diffs the app against `reference/prototype.html` at 390 and 1280 px across 7 steps (intro → final). It found and fixed two real differences: next/font's Arial fallback (→, ≈ glyphs) and the prototype rendering bold at 800. Result: **0 differing pixels on all 14 screenshots**, threshold tightened to 0.1%. Side-by-sides in `test-results/parity/`. Also started pushing the branch to GitHub after each commit (Dani's request).
 - 2026-11-09: 1.9 Extra screens: header menu (keyboard + outside-click + Escape), `/how-to-play`, `/stats` (local stats: played/avg/best, current + max streak, tier distribution with labels, 30-day strip), `/account` and `/about` placeholders via `PageShell`. E2E: menu by mouse/keyboard, no horizontal scroll at 320 px, stats after a game (18 E2E total).
 - 2026-11-09: 1.8 Slider accessibility: pure `lib/slider.ts` (keyboard steps without snap, pointer snap ±0.01, nudges), persistent live region for results, nudge labels fixed for WCAG 2.5.3. E2E: keyboard-only full game, 44 px target, axe clean on intro/round/reveal/final except the known prototype contrast (header meta, verdict bar; fixed in M6).
