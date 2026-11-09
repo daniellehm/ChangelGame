@@ -99,7 +99,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [ ] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded sign-in email (link + 6-digit code) from hello@changel.app; changel.app added to Vercel; DNS table for GoDaddy.
 - [ ] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`; verify by 6-digit code or link; sessions persist (no re-entering codes).
 - [~] 4.3 Google via `linkIdentity`: **dropped by Dani** (email-only).
-- [ ] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
+- [x] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
 - [ ] 4.5 Account page: change email, export JSON, delete account (hard delete).
 - [ ] 4.6 Sign out → fresh anonymous state + local cache cleared.
 - [ ] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
@@ -140,6 +140,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 4.2/4.4/4.5/4.6 server side: `POST /api/auth/email` (always `{sent:true}`; flow kept in an HTTP-only cookie; upgrade in place via updateUser, or a merge token + sign-in code for an existing email), `POST /api/auth/verify` (6-digit code → session + merge), `GET /auth/confirm` (email link), `POST /api/merge`, `POST /api/auth/signout`, `GET /api/account/export`, `POST /api/account/delete`. Rate limits: 5 emails / 10 codes per 10 min per IP. Integration test of the M4 acceptance passes (5 plays end up on the account, earlier-started kept on the clash, anonymous user deleted, token single-use). UI + Supabase email config still to do.
 - 2026-11-09: DNS: Dani moved changel.app nameservers to Vercel; Claude added the 5 Resend records via the Vercel API (after Vercel created the zone) and started Resend verification. https://changel.app returns 200 over HTTPS (public, serves `main`); the www certificate is pending. Migrations `merge_players` (earlier-started wins on clashes) and `email_registered` (server-only) applied.
 - 2026-11-09: 4.1 (part): Resend domain `changel.app` created (sending only, ap-northeast-1, no tracking; the other Resend domain untouched); sending-only key restricted to changel.app in `.env.local` + Vercel (Sensitive). `changel.app` + `www` (308 → apex) added to the Vercel project. DNS instructions for Dani: `docs/setup/godaddy-dns.md`.
 - 2026-11-09: M4 started (branch `m4-login-merge`). Dani: email-only login, no Google; players must stay logged in; DNS is at GoDaddy; don't touch other Resend domains or keys.

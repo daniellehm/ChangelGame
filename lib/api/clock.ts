@@ -17,3 +17,9 @@ export function serverNow(req: Request): number {
   }
   return Date.now();
 }
+
+/** Tests only: skip sending auth emails (codes come from the admin API). Never honoured in production. */
+export const TEST_NO_EMAIL_HEADER = "x-changel-test-no-email";
+export function skipEmailForTest(req: Request): boolean {
+  return testClockEnabled() && req.headers.get(TEST_NO_EMAIL_HEADER) === "1";
+}

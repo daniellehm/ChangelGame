@@ -46,6 +46,7 @@ export async function GET(req: Request) {
         {
           player_id: user.id,
           anonymous: user.isAnonymous,
+          email: user.email,
           games_played: stats?.games_played ?? 0,
           best_total: stats?.best_total ?? null,
           avg_total: stats?.avg_total ?? null,
