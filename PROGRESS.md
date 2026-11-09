@@ -2,13 +2,14 @@
 
 ## Current status
 
-**Tracking files created. Waiting for Dani's go-ahead on the Milestone 1 plan.** Next step after the go-ahead: task 1.1, scaffold Next.js.
+**M1 in progress (go-ahead given 2026-11-09).** 1.1 scaffold done. Next: task 1.2, tokens + fonts.
 
 ## Needs from Dani
 
 **Now (blocks M1 or its plan):**
-- [ ] Go-ahead on the M1 plan, plus answers to the spec questions raised in chat on 2026-11-09 (also logged as **(proposed)** in DECISIONS.md once answered)
-- [ ] Which Vercel plan the "changel" project will run on (Hobby or Pro). Hobby limits cron to once a day per job and caps function duration, and its terms are for non-commercial use. This affects the M5 pipeline design. M1 itself works on either.
+- [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
+- [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
+- [ ] Only if task 1.11 hits it: grant Vercel's GitHub app access to `daniellehm/ChangelGame`
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
@@ -27,7 +28,7 @@
 Next.js app, tokens, fonts, all game screens ported from the prototype, running on hard-coded data.
 **Milestone accepted when:** side-by-side screenshots match the prototype at 390 px and 1280 px.
 
-- [ ] **1.1 Scaffold.** Next.js (App Router, TypeScript strict, ESLint), Vitest, Playwright, npm scripts, `.nvmrc`, `.env.example`, repo layout from SPEC section 3.
+- [x] **1.1 Scaffold.** Next.js (App Router, TypeScript strict, ESLint), Vitest, Playwright, npm scripts, `.nvmrc`, `.env.example`, repo layout from SPEC section 3.
   *Accept:* `npm run dev` serves a page; `npm run typecheck`, `npm run lint` and `npm test` pass; `.env.example` lists every variable from SPEC section 11 with no values.
 - [ ] **1.2 Tokens + fonts.** Port the prototype CSS into `app/globals.css` nearly verbatim, with all colours as `:root` tokens (DECISIONS: extra tokens). Bricolage (with opsz axis) + JetBrains Mono via `next/font`. Respect `prefers-reduced-motion`.
   *Accept:* no hard-coded colour outside `:root`; fonts self-hosted (no request to fonts.googleapis.com); reduced-motion disables pop/pin/toast animations.
@@ -127,4 +128,6 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.1 Scaffold: Next 16.4 + React 19.3, TS 5.9 strict, ESLint 9, Vitest 5, Playwright 1.65, Node 22, `.env.example` + test that it lists every var. (8 moderate npm-audit advisories, all in dev-only typescript-eslint; not shipped.)
+- 2026-11-09: Logged Dani's go-ahead and the 16 accepted spec fixes in DECISIONS.md.
 - 2026-11-09: Created CLAUDE.md, PROGRESS.md and DECISIONS.md.

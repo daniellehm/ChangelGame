@@ -34,10 +34,12 @@ _Filled in as they come to exist._
 
 | What | Command |
 | --- | --- |
+| Node | Node 22 via nvm. If `node -v` isn't 22, prefix commands with `export PATH="$HOME/.nvm/versions/node/v22.18.0/bin:$PATH" &&` |
 | Install | `npm install` |
-| Dev server | _TBD (M1)_ |
-| Unit tests | _TBD (M1)_ |
-| E2E / visual tests | _TBD (M1)_ |
-| Typecheck + lint | _TBD (M1)_ |
+| Dev server | `npm run dev` (http://localhost:3000) |
+| Unit tests | `npm test` (Vitest, `tests/unit/**/*.test.ts`) |
+| E2E tests | `npm run test:e2e` (Playwright, `tests/e2e`) |
+| Visual parity vs prototype | `npm run test:parity` (side-by-side PNGs in `test-results/parity/`) |
+| Typecheck + lint + unit | `npm run check` (run before every commit) |
 | Migrations | _TBD (M2)_ |
 | Deploy | _TBD (M1: preview via Vercel git integration)_ |
