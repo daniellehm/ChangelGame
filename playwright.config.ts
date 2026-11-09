@@ -37,7 +37,8 @@ export default defineConfig({
     command: `npx next dev -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     // Pins the server clock to the browser's mocked clock via a header (lib/api/clock.ts).
-    env: { ALLOW_TEST_CLOCK: "1" },
+    // Rate limiting off: the test suite makes far more requests per minute from localhost than a player.
+    env: { ALLOW_TEST_CLOCK: "1", UPSTASH_REDIS_REST_URL: "", UPSTASH_REDIS_REST_TOKEN: "" },
     // Never reuse: a server started without ALLOW_TEST_CLOCK would make date-window tests flaky.
     reuseExistingServer: false,
     timeout: 120_000,

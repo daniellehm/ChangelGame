@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { apiError, invalid } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
+import { rateLimit } from "@/lib/api/ratelimit";
 import { serverNow } from "@/lib/api/clock";
 import { isGuessAcceptable } from "@/lib/dates";
 import { findPlayById, roundStats, toRoundResult } from "@/lib/plays/repo";
@@ -26,6 +27,8 @@ const NO_STORE = { "Cache-Control": "no-store" };
 export async function POST(req: Request) {
   const { user, sb } = await sessionUser(req);
   if (!user) return apiError("unauthorized", "Start a session first.", 401);
+  const limited = await rateLimit("guess", user.id);
+  if (limited) return limited;
 
   let json: unknown;
   try {

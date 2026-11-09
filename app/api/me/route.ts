@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { apiError, invalid } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
+import { rateLimit } from "@/lib/api/ratelimit";
 import { launchDate } from "@/lib/config";
 import { isDateString, isValidTimeZone, puzzleNumber } from "@/lib/dates";
 import { currentStreak, maxStreak } from "@/lib/streaks";
@@ -20,6 +21,8 @@ const Query = z.object({
 export async function GET(req: Request) {
   const { user, sb } = await sessionUser(req);
   if (!user) return apiError("unauthorized", "Start a session first.", 401);
+  const limited = await rateLimit("me", user.id);
+  if (limited) return limited;
   const parsed = Query.safeParse(Object.fromEntries(new URL(req.url).searchParams));
   if (!parsed.success) return invalid(parsed.error);
   const { date, tz } = parsed.data;

@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { apiError, invalid } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
+import { rateLimit } from "@/lib/api/ratelimit";
 import { serverNow } from "@/lib/api/clock";
 import { isDateString, isValidTimeZone, puzzleWindow } from "@/lib/dates";
 import { answeredResults, findPlay } from "@/lib/plays/repo";
@@ -31,6 +32,8 @@ const MAX_AGE_DAYS = 7;
 export async function POST(req: Request) {
   const { user, sb } = await sessionUser(req);
   if (!user) return apiError("unauthorized", "Start a session first.", 401);
+  const limited = await rateLimit("sync", user.id);
+  if (limited) return limited;
   let json: unknown;
   try {
     json = await req.json();

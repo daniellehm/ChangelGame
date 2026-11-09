@@ -140,3 +140,7 @@ Each item is applied in the milestone where it comes up.
 - Finished local plays are uploaded with `POST /api/sync` the next time a session exists. The server re-scores from `guess_log`, stores `source='local'` (no crowd stats), ignores the upload if it already has a play for that date (server wins), and refuses anything older than 7 days. Partly played local games aren't synced.
 - Server mode shows `/api/me` stats (games played, streak, best) on the final screen, with local stats as the fallback.
 **Why:** It implements SPEC §5's fallback with the M2 reveal design, so the game always works while server records stay authoritative and honest.
+
+### 2026-11-09: Upstash Redis in Singapore; limiter details
+**Decision:** The Upstash database "changel" is in ap-southeast-1 (Singapore), not Sydney as first planned, so it sits with the functions and Supabase (Dani's region choice). Limits are sliding windows: guess 30/min, play 30/min, me 30/min and sync 10/min per player; puzzle 60/min and reveal 30/min per IP. Anonymous sign-ups are limited by Supabase, per forwarded IP. The limiter fails **open** if Redis is unreachable, and it's disabled when the Upstash env vars are empty (local dev, E2E and route integration tests). `tests/integration/ratelimit.test.ts` tests it against the real Redis.
+**Why:** Same co-location reasoning as the database region. Failing open keeps the game up during a Redis blip. Test runs from one IP would otherwise hit the per-IP limits.
