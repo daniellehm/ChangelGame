@@ -182,6 +182,17 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M5 review, round 2 (from Dani testing):
+  - **Admin edits are trusted:** saving doesn't re-run the checks and approves the question. "Run checks (second opinion)" is a separate button.
+  - **Assigning days:** Upcoming has "Choose questions…" and "Auto-fill" on empty days, and a question picker for Swap.
+  - **Fact-checked the 20 prototype questions:** two sources each, wrong numbers corrected (arctic ice, solar, internet users, CO₂, world population, years for minimum wage, stamp and cinema). 17 pass the full checks; solar, Wikipedia and pandas don't yet (sources don't state the value next to the year, or the year is ambiguous).
+  - **Checks tuned (DECISIONS):**
+    - the review puts the reason before the verdict and is fairer on neutral facts;
+    - the source check reads octet-stream CSVs, 3 s.f. figures and h:mm:ss times;
+    - duplicates ignore retired questions;
+    - the question writer must cite specific pages it opened with web_fetch.
+  - **Filling 13–16 Nov:** `npm run content:fill-days -- 2026-11-13 2026-11-16` is running.
+
 - 2026-11-09: M5 review fixes (from Dani testing the preview):
   - Bank: a Day column (day, round, date), sort by newest added or by puzzle day, and a "Day #" filter.
   - The dev seed's 20 questions were still 'draft' though they're on the 4 test days, so the status filter "scheduled" found nothing. The seed script now marks them 'scheduled', and the DB rows were fixed (19 updated; #19 Bitcoin was flagged by Dani's edit, left as is).

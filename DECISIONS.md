@@ -388,3 +388,19 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - The 20 prototype questions were fact-checked, with two sources each and corrections where the numbers were off, via `npm run content:apply-edits` (the editor's save, logged as "fact-check (Claude, for Dani)").
 
 **Why:** Dani asked for the first days to be filled with strong, checked questions now.
+
+## 2026-11-09: Admin edits are trusted; days can be filled by hand (Dani's request)
+
+**Decision:**
+- **Saving in the editor:**
+  - doesn't run the automatic checks;
+  - counts as approval: flagged or draft becomes verified (or scheduled if it's on a day), and any failed-check note is cleared;
+  - still refuses what the game can't play (answer outside the slider, values ≤ 0, end year not after start).
+- **"Run checks (second opinion)"** in the editor runs the full checks and shows the result, and never changes the status.
+- **Upcoming:**
+  - an empty day (today or later) has "Choose questions…" (pick 5 ready questions, in that order) and "Auto-fill" (the scheduler's balance rules, relaxed if needed);
+  - "Swap…" opens the same picker instead of asking for an id;
+  - same-category clashes are shown as a warning, not blocked.
+- **Scripts** (`content:apply-edits`) still run the full checks.
+
+**Why:** Dani's edits should be trusted, and the nightly job's assignment was invisible: nothing showed how a question gets onto a day.
