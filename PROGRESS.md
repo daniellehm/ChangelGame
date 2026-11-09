@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). Current: **relative scoring** on branch `relative-scoring` (points = share of the slider away; ⅓ of the slider = 0). It's on a Vercel preview for Dani to test. Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
 
 ## Needs from Dani
 
@@ -10,7 +10,7 @@
 - [x] M4 reviewed and approved (2026-11-09)
 - [x] Test the per-question ranges on the preview and approve the merge (2026-11-09)
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
-- [ ] Test relative scoring on the preview (branch `relative-scoring`) and approve the merge
+- [x] Relative scoring approved and merged (2026-11-09)
 - [ ] Go-ahead for M5
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
@@ -147,6 +147,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: Relative scoring approved by Dani and merged into `main`.
 
 - 2026-11-09: **Hotfix (branch `hotfix-stored-ranges`, shipped to production with Dani's OK):** changel.app showed a blank page for anyone with a game saved in their browser from before the ranges change (old saved rounds had no `range`, so the page crashed). `loadPlay` now falls back to the full range, and boot re-fetches the real ranges, keeping the results. Two E2E regression tests (finished and half-played old saves) crash without the fix; all 28 E2E pass with it.
 - 2026-11-09: Unused range columns dropped by Dani in the SQL editor; recorded as `supabase/migrations/*_drop_unused_end_value_bounds.sql` (`if exists`, safe to re-run).
