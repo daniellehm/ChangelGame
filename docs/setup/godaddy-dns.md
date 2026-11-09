@@ -1,3 +1,5 @@
+> **Superseded 2026-11-09:** nameservers now point to Vercel and Claude manages these records via the Vercel API (see DECISIONS.md). Kept for reference only.
+
 # changel.app DNS at GoDaddy
 
 Set up for Vercel (the website) and Resend (sign-in emails from hello@changel.app).

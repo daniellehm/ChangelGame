@@ -2,12 +2,12 @@
 
 ## Current status
 
-**M4 in progress on branch `m4-login-merge` (go-ahead 2026-11-09, email-only, no Google).** First: Resend domain + Vercel domain, so Dani can add the GoDaddy DNS records early. Then the login code.
+**M4 in progress on branch `m4-login-merge` (email-only, no Google).** DNS done (Vercel DNS); changel.app serves over HTTPS. Resend domain verification is running. Next: Supabase email checklist for Dani, then the login/merge code (DB functions `merge_players` + `email_registered` already applied).
 
 ## Needs from Dani
 
 **Now:**
-- [ ] **GoDaddy DNS for changel.app:** follow `docs/setup/godaddy-dns.md` (delete 3 parking records, add 8). Unblocks the sign-in emails and the changel.app website.
+- [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
 - [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
 - [x] Go-ahead for M4 (2026-11-09): email-only, no Google; stay logged in
 - [x] Review M2 (approved 2026-11-09)
@@ -140,6 +140,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: DNS: Dani moved changel.app nameservers to Vercel; Claude added the 5 Resend records via the Vercel API (after Vercel created the zone) and started Resend verification. https://changel.app returns 200 over HTTPS (public, serves `main`); the www certificate is pending. Migrations `merge_players` (earlier-started wins on clashes) and `email_registered` (server-only) applied.
 - 2026-11-09: 4.1 (part): Resend domain `changel.app` created (sending only, ap-northeast-1, no tracking; the other Resend domain untouched); sending-only key restricted to changel.app in `.env.local` + Vercel (Sensitive). `changel.app` + `www` (308 → apex) added to the Vercel project. DNS instructions for Dani: `docs/setup/godaddy-dns.md`.
 - 2026-11-09: M4 started (branch `m4-login-merge`). Dani: email-only login, no Google; players must stay logged in; DNS is at GoDaddy; don't touch other Resend domains or keys.
 - 2026-11-09: M3 approved by Dani and merged into `main`. Dani's preview game verified in the DB (Nov 9, 423, anonymous, server-scored). With Dani's OK, deleted 16 untagged test players from the earliest real-sign-in E2E runs (cascaded 18 plays). The DB now holds just Dani's player and play.

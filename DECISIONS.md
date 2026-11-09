@@ -155,3 +155,7 @@ Each item is applied in the milestone where it comes up.
 - **Players stay logged in** in a browser after signing in once. The session lives in the HTTP-only cookie (400-day max-age, refreshed as they play). Supabase's time-box and inactivity limits stay off, so a code is only needed on a new browser or device, or after signing out or clearing site data.
 - DNS for changel.app is at **GoDaddy**. Claude adds only `changel.app` to the existing Resend team and creates one sending-only key restricted to it. Other Resend domains and keys are never touched.
 **Why:** Dani's instructions. Email login covers everyone without a third-party account, and the persistent cookie avoids re-entering codes.
+
+### 2026-11-09: changel.app DNS is hosted on Vercel (nameservers moved from GoDaddy)
+**Decision:** There's no GoDaddy MCP, and GoDaddy's DNS API is limited to large accounts, so Dani pointed changel.app's nameservers at `ns1/ns2.vercel-dns.com`. The domain stays registered and billed at GoDaddy. Vercel serves the apex and `www` automatically (`www` → 308 → apex). Claude added the Resend records via the Vercel API: DKIM `resend._domainkey`, `send` MX + SPF TXT, `rsend` CNAME, and `_dmarc` (`p=none`). Vercel only accepted records once it had created the zone, about 12 minutes after nameserver verification. `docs/setup/godaddy-dns.md` (manual GoDaddy records) is superseded.
+**Why:** Claude can then manage DNS directly. It's one edit at GoDaddy instead of eleven, and it can be reversed by restoring GoDaddy's nameservers.
