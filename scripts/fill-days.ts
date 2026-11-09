@@ -38,6 +38,16 @@ async function main() {
   const db = adminClient();
   const { data: run, error } = await db.from("content_runs").insert({ trigger: "manual" }).select("id").single();
   if (error) throw error;
+  // Stopped by hand (Ctrl-C / kill): close this run so it isn't left 'running' or counted as a failed night.
+  for (const sig of ["SIGINT", "SIGTERM"] as const) {
+    process.once(sig, () => {
+      void db
+        .from("content_runs")
+        .update({ status: "done", finished_at: new Date().toISOString(), error: "fill-days: stopped by hand (not a failure)" })
+        .eq("id", run.id)
+        .then(() => process.exit(130));
+    });
+  }
   const llm = new ClaudeLlm(sdkParse(), dbLedger());
   const spentBefore = await dbLedger().monthSpendUsd();
   const totals = { generated: 0, verified: 0, flagged: 0, scheduled: 0 };
