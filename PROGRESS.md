@@ -2,15 +2,15 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
 
 ## Needs from Dani
 
 **Now:**
 - [x] M4 reviewed and approved (2026-11-09)
 - [x] Test the per-question ranges on the preview and approve the merge (2026-11-09)
-- [ ] Drop the unused `min_end_value`/`max_end_value` columns: Dani said yes, but the MCP permission check declined `alter table public.questions drop column min_end_value, drop column max_end_value;`. Dani approves the prompt or runs it in the Supabase SQL editor, then save it as a migration file.
-- [ ] Scoring harshness: Dani asked whether the range-scaled scoring is too harsh; options sent 2026-11-09, awaiting a pick
+- [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
+- [x] Relative scoring approved and merged (2026-11-09)
 - [ ] Go-ahead for M5
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
@@ -148,8 +148,12 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
-- 2026-11-09: **Hotfix (branch `hotfix-stored-ranges`, shipped to production with Dani's OK):** changel.app showed a blank page for anyone with a game saved in their browser from before the ranges change (old saved rounds had no `range`, so the page crashed). `loadPlay` now falls back to the full range, and boot re-fetches the real ranges, keeping the results. Two E2E regression tests (finished and half-played old saves) crash without the fix; all 28 E2E pass with it.
+- 2026-11-09: Relative scoring approved by Dani and merged into `main`.
 
+- 2026-11-09: **Hotfix (branch `hotfix-stored-ranges`, shipped to production with Dani's OK):** changel.app showed a blank page for anyone with a game saved in their browser from before the ranges change (old saved rounds had no `range`, so the page crashed). `loadPlay` now falls back to the full range, and boot re-fetches the real ranges, keeping the results. Two E2E regression tests (finished and half-played old saves) crash without the fix; all 28 E2E pass with it.
+- 2026-11-09: Unused range columns dropped by Dani in the SQL editor; recorded as `supabase/migrations/*_drop_unused_end_value_bounds.sql` (`if exists`, safe to re-run).
+
+- 2026-11-09: Relative scoring (branch `relative-scoring`): tolerance = ⅓ of the slider on every question. The prototype-parity sweep is replaced by scale-invariance tests. Unit 205, integration 60, E2E 26 pass. Every visual baseline was regenerated: the 0.1% diff threshold had hidden small number changes.
 - 2026-11-09: Per-question ranges approved by Dani and merged into `main`.
 - 2026-11-09: Per-question ranges made symmetric at Dani's request: one `max_change` per question (slider ÷k … ×k, "same" always centred). Migration `question_max_change`; all 20 seed questions re-set and imported; tests updated (unit 205, integration 60, E2E 26 + visual, baselines reviewed).
 - 2026-11-09: Per-question guess ranges (branch `per-question-range`):

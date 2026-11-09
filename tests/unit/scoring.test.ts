@@ -9,15 +9,9 @@ import {
   TIERS,
   totalOf,
 } from "@/lib/scoring";
-import { FULL_RANGE as F } from "@/lib/range";
+import { FULL_RANGE as F, rangeFromFactor } from "@/lib/range";
 
-/** Verbatim copy of the prototype's score() for parity checks. */
-function prototypeScore(gl: number, al: number) {
-  if (Math.abs(al) > 0.004 && Math.abs(gl) > 0.004 && Math.sign(gl) !== Math.sign(al)) return { pts: 0, wrong: true };
-  return { pts: Math.max(0, Math.round(100 * (1 - Math.abs(gl - al) / 0.75))), wrong: false };
-}
-
-describe("scoreRound on the full ÷1000…×1000 range (prototype parity)", () => {
+describe("scoreRound: points depend on distance as a share of the slider", () => {
   it("scores an exact hit as 100 / Nailed it", () => {
     const a = actualLog(4.07e9, 8.2e9);
     expect(scoreRound(a, a, F)).toEqual({ points: 100, wrongWay: false, tier: "nailed" });
@@ -27,16 +21,30 @@ describe("scoreRound on the full ÷1000…×1000 range (prototype parity)", () =
     expect(scoreRound(0, 0, F)).toEqual({ points: 100, wrongWay: false, tier: "nailed" });
   });
 
-  it("scores 2× off at about 60 in either direction", () => {
-    const a = Math.log10(3);
-    expect(scoreRound(a + Math.log10(2), a, F).points).toBe(60);
-    expect(scoreRound(a - Math.log10(2), a, F).points).toBe(60);
+  it("loses 1 point per 1/300 of the slider: a third of the slider away is 0", () => {
+    const r = rangeFromFactor(8);
+    const w = r.hi - r.lo;
+    const a = Math.log10(3.8);
+    expect(scoreRound(a + w / 6, a, r).points).toBe(50);
+    expect(scoreRound(a - w / 6, a, r).points).toBe(50);
+    expect(scoreRound(a - w / 3, a, r).points).toBe(0);
+    expect(scoreRound(a + w / 30, a, r).points).toBe(90);
   });
 
-  it("scores about 5.6× off as 0, and never goes negative", () => {
-    const a = Math.log10(10);
-    expect(scoreRound(a + Math.log10(5.6), a, F).points).toBe(0);
-    expect(scoreRound(3, -0.001, F).points).toBe(0);
+  it("the same slider distance scores the same on every range", () => {
+    for (const frac of [0.01, 0.05, 0.1, 0.2, 0.3]) {
+      const pts = [1.05, 1.5, 8, 100, 1000].map((k) => {
+        const r = rangeFromFactor(k);
+        const a = r.hi * 0.4;
+        return scoreRound(a - frac * (r.hi - r.lo), a, r).points;
+      });
+      expect(new Set(pts).size, `frac ${frac}: ${pts}`).toBe(1);
+    }
+  });
+
+  it("never goes negative", () => {
+    expect(scoreRound(3, 0.5, F).points).toBe(0);
+    expect(scoreRound(-3, 0.001, F).points).toBe(0);
   });
 
   it("marks the wrong direction as 0 / Wrong way", () => {
@@ -55,11 +63,11 @@ describe("scoreRound on the full ÷1000…×1000 range (prototype parity)", () =
     expect(isWrongWay(0.0041, -0.0041, F)).toBe(true);
   });
 
-  it("clamps guesses to the range [−3, 3] before scoring", () => {
+  it("clamps guesses to the range before scoring", () => {
     expect(clampGuess(7, F)).toBe(3);
     expect(clampGuess(-9, F)).toBe(-3);
-    expect(scoreRound(10, 3, F)).toEqual(scoreRound(3, 3, F));
-    expect(scoreRound(-10, -2.9, F).points).toBe(scoreRound(-3, -2.9, F).points);
+    expect(scoreRound(10, 2.5, F)).toEqual(scoreRound(3, 2.5, F));
+    expect(scoreRound(-10, -2.5, F).points).toBe(scoreRound(-3, -2.5, F).points);
     expect(() => clampGuess(Number.NaN, F)).toThrow(RangeError);
     expect(() => clampGuess(Infinity, F)).toThrow(RangeError);
   });
@@ -67,18 +75,6 @@ describe("scoreRound on the full ÷1000…×1000 range (prototype parity)", () =
   it("rejects non-positive values for the actual change", () => {
     expect(() => actualLog(0, 5)).toThrow(RangeError);
     expect(() => actualLog(5, -1)).toThrow(RangeError);
-  });
-
-  it("matches the prototype exactly across the whole slider range", () => {
-    const actuals = [-2.7, -1, -0.31, -0.05, -0.004, 0, 0.003, 0.012, 0.3, 1.2, 2.9];
-    for (const a of actuals) {
-      for (let g = -3; g <= 3.0001; g += 0.005) {
-        const gl = Math.round(g * 1000) / 1000;
-        const p = prototypeScore(gl, a);
-        const s = scoreRound(gl, a, F);
-        expect([s.points, s.wrongWay], `g=${gl} a=${a}`).toEqual([p.pts, p.wrong]);
-      }
-    }
   });
 });
 

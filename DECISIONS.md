@@ -204,7 +204,7 @@ Each item is applied in the milestone where it comes up.
   - The reveal pins use the same positions. The readout's pop now fires on crossing a tick rather than a power of ten.
 - **Seed content:** k was chosen for all 20 questions from plausibility, as round numbers (1.1, 2, 4, 5, 8, 10, 20 … 1000). Answers sit 32–84% of the way out.
 - **For M5:** the generators must propose k *without seeing the answer*, so how far out the answer sits leaks nothing. Then the rules above are checked, and k is raised if the answer is too close to the end.
-- **Cleanup pending Dani's OK:** the first version's `min_end_value`/`max_end_value` columns are still in the table, unused, and marked UNUSED (dropping columns is a delete).
+- **Cleanup:** the first version's `min_end_value`/`max_end_value` columns were dropped by Dani in the SQL editor on 2026-11-09 (migration file `drop_unused_end_value_bounds`).
 
 **Why:** Dani: with ×1000 available on "UN members since 1945", a silly ×10 still scored well. With k = 8, the scores change (real answer ×3.8):
 
@@ -215,3 +215,22 @@ Each item is applied in the milestone where it comes up.
 | ×5 | 84 | 71 |
 | ×8 | 57 | 21 (the top of the slider) |
 | ×10 | 44 | not selectable |
+
+### 2026-11-09: Scoring is relative to the slider (replaces the √-width tolerance)
+**Decision:** Points depend only on how far the guess is from the answer *as a share of the slider's length*: points = 100 × (1 − distance ÷ (⅓ of the slider)), floored at 0. A guess a third of the slider away scores 0 on every question, and each 1/300 of the slider costs 1 point. The setting is `RANGE.TOLERANCE_FRACTION` = 1/3 in `lib/config.ts`.
+- Tiers, the wrong-way rule, the scaled ε, the symmetric ÷k … ×k ranges and the content rules (k between 1.05 and 1000, answer at most 85% of the way out) are unchanged.
+- The guarantees still hold on every valid question: the exact answer scores 100, the far end scores 0, and slamming the slider to an end never scores more than 78.
+- **This no longer matches the prototype on ÷1000…×1000 questions.** Those are now more forgiving in absolute terms, because their slider is wider. A question's k is therefore the one difficulty knob: a tighter k makes the same miss cost more.
+- On average across the 20 seed questions, a miss of a given size now scores:
+
+  | Off by | Prototype | Previous (√-width) | Now |
+  | --- | --- | --- | --- |
+  | ×1.1 | 89 | 82 | 84 |
+  | ×1.25 | 83 | 69 | 75 |
+  | ×1.5 | 71 | 52 | 63 |
+  | ×2 | 53 | 30 | 48 |
+
+  UN (÷8 … ×8, real ×3.8): ×2 scores 54, ×3 scores 83, ×8 (the top) 46.
+- 1/3 was chosen as closest to the prototype's average feel while keeping the far end at 0. It must stay at most ½ to keep that guarantee.
+
+**Why:** Dani: the √-width version felt harsh, and "it should be based on the slider width and how close you are relative to that."
