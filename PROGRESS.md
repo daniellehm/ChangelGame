@@ -2,13 +2,13 @@
 
 ## Current status
 
-**M3 approved by Dani and merged to `main` (2026-11-09).** Next: M4 (login + merge) on branch `m4-login-merge`, once Dani gives the go-ahead. M4 needs from Dani: DNS records for changel.app (Resend), a Google OAuth client, and a short Supabase auth checklist (redirect URLs, SMTP, providers).
+**M4 in progress on branch `m4-login-merge` (go-ahead 2026-11-09, email-only, no Google).** First: Resend domain + Vercel domain, so Dani can add the GoDaddy DNS records early. Then the login code.
 
 ## Needs from Dani
 
 **Now:**
 - [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
-- [ ] Go-ahead for M4
+- [x] Go-ahead for M4 (2026-11-09): email-only, no Google; stay logged in
 - [x] Review M2 (approved 2026-11-09)
 - [x] Go-ahead for M3 (2026-11-09): dashboard checklist for Supabase, Turnstile deferred to M6
 - [x] (done 2026-11-09) **Supabase dashboard checklist:** project Changel → **Authentication → Sign In / Providers** → turn on **Allow anonymous sign-ins** → Save. Then **Authentication → Rate Limits** → **IP Address Forwarding** → turn it on → Save. Leave the anonymous sign-ins limit at its default of 30/hour.
@@ -24,8 +24,7 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M4: DNS records for changel.app at the registrar (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
-- [ ] M4: Google OAuth client (Google Cloud console) for Supabase
+- [ ] M4: DNS records for changel.app at GoDaddy (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
 - [ ] M5: Anthropic API key
 - [ ] M6: Sentry account/DSN; PostHog or Plausible account
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
@@ -95,11 +94,11 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 ## Milestone 4: Login + merge
 
 Magic link, Google, upgrade in place, merge-token flow, account page with export/delete.
-**Milestone accepted when:** an anonymous player with 3 plays logs in on a second device holding 2 other plays and ends with all 5 (earlier-started kept on clashes).
+**Milestone accepted when:** an anonymous player with 3 plays logs in on a second device holding 2 other plays and ends with all 5 (earlier-started kept on clashes). Email-only; Google dropped by Dani (DECISIONS 2026-11-09).
 
-- [ ] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded magic-link email from hello@changel.app.
-- [ ] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`.
-- [ ] 4.3 Google via `linkIdentity`.
+- [ ] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded sign-in email (link + 6-digit code) from hello@changel.app; changel.app added to Vercel; DNS table for GoDaddy.
+- [ ] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`; verify by 6-digit code or link; sessions persist (no re-entering codes).
+- [~] 4.3 Google via `linkIdentity`: **dropped by Dani** (email-only).
 - [ ] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
 - [ ] 4.5 Account page: change email, export JSON, delete account (hard delete).
 - [ ] 4.6 Sign out → fresh anonymous state + local cache cleared.
@@ -141,6 +140,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M4 started (branch `m4-login-merge`). Dani: email-only login, no Google; players must stay logged in; DNS is at GoDaddy; don't touch other Resend domains or keys.
 - 2026-11-09: M3 approved by Dani and merged into `main`. Dani's preview game verified in the DB (Nov 9, 423, anonymous, server-scored). With Dani's OK, deleted 16 untagged test players from the earliest real-sign-in E2E runs (cascaded 18 plays). The DB now holds just Dani's player and play.
 - 2026-11-09: M3 preview check: `/api/puzzle` 200 from sin1 (rate limiter loads with the Vercel Upstash env), `/api/me` 401 without a session (body not visible to the fetch tool). **M3 complete**, awaiting Dani's review.
 - 2026-11-09: 3.1/3.2/3.9: Dani enabled anonymous sign-ins + IP forwarding. The spec E2E passes with real anonymous players (play → refresh resumes from the server with local storage wiped → finish → exact share text → next day streak 2), and a cookie-refusing browser falls back to local play. Integration tests now use real anonymous sign-in. E2E users tagged e2e + global teardown (deleted 15); per-page fake IPs. Vercel docs confirm x-forwarded-for can't be spoofed. 170 unit + 47 integration + 25 Playwright pass.

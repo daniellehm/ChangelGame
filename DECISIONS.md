@@ -148,3 +148,10 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: E2E test players are tagged and cleaned up; test IPs
 **Decision:** When the test clock is on (`ALLOW_TEST_CLOCK=1`, never in production) and the request carries the test-clock header, `/api/session` tags new anonymous users with `user_metadata.e2e = true`. A Playwright global teardown deletes exactly those users. E2E pages send a stable fake `x-forwarded-for` from the RFC 2544 test range, so local runs don't exhaust Supabase's per-IP sign-up limit for the developer's machine. Test games still add to the crowd-stat counters of the dev seed puzzles. That's harmless, since those puzzles are deleted before launch.
 **Why:** The tests share the one Supabase project. Tagging makes cleanup exact without risking real players. Vercel overwrites `x-forwarded-for` (no spoofing in production), so the fake IP only matters locally.
+
+### 2026-11-09: M4 login is email-only (no Google), sessions persist
+**Decision:**
+- **No Google sign-in** (Dani: "I don't want Google full stop"). Login is passwordless email only: a sign-in link and a 6-digit code in the same email, either of which works. This drops SPEC §5 `linkIdentity({ provider: 'google' })`, the Google OAuth setup and the launch-checklist item on Google consent-screen verification.
+- **Players stay logged in** in a browser after signing in once. The session lives in the HTTP-only cookie (400-day max-age, refreshed as they play). Supabase's time-box and inactivity limits stay off, so a code is only needed on a new browser or device, or after signing out or clearing site data.
+- DNS for changel.app is at **GoDaddy**. Claude adds only `changel.app` to the existing Resend team and creates one sending-only key restricted to it. Other Resend domains and keys are never touched.
+**Why:** Dani's instructions. Email login covers everyone without a third-party account, and the persistent cookie avoids re-entering codes.
