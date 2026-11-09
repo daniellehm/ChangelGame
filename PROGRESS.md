@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.10 (same-day pull, rerun fallback, alert emails). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. **All M5 tasks are built; waiting for Dani to review the preview and approve the merge.** The nightly cron only runs on production (after the merge). Claude spend so far: $0.26 (smoke tests). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
 
 ## Needs from Dani
 
@@ -12,6 +12,7 @@
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [x] Relative scoring approved and merged (2026-11-09)
 - [x] Go-ahead for M5 (2026-11-09)
+- [ ] **Review M5** on the preview (admin portal, report button) and approve the merge
 - [ ] **Approve one database fix** (Upcoming → reorder a day's rounds).
   - Why: the MCP permission check declined it because it deletes and re-inserts the day's 5 rounds; it's only allowed on days nobody has played.
   - How: approve the prompt when Claude retries, or run in the Supabase SQL editor, then Claude saves it as a migration:
@@ -133,7 +134,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Milestone 5: Content pipeline + admin
 
 **Milestone accepted when:** a cold start with an empty database fills 30 days with no human action; a planted wrong number is flagged; simulated reports from 11% of players add the question once to the Reports queue, send no email and leave it live, while 3 reports out of 5,000 players do nothing; and deleting a day triggers the rerun plus an alert.
-**Status:** started 2026-11-09 on branch `m5-content-admin`. Decisions: DECISIONS 2026-11-09 "M5 pipeline: models, spend cap, global mix" and "M5 pipeline: how the nightly job runs".
+**Status:** all 10 tasks built and tested on branch `m5-content-admin` (2026-11-09); **waiting for Dani's review**, then merge. Decisions: DECISIONS 2026-11-09 "M5 pipeline: models, spend cap, global mix" and "M5 pipeline: how the nightly job runs".
 
 **How it works (summary):** a candidate question is inserted as `draft`. The checks run, and it becomes `verified` (all pass, `verified_by='auto'`) or `flagged` (any fail, `flag_reason`). The scheduler fills days 7–30 ahead with verified questions (status `scheduled`, puzzle `ready`) and keeps ≥10 verified spares. Once a puzzle date has passed, its questions become `used`. All of this state lives in the database, so the nightly job can stop at any point and resume in the next run.
 
@@ -159,7 +160,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
   - Question bank
   - Health (+ "Run now")
 - [x] 5.9 **Report button** + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
-- [ ] 5.10 **Same-day pull / reserve swap;** rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
+- [x] 5.10 **Same-day pull / reserve swap;** rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
 
 ## Milestone 6: Virality + launch hardening
 
@@ -180,6 +181,22 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.10 Same-day pull, rerun fallback, alert emails:
+  - **Same-day pull:**
+    - pulling a live or past round sets `corrected_at` on the old question, so players who already answered keep their score and their reveal says Corrected;
+    - players who haven't reached the round get the replacement: the existing `question_changed` reload now asks for `?fresh=…`, which is never cached, so the 5-minute CDN cache can't serve the old round back.
+  - **Rerun fallback** (`lib/puzzles/rerun.ts`):
+    - when a date's window opens with no ready puzzle, a ready puzzle with `rerun_of` is created (the most recent original at least 365 days earlier, else the oldest original), labelled Rerun, and an alert is emailed;
+    - only by the real clock, so tests can't create reruns on real dates.
+  - **Alert emails** (`lib/admin/notify.ts`, Resend from hello@changel.app to ADMIN_EMAILS):
+    - only when the game is at risk (fewer than 7 ready days, two failed nights, a rerun served);
+    - at most once per kind per 20 hours, recorded in `alerts_sent`;
+    - sent after each nightly run ends;
+    - `CHANGEL_NO_ALERT_EMAIL=1` in every test run, so tests record alerts without sending.
+  - **Acceptance:** deleting a day → rerun served (labelled, the original's rounds) + one alert, idempotent (`tests/integration/rerun.test.ts`); same-day pull keeps scores and adds Corrected (`tests/integration/same-day-pull.test.ts`).
+  - `questionRange` moved to `lib/range.ts` (pure), so browser tests don't load server-only code.
+  - Final counts: unit 279, integration 95, E2E 35, visual 2, all passing. The DB was checked clean after the test runs: no reruns, no running runs, no test questions.
 
 - 2026-11-09: 5.9 Report button + Reports queue:
   - **Player side:**

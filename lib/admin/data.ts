@@ -81,9 +81,12 @@ export async function pullRound(date: string, position: number, opts: { newId?: 
   if (!newId) return { status: "no_reserve" as const };
   const r = must(await db().rpc("swap_round", { p_date: date, p_position: position, p_new_id: newId, p_old_status: opts.oldStatus ?? "flagged" })) as string;
   if (r !== "ok") return { status: r as "unavailable" | "no_round" };
-  if ((opts.oldStatus ?? "flagged") === "flagged") {
-    await db().from("questions").update({ flag_reason: `pulled by ${opts.editor} from ${date}${opts.note ? `: ${opts.note}` : ""}` }).eq("id", current.question_id);
-  }
+  // Same-day (or past) pull: players who already answered keep their score, and their reveal says "Corrected".
+  const live = date <= schedulingToday();
+  const oldPatch: Record<string, unknown> = {};
+  if ((opts.oldStatus ?? "flagged") === "flagged") oldPatch.flag_reason = `pulled by ${opts.editor} from ${date}${opts.note ? `: ${opts.note}` : ""}`;
+  if (live) oldPatch.corrected_at = new Date().toISOString();
+  if (Object.keys(oldPatch).length) await db().from("questions").update(oldPatch).eq("id", current.question_id);
   await db().from("question_edits").insert({ question_id: current.question_id, edited_by: opts.editor, before: { puzzle_date: date, position }, after: { swapped_for: newId }, note: opts.note ?? "pulled" });
   return { status: "ok" as const, oldId: current.question_id, newId };
 }

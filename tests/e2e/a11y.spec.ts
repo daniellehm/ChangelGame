@@ -1,8 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { multSpoken } from "@/lib/format";
-import { questionRange } from "@/lib/puzzles/repo";
-import { epsilon } from "@/lib/range";
+import { epsilon, questionRange } from "@/lib/range";
 import { keyboardMove, nudge } from "@/lib/slider";
 import { next, playRound, roundsFor, syd, setClock } from "./helpers";
 

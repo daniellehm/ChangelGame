@@ -54,6 +54,7 @@ export interface RoundResult {
  * M3 adds the session-backed source (/api/play, /api/guess).
  */
 export interface GameSource {
-  loadPuzzle(date: string): Promise<Puzzle>;
+  /** `fresh` bypasses the CDN cache (used after a same-day swap). */
+  loadPuzzle(date: string, opts?: { fresh?: boolean }): Promise<Puzzle>;
   lockIn(puzzle: Puzzle, position: number, guessLog: number): Promise<RoundResult>;
 }

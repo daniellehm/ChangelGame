@@ -11,6 +11,9 @@ import { ClaudeLlm, sdkParse, type Llm } from "./llm";
 import { runHop, type HopResult } from "./pipeline";
 import type { FetchLike } from "./sources";
 import { dbStore, type Store } from "./store";
+import { getOverview } from "../admin/overview";
+import { sendRiskAlerts } from "../admin/notify";
+import { reportQueueCount } from "./reports";
 
 export const RUN = {
   /** Work budget per hop; the function itself may run 300 s. */
@@ -114,10 +117,21 @@ export async function runContentHop(trigger: Trigger, runId: number | null = nul
     });
     const { log: _omit, ...counts } = hop;
     void _omit;
+    if (status !== "running" && trigger !== "test") await emailRiskAlerts();
     return { status: status === "running" ? "continue" : status, runId: run.id, hop: counts };
   } catch (e) {
     console.error("content hop failed", e);
     await finish({ status: "failed", error: (e as Error).message?.slice(0, 1000) ?? String(e), finished_at: new Date(now()).toISOString() });
+    if (trigger !== "test") await emailRiskAlerts();
     return { status: "failed", runId: run.id };
+  }
+}
+
+/** After a run ends: email the game-at-risk alerts (fewer than 7 ready days, two failed nights). */
+async function emailRiskAlerts(): Promise<void> {
+  try {
+    await sendRiskAlerts((await getOverview(reportQueueCount)).alerts);
+  } catch (e) {
+    console.error("risk alert emails failed", e);
   }
 }

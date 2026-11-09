@@ -28,6 +28,11 @@ export const FULL_RANGE: GuessRange = RANGE.FULL;
 
 export const width = (r: GuessRange) => r.hi - r.lo;
 
+/** A question's guess range (÷max_change … ×max_change). Questions without one get the full ÷1000…×1000. */
+export function questionRange(q: { max_change?: number | null }): GuessRange {
+  return q.max_change != null ? rangeFromFactor(q.max_change) : FULL_RANGE;
+}
+
 /** Range for a question's max_change k: ÷k … ×k. */
 export function rangeFromFactor(k: number): GuessRange {
   const K = Math.log10(k);

@@ -1,8 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { TEST_CLOCK_HEADER } from "@/lib/api/clock";
 import { formatValue, multLabel } from "@/lib/format";
-import { questionRange } from "@/lib/puzzles/repo";
-import { clampTo, epsilon } from "@/lib/range";
+import { clampTo, epsilon, questionRange } from "@/lib/range";
 import { actualLog, scoreRound, TIERS } from "@/lib/scoring";
 import { snapPointer } from "@/lib/slider";
 import { seededRounds } from "../helpers/seed";

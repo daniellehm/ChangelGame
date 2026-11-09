@@ -337,3 +337,17 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
 - **A "Corrected" note shows on the reveal** for any question edited after it went live (`corrected_at`, set by the editor).
 
 **Why:** These are the simplest readings of SPEC §8 that avoid the literal-rule trap and misattributed reports.
+
+### 2026-11-09: M5 rerun fallback, same-day pull, alert emails
+**Decision:**
+- **Rerun source:** the most recent original (non-rerun) ready puzzle at least 365 days earlier (SPEC §8). Until the game is a year old there is none, so it uses the oldest original puzzle rather than serve nothing. The rerun is stored as a ready `puzzles` row with `rerun_of`, so every route serves the same rounds and players see "Rerun".
+- **When a rerun is created:** on the first lookup of a date whose window is open **by the real clock** with no ready puzzle. Tests use a simulated clock, so they can never create reruns on real dates (two existing tests ask about a real near-future date).
+- **Same-day pull:** the round's question is swapped atomically (`swap_round`). Players who already answered keep their stored guess and points, and the pulled question gets `corrected_at`, so their reveal says "Corrected". Players mid-game get `question_changed` on that round and reload it uncached (`?fresh=`).
+- **Alert emails go only to ADMIN_EMAILS, and only when the game is at risk:**
+  - fewer than 7 ready days;
+  - the nightly run failing two nights in a row;
+  - a rerun being served.
+
+  Each kind is sent at most once per 20 hours, and everything else stays on the admin banner. Tests set `CHANGEL_NO_ALERT_EMAIL=1`, so they record alerts without sending.
+
+**Why:** SPEC §8, plus the simplest safe choices where it's silent (the first year of reruns; never letting tests touch real dates or email Dani).

@@ -37,7 +37,8 @@ export async function GET(req: Request) {
     return Response.json(body, {
       headers: {
         // No answers or user data in here, so the edge may cache it (SPEC §4 "Caching").
-        "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=60",
+        // ?fresh=… (a reload after a same-day swap) is never cached.
+        "Cache-Control": new URL(req.url).searchParams.has("fresh") ? "no-store" : "public, max-age=0, s-maxage=300, stale-while-revalidate=60",
       },
     });
   } catch (e) {
