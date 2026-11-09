@@ -1,7 +1,10 @@
 import { expect, type Page } from "@playwright/test";
 import { TEST_CLOCK_HEADER } from "@/lib/api/clock";
 import { formatValue, multLabel } from "@/lib/format";
+import { questionRange } from "@/lib/puzzles/repo";
+import { clampTo, epsilon } from "@/lib/range";
 import { actualLog, scoreRound, TIERS } from "@/lib/scoring";
+import { snapPointer } from "@/lib/slider";
 import { seededRounds } from "../helpers/seed";
 
 /** Sydney wall-clock time → Date. */
@@ -44,20 +47,21 @@ export async function setSlider(page: Page, value: number) {
   }, value);
 }
 
-/** Play one round at `guess`, verify the reveal, and return the expected score. */
+/** Play one round at `guess` (the slider clamps it to the question's range), verify the reveal, and return the expected score. */
 export async function playRound(page: Page, date: string, i: number, guess: number) {
   const q = roundsFor(date)[i]!;
+  const r = questionRange(q);
   await expect(page.locator("#cat")).toHaveText(`Round ${i + 1} of 5, ${q.category}`, { ignoreCase: true });
   await expect(page.locator("#q")).toHaveText(q.prompt);
   await expect(page.locator("#v0")).toHaveText(formatValue(q.start_value, q.format));
   await setSlider(page, guess);
   await page.locator("#lockBtn").click();
   const a = actualLog(q.start_value, q.end_value);
-  const s = scoreRound(guess, a);
+  const s = scoreRound(snapPointer(r, clampTo(r, guess)), a, r);
   await expect(page.locator("#vText")).toHaveText(TIERS[s.tier].label);
   await expect(page.locator("#vPts")).toHaveText(`+${s.points}`);
   await expect(page.locator("#v1")).toHaveText(formatValue(q.end_value, q.format));
-  await expect(page.locator("#pinRealLbl")).toHaveText(`REAL ${multLabel(a).big}`);
+  await expect(page.locator("#pinRealLbl")).toHaveText(`REAL ${multLabel(a, epsilon(r)).big}`);
   await expect(page.locator("#fact")).toHaveText(q.fact ?? "");
   await expect(page.locator("#src")).toHaveText(`Source: ${q.source_name}`);
   return s;

@@ -54,7 +54,7 @@ test("no horizontal scroll at 320 px on any screen", async ({ page }) => {
   }
   await page.goto("/");
   await page.locator("#startBtn").click();
-  await playRound(page, "2026-11-10", 0, 3); // longest readout (×1,000)
+  await playRound(page, "2026-11-10", 0, 99); // clamps to the top of the range: the longest readout
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 });
 

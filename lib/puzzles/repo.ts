@@ -4,6 +4,7 @@
  */
 import { isFormat, type Format } from "../format";
 import type { PublicRound } from "../game/types";
+import { FULL_RANGE, rangeFromBounds, type GuessRange } from "../range";
 import { adminClient } from "../supabase/admin";
 
 export interface StoredPuzzle {
@@ -27,16 +28,21 @@ export async function findReadyPuzzle(date: string): Promise<StoredPuzzle | null
   return { date: data.puzzle_date, theme: data.theme, roundsDate: data.rerun_of ?? data.puzzle_date, rerunOf: data.rerun_of };
 }
 
+/** A question's guess range. Questions without bounds (none after the 2026-11 import) get the full ÷1000…×1000 range. */
+export function questionRange(q: { start_value: number; min_end_value: number | null; max_end_value: number | null }): GuessRange {
+  return q.min_end_value != null && q.max_end_value != null ? rangeFromBounds(q.start_value, q.min_end_value, q.max_end_value) : FULL_RANGE;
+}
+
 /** The 5 rounds WITHOUT answers: only these columns are ever selected. */
 export async function publicRounds(roundsDate: string): Promise<PublicRound[]> {
   const { data, error } = await adminClient()
     .from("puzzle_rounds")
-    .select("position, question_id, questions!inner(category, prompt, start_year, start_value, end_year, format)")
+    .select("position, question_id, questions!inner(category, prompt, start_year, start_value, end_year, format, min_end_value, max_end_value)")
     .eq("puzzle_date", roundsDate)
     .order("position");
   if (error) throw error;
   return (data ?? []).map((r) => {
-    const q = r.questions as unknown as { category: string; prompt: string; start_year: number; start_value: number; end_year: number; format: string };
+    const q = r.questions as unknown as { category: string; prompt: string; start_year: number; start_value: number; end_year: number; format: string; min_end_value: number | null; max_end_value: number | null };
     if (!isFormat(q.format)) throw new Error(`Unknown format ${q.format}`);
     return {
       position: r.position,
@@ -47,6 +53,7 @@ export async function publicRounds(roundsDate: string): Promise<PublicRound[]> {
       start_value: q.start_value,
       end_year: q.end_year,
       format: q.format as Format,
+      range: questionRange(q),
     };
   });
 }
@@ -55,6 +62,8 @@ export interface RoundAnswer {
   question_id: number;
   start_value: number;
   end_value: number;
+  /** Scoring range (bounds are public; served with the round too). */
+  range: GuessRange;
   fact: string;
   source_name: string;
   source_url: string | null;
@@ -64,17 +73,18 @@ export interface RoundAnswer {
 export async function roundAnswer(roundsDate: string, position: number): Promise<RoundAnswer | null> {
   const { data, error } = await adminClient()
     .from("puzzle_rounds")
-    .select("question_id, questions!inner(start_value, end_value, fact, source_name, source_url)")
+    .select("question_id, questions!inner(start_value, end_value, min_end_value, max_end_value, fact, source_name, source_url)")
     .eq("puzzle_date", roundsDate)
     .eq("position", position)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const q = data.questions as unknown as { start_value: number; end_value: number; fact: string | null; source_name: string | null; source_url: string | null };
+  const q = data.questions as unknown as { start_value: number; end_value: number; min_end_value: number | null; max_end_value: number | null; fact: string | null; source_name: string | null; source_url: string | null };
   return {
     question_id: data.question_id,
     start_value: q.start_value,
     end_value: q.end_value,
+    range: questionRange(q),
     fact: q.fact ?? "",
     source_name: q.source_name ?? "",
     source_url: q.source_url,
@@ -87,7 +97,7 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
   if (!ids.length) return out;
   const { data, error } = await adminClient()
     .from("questions")
-    .select("id, start_value, end_value, fact, source_name, source_url")
+    .select("id, start_value, end_value, min_end_value, max_end_value, fact, source_name, source_url")
     .in("id", ids);
   if (error) throw error;
   for (const q of data ?? []) {
@@ -95,6 +105,7 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
       question_id: q.id,
       start_value: q.start_value,
       end_value: q.end_value,
+      range: questionRange(q),
       fact: q.fact ?? "",
       source_name: q.source_name ?? "",
       source_url: q.source_url,

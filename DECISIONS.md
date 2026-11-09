@@ -179,3 +179,39 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: One attempt per day per account, shown honestly after sign-in
 **Decision:** Signing in can never let a replay count. The server already kept the **first** attempt on a same-day clash and discarded the other (`merge_players`). The bug was on the device: after signing in, the browser kept showing the replay's score. Now, after any sign-in (final screen or account page), `refreshFromAccount()` uploads offline games, then reloads this device's recent plays from the account (`/api/play` per stored date). The screen therefore shows the account's result. A banner then explains what happened, e.g. "You'd already played that day on your account, so your first score stands. This device's replay was discarded."
 **Why:** Dani found that signing in after replaying today on another browser looked as if the replay counted. A browser can't know who someone is before they sign in, so it can't block the replay itself. Instead the replay is never kept and never shown as counting.
+
+### 2026-11-09: Per-question guess ranges replace the fixed ÷1000 … ×1000 slider
+**Decision:** Every question has plausible bounds for its end value, `min_end_value` and `max_end_value`, in real units (e.g. UN members in 2011: 40 … 300). The slider spans exactly those bounds, and scoring tolerance scales with the width of the range. On the full ÷1000 … ×1000 range, everything is identical to the prototype. This departs from the prototype's scoring, at Dani's request.
+- **Range:** lo = log10(min ÷ start), hi = log10(max ÷ start), width W = hi − lo.
+- **Rules every question must pass** (`rangeProblems()` in `lib/range.ts`, run by the importer and mirrored by the DB constraint `questions_range_sane`):
+  - the range includes "no change" (min < start < max);
+  - W is between 0.04 (×1.0965 end to end, e.g. a sprint record) and 6 (×1,000,000, the old full width);
+  - the real answer is at least 10% of W in from both ends.
+- **A range is required** once a question is past draft (`questions_range_required`). Questions without bounds fall back to the full range (only a test fixture uses this).
+- **Scoring:** tolerance = min(0.75 × √(W ÷ 6), W ÷ 3), and points = 100 × (1 − |guess − answer| ÷ tolerance), floored at 0.
+  - The wrong-way rule is unchanged.
+  - Its "no change" threshold scales too: ε = 0.004 × W ÷ 6, so a narrow range isn't mostly dead zone.
+  - Wider plausible ranges forgive more, but less than in proportion.
+  - Because tolerance is never more than a third of the slider, and the answer is at least 10% in from each end:
+    - the far end from the answer always scores 0;
+    - slamming the slider to either end never scores more than 70;
+    - the exact answer is always 100.
+
+  Property tests check all of these over 3,000 random valid questions.
+- **Slider:** 1,200 steps end to end. Nudge = 1/120 of W, Page Up/Down = 1/60, pointer snap to 0 = 1/600 (the prototype's 0.005 / 0.05 / 0.1 / 0.01 at full width). Native `step="any"`, so exact 0 is always reachable; `lib/slider` does the rounding. The server clamps guesses to the question's range.
+- **Ticks:**
+  - Both ends are always labelled at 2 significant figures (e.g. ÷1.3, ×5.9).
+  - "same" is shown where no change sits, unless it's crowded against an end. The track's blue/orange split moves to the same point.
+  - Up to two round multipliers per side are shown (×2, ×5, ×10, ×100, ×1,000), only where they fit on a 250 px phone row without overlapping.
+  - The reveal pins and the centre line use the same positions. The readout's pop now fires on crossing a tick rather than a power of ten.
+- **Seed content:** bounds were chosen for all 20 questions from plausibility (what someone might believe knowing only the start value), not from the answer. Answers sit 22–87% along their ranges.
+- **For M5:** the generators must propose bounds *without seeing the answer*, so position on the slider leaks nothing. Then the rules above are checked, and the bounds widen if the answer is too close to an edge.
+
+**Why:** Dani: with ×1000 available on "UN members since 1945", a silly ×10 still scored well. Bounds of 40 … 300 change the scores (real answer ×3.8):
+
+| Guess | Old score | New score |
+| --- | --- | --- |
+| ×2 | 63 | 3 |
+| ×3 | 87 | 65 |
+| ×5 | 84 | 58 |
+| ×10 | 44 | not selectable; the top of the slider (×5.9) scores 33 |

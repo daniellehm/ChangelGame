@@ -30,7 +30,6 @@ export async function POST(req: Request) {
   const { date, position } = parsed.data;
   const limited = await rateLimit("reveal", clientIp(req) ?? "unknown");
   if (limited) return limited;
-  const guess = clampGuess(parsed.data.guess_log);
 
   // Same window as serving, plus the grace period to finish a started game.
   const now = serverNow(req);
@@ -46,7 +45,8 @@ export async function POST(req: Request) {
     if (!ans) return apiError("puzzle_not_found", "That round doesn't exist.", 404);
 
     const a = actualLog(ans.start_value, ans.end_value);
-    const s = scoreRound(guess, a);
+    const guess = clampGuess(parsed.data.guess_log, ans.range);
+    const s = scoreRound(guess, a, ans.range);
     return ok({
       position,
       question_id: ans.question_id,

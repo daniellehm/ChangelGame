@@ -1,6 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { next, playRound, syd, setClock } from "./helpers";
+import { multSpoken } from "@/lib/format";
+import { questionRange } from "@/lib/puzzles/repo";
+import { epsilon } from "@/lib/range";
+import { keyboardMove, nudge } from "@/lib/slider";
+import { next, playRound, roundsFor, syd, setClock } from "./helpers";
 
 const DAY = "2026-11-10";
 
@@ -42,11 +46,14 @@ test("keyboard-only: a full game can be played without a pointer", async ({ page
     await page.keyboard.press("Tab"); // + (nudge up)
     await page.keyboard.press("Tab");
     await expect(page.locator("#slider")).toBeFocused();
-    await page.keyboard.press("PageUp"); // +0.1
-    await page.keyboard.press("PageUp"); // +0.2
-    await page.keyboard.press("ArrowRight"); // +0.205
-    await expect(page.locator("#slider")).toHaveValue("0.205");
-    await expect(page.locator("#slider")).toHaveAttribute("aria-valuetext", "1.6 times bigger");
+    // Steps scale with each question's range: 2 pages + 1 step from "same".
+    const r = questionRange(roundsFor(DAY)[i]!);
+    const want = keyboardMove(r, keyboardMove(r, keyboardMove(r, 0, "PageUp")!, "PageUp")!, "ArrowRight")!;
+    await page.keyboard.press("PageUp");
+    await page.keyboard.press("PageUp");
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator("#slider")).toHaveValue(String(want));
+    await expect(page.locator("#slider")).toHaveAttribute("aria-valuetext", multSpoken(want, epsilon(r)));
     await page.keyboard.press("Tab"); // Lock in
     await expect(page.locator("#lockBtn")).toBeFocused();
     await page.keyboard.press("Enter");
@@ -61,18 +68,29 @@ test("keyboard-only: a full game can be played without a pointer", async ({ page
   await expect(page.locator("#finalGrid")).toHaveAttribute("aria-label", /.+/);
 });
 
-test("arrow keys step away from 0 (no snap), nudges move 0.05", async ({ page }) => {
+test("arrow keys step away from 0 (no snap), nudges move 1/120 of the range, Home/End reach the bounds", async ({ page }) => {
+  const r = questionRange(roundsFor(DAY)[0]!);
+  const one = keyboardMove(r, 0, "ArrowRight")!;
+  const minusOne = keyboardMove(r, 0, "ArrowLeft")!;
   await page.goto("/");
   await page.locator("#startBtn").click();
   await page.locator("#slider").focus();
   await page.keyboard.press("ArrowRight");
-  await expect(page.locator("#slider")).toHaveValue("0.005");
+  await expect(page.locator("#slider")).toHaveValue(String(one));
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ArrowLeft");
-  await expect(page.locator("#slider")).toHaveValue("-0.005");
+  await expect(page.locator("#slider")).toHaveValue(String(minusOne));
   await page.getByRole("button", { name: "Nudge up" }).click();
-  await expect(page.locator("#slider")).toHaveValue("0.045");
-  await expect(page.locator("#slider")).toHaveAttribute("aria-valuetext", "1.1 times bigger");
+  const nudged = nudge(r, minusOne, 1);
+  await expect(page.locator("#slider")).toHaveValue(String(nudged));
+  await expect(page.locator("#slider")).toHaveAttribute("aria-valuetext", multSpoken(nudged, epsilon(r)));
+  await page.locator("#slider").focus(); // clicking the nudge button took focus
+  // The browser re-serialises range values to ~15 digits, so compare numerically.
+  const sliderValue = async () => Number(await page.locator("#slider").inputValue());
+  await page.keyboard.press("End");
+  await expect.poll(sliderValue).toBeCloseTo(r.hi, 10);
+  await page.keyboard.press("Home");
+  await expect.poll(sliderValue).toBeCloseTo(r.lo, 10);
 });
 
 test("slider touch target is at least 44 px tall", async ({ page }) => {

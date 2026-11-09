@@ -2,16 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { POST as guessPOST } from "@/app/api/guess/route";
 import { GET as meGET } from "@/app/api/me/route";
 import { POST as playPOST } from "@/app/api/play/route";
-import { actualLog, scoreRound } from "@/lib/scoring";
+import { GET as puzzleGET } from "@/app/api/puzzle/route";
+import { FULL_RANGE } from "@/lib/range";
 import { adminClient } from "@/lib/supabase/admin";
-import { cleanup, newPlayer, req, setupTestPuzzle, TEST_DATE, TEST_QUESTIONS } from "./fixtures";
+import { cleanup, expectedScore, newPlayer, req, setupTestPuzzle, TEST_DATE, TEST_NOW, TEST_QUESTIONS, testRange } from "./fixtures";
+import { get } from "./helpers";
 
 let qids: number[] = [];
 let A: Awaited<ReturnType<typeof newPlayer>>;
 let B: Awaited<ReturnType<typeof newPlayer>>;
 let playId = "";
 
-const expectedScore = (i: number, g: number) => scoreRound(g, actualLog(TEST_QUESTIONS[i]!.start_value, TEST_QUESTIONS[i]!.end_value));
 const guess = (cookie: string, body: Record<string, unknown>, now?: string) => guessPOST(req("/api/guess", { method: "POST", cookie, body, now }));
 
 beforeAll(async () => {
@@ -29,6 +30,34 @@ describe("players", () => {
   it("a players row is created by the auth trigger (deferred check from 2.2)", async () => {
     const { data } = await adminClient().from("players").select("id").eq("id", A.id).maybeSingle();
     expect(data?.id).toBe(A.id);
+  });
+});
+
+describe("guess ranges", () => {
+  it("each round carries its question's range; a question without bounds gets the full ÷1000…×1000", async () => {
+    const body = await (await puzzleGET(get(`/api/puzzle?date=${TEST_DATE}`, TEST_NOW))).json();
+    expect(body.rounds[0].range.lo).toBeCloseTo(Math.log10(50 / 100), 12);
+    expect(body.rounds[0].range.hi).toBeCloseTo(Math.log10(1000 / 100), 12);
+    for (const i of [0, 1, 2, 4]) expect(body.rounds[i].range).toEqual(testRange(i));
+    expect(body.rounds[3].range).toEqual(FULL_RANGE);
+  });
+
+  it("the database refuses a range the game can't play", async () => {
+    const db = adminClient();
+    const base = { ...TEST_QUESTIONS[0]!, slug: "itest-bad-range" };
+    const bad = [
+      { min_end_value: 120, max_end_value: 1000 }, // excludes "no change"
+      { min_end_value: 50, max_end_value: 260 }, // answer (250) hard against the top
+      { min_end_value: 99, max_end_value: 101 }, // narrower than ×1.0965
+      { min_end_value: 50, max_end_value: null }, // half a range
+      { min_end_value: 1e-4, max_end_value: 1e4 }, // wider than ÷1000…×1000 overall (×1e8)
+    ];
+    for (const b of bad) {
+      const { error } = await db.from("questions").insert({ ...base, ...b });
+      expect(error?.code, JSON.stringify(b)).toBe("23514");
+    }
+    const { error } = await db.from("questions").insert({ ...base, min_end_value: null, max_end_value: null, status: "verified" });
+    expect(error?.code, "verified without a range").toBe("23514");
   });
 });
 

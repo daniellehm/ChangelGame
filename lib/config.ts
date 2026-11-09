@@ -22,6 +22,30 @@ export const TIER_CUTOFFS = {
   MEH: 30,
 } as const;
 
+/**
+ * Per-question guess ranges (DECISIONS 2026-11-09). Each question has plausible
+ * bounds for its end value; the slider spans them, and scoring tolerance scales
+ * with their width. Widths and positions are in log10-multiplier units.
+ */
+export const RANGE = {
+  /** The prototype's range (÷1000 … ×1000). A question with this width scores exactly like the prototype. */
+  FULL: { lo: -3, hi: 3 },
+  /** Narrowest allowed range (total span ×1.10, e.g. a sprint record 9.0 s … 9.9 s). */
+  MIN_WIDTH: 0.04,
+  /** Widest allowed range (÷1000 … ×1000). */
+  MAX_WIDTH: 6,
+  /** The real answer must sit at least this fraction of the width in from either end. */
+  EDGE_MARGIN: 0.1,
+  /** Tolerance never exceeds this fraction of the width, so the far end always scores 0. */
+  MAX_TOLERANCE_FRACTION: 1 / 3,
+  /** Slider resolution, as fractions of the width (full range: 0.005 / 0.05 / 0.1 / 0.01, as the prototype). */
+  STEP_FRACTION: 1 / 1200,
+  NUDGE_FRACTION: 1 / 120,
+  PAGE_FRACTION: 1 / 60,
+  SNAP_FRACTION: 1 / 600,
+} as const;
+
+/** Full-range slider constants (the prototype). Per-question values come from lib/range.ts. */
 export const SLIDER = {
   /** Slider value is g = log10(multiplier). */
   MIN: -3,

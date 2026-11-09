@@ -2,12 +2,13 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
+**M4 approved by Dani and merged to `main` (2026-11-09).** Current: **per-question guess ranges** (branch `per-question-range`, DECISIONS 2026-11-09 "Per-question guess ranges"). They're built, tested and on a Vercel preview, waiting for Dani to test and approve, then merge. The DB migration `question_guess_range` and the bounds import are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
 
 ## Needs from Dani
 
 **Now:**
 - [x] M4 reviewed and approved (2026-11-09)
+- [ ] Test the per-question ranges on the preview and approve the merge
 - [ ] Go-ahead for M5
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
@@ -116,7 +117,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 - [ ] 5.1 Pipeline tables: content_runs, check results, reports, events (+ `flagged` question status).
 - [ ] 5.2 Data-backed generators: OWID, World Bank.
-- [ ] 5.3 Researched generator (Claude + web search).
+- [ ] 5.3 Researched generator (Claude + web search). Every generator also proposes `min_end_value`/`max_end_value` **without seeing the answer** (a separate step given only the prompt, start value and years). `rangeProblems()` must pass, widening the bounds if the answer sits too close to an edge.
 - [ ] 5.4 Automatic checks (source support, cross-check, like-for-like, sanity, duplicate, topic safety, fact quality). *Accept:* a planted wrong number is flagged.
 - [ ] 5.5 Scheduler with balance rules, the 7-day rule and the reserve of 10. *Accept:* cold-start fill.
 - [ ] 5.6 Nightly cron orchestration (fits Vercel limits), cost logging.
@@ -144,6 +145,11 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: Per-question guess ranges (branch `per-question-range`):
+  - Code: `lib/range.ts` (range maths, rules, tolerance, ε, steps, ticks); `scoreRound`, `clampGuess` and `lib/slider` take the range. Rounds and answers carry `range`. Slider, Round ticks and Reveal pins are positioned on it.
+  - Data: migration `question_guess_range` (columns + 2 constraints); bounds for all 20 seed questions, imported.
+  - Tests: unit tests went from 177 to 206, including property tests over 3,000 random questions. Integration tests: 60, including API ranges, the full-range fallback and DB rejection of bad ranges. All 28 E2E pass. Visual baselines updated and reviewed (round, reveal and final screens changed; intro and how-to-play didn't).
 
 - 2026-11-09: `account-copy` polish (one message in the sign-in form, no nested box, no duplicate Account label, Stats sign-in link) approved by Dani and merged into `main`.
 - 2026-11-09: Copy polish 4 (Dani): the empty Stats page offers "or · Sign in to restore your stats" (link to /account) when not signed in.
