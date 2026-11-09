@@ -76,6 +76,9 @@ test("stats page reflects a completed game", async ({ page }) => {
   await expect(page.locator("#sStreak")).toHaveText("1");
   await expect(page.locator(".strip i.played")).toHaveCount(1);
   await expect(page.locator(".strip")).toHaveAttribute("aria-label", "Played 1 of the last 30 days");
+  await expect(page.getByText("Stats are kept on this device.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Add your email" })).toHaveAttribute("href", "/account");
+  await expect(page.getByText("coming soon")).toHaveCount(0);
 });
 
 test("account page on a fresh browser offers sign-in (no account created just by visiting)", async ({ page }) => {
