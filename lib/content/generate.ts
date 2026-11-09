@@ -185,7 +185,17 @@ Rules for every question:
 - Never: death tolls, disasters, wars, crimes, living private individuals, active political controversies, anything that could shame a group.
 - Don't repeat topics from the "Already used" list.`;
 
-export async function generateResearchedBatch(ctx: GenContext & { count: number; categories: string[]; avoid: string[] }): Promise<Candidate[]> {
+/** Kinds the schedule is short of: near-unchanged "traps" and big movers (beyond ×10 / ÷10). */
+export interface KindsHint {
+  traps: number;
+  movers: number;
+}
+
+export async function generateResearchedBatch(ctx: GenContext & { count: number; categories: string[]; avoid: string[]; kinds?: KindsHint }): Promise<Candidate[]> {
+  const kinds = [
+    ctx.kinds?.traps ? `At least ${ctx.kinds.traps} must be nearly unchanged: within about ±25% between the two years.` : null,
+    ctx.kinds?.movers ? `At least ${ctx.kinds.movers} must have changed a lot: more than ×10 or less than ÷10.` : null,
+  ].filter(Boolean);
   const out = await ctx.llm.json({
     purpose: "draft",
     tier: "strong",
@@ -195,6 +205,7 @@ export async function generateResearchedBatch(ctx: GenContext & { count: number;
     prompt: [
       `Research ${ctx.count} new questions.`,
       `Spread them across these categories: ${ctx.categories.join(", ")}.`,
+      ...kinds,
       `Today is ${(ctx.now ?? new Date()).toISOString().slice(0, 10)}.`,
       `Already used (avoid these topics):\n${ctx.avoid.slice(0, 300).map((p) => `- ${p}`).join("\n") || "- (none)"}`,
     ].join("\n\n"),

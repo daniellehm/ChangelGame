@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.6 (nightly cron orchestration).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.7 (admin auth + portal shell). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
 
 ## Needs from Dani
 
@@ -132,7 +132,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
   - blind `max_change` proposal (sees prompt, start value and years only)
 - [x] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
 - [x] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
-- [ ] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
+- [x] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
 - [ ] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
 - [ ] 5.8 **Admin pages:**
   - Reports
@@ -163,6 +163,16 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.6 Nightly orchestration:
+  - **`lib/content/pipeline.ts` (`runHop`)**, one time-boxed hop: mark used → schedule → check pending drafts → generate (one data-backed + a researched batch of 5) → repeat → schedule.
+    - The remaining need comes from simulating the schedule, so days still empty for lack of a trap or big mover, or of 5 different categories, ask for more candidates of that kind.
+    - At most 220 candidates per night.
+  - **`lib/content/store.ts`:** database adapter.
+  - **`lib/content/run.ts`:** `content_runs` bookkeeping (find or start tonight's run, lease, counters, log, fail-safe error recording; a run older than 20 h is closed as abandoned).
+  - **`/api/cron/content`** (Vercel Cron 02:00 UTC): replies 202 at once and does the hop afterwards; it chains the next hop by calling itself.
+  - **Tests:** an end-to-end cold start on fakes (30 days ready after a week; planted wrong numbers never scheduled; spend cap; deadline); run bookkeeping against the real table. 271 unit + 74 integration tests.
+  - **Bugs found by the tests and fixed:** the run could finish with days left empty when the pool was big enough but missing a kind, or lacking 5 different categories.
 
 - 2026-11-09: 5.5 Scheduler:
   - **`lib/content/schedule.ts`** (pure functions):
