@@ -19,8 +19,15 @@ describe("rate limits (real Upstash)", () => {
     for (let i = 0; i < LIMITS.guess.tokens; i++) expect(await rateLimit("guess", key), `request ${i + 1}`).toBeNull();
     const blocked = await rateLimit("guess", key);
     expect(blocked?.status).toBe(429);
-    expect((await blocked!.json()).error.code).toBe("rate_limited");
+    const body = await blocked!.json();
+    expect(body.error.code).toBe("rate_limited");
+    expect(body.error.message).toMatch(/Try again in \d+ seconds|in \d+ seconds/);
     expect(Number(blocked!.headers.get("retry-after"))).toBeGreaterThan(0);
+    // Sign-in limits say what tripped, so players aren't left guessing.
+    const ip = `itest-${randomUUID()}`;
+    for (let i = 0; i < LIMITS.authEmail.tokens; i++) await rateLimit("authEmail", ip);
+    const emailBlocked = await rateLimit("authEmail", ip);
+    expect((await emailBlocked!.json()).error.message).toMatch(/^Too many sign-in emails from your network\. Try again in \d+ seconds\.$/);
     // Another player is unaffected.
     expect(await rateLimit("guess", `itest-${randomUUID()}`)).toBeNull();
   });

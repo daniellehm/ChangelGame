@@ -127,12 +127,13 @@ export interface MergeSummary {
   replaced: number;
 }
 
-export type VerifyStep = { ok: true; email: string; merged: MergeSummary | null } | { ok: false; message: string };
+export type VerifyStep = { ok: true; email: string; merged: MergeSummary | null } | { ok: false; message: string; retryAfter?: number };
 
 export async function verifyCode(code: string): Promise<VerifyStep> {
   const r = await call("/api/auth/verify", { method: "POST", body: JSON.stringify({ code }) });
   if (r.status === 200 && r.body) return { ok: true, email: r.body.email as string, merged: (r.body.merged as MergeSummary | null) ?? null };
-  return { ok: false, message: ((r.body?.error as Json | undefined)?.message as string) ?? "That code didn't work." };
+  const message = ((r.body?.error as Json | undefined)?.message as string) ?? "That code didn't work.";
+  return { ok: false, message, retryAfter: r.status === 429 ? Number(/(\d+) seconds/.exec(message)?.[1]) || 60 : undefined };
 }
 
 export async function signOut(): Promise<void> {

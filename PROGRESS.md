@@ -141,6 +141,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Dani hit our per-IP sign-in email limit ("Slow down a little"; old preview still had 5/10 min). Rate-limit messages now say what tripped + seconds left (feeds the form's countdown). Vercel hadn't built the previous push; re-pushed.
 - 2026-11-09: M4 feedback from Dani's preview test (sign-in + email change worked): save button under Share from game 1 (auto-open from game 2); Supabase's 60 s per-address email cooldown surfaced as a countdown (not a generic "too many emails"); per-IP email limit 10/10 min; `email_taken` (409) when an account changes to another account's email. Visual baselines refreshed (final screen). 173 unit + 58 integration + 27 Playwright pass.
 - 2026-11-09: Dani finished the Supabase email settings (Supabase defaults had secure email change on and 8-digit codes; both changed). Found the branch preview link pointing at an older build (a queued build finished last); redeployed.
 - 2026-11-09: 4.7 Cleanup cron: migration `cleanup_candidates` (anonymous + no plays after 7 days, or inactive 400 days; never permanent accounts), `GET /api/cron/cleanup` (Bearer CRON_SECRET, timing-safe; deletes in batches of 500; drops expired merge tokens), `vercel.json` cron at 17:30 UTC daily. CRON_SECRET generated into `.env.local` + Vercel (Sensitive). Resend domain verified. 173 unit + 57 integration pass.

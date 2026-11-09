@@ -54,14 +54,22 @@ function limiter(name: LimitName): Ratelimit | null {
  * Returns a 429 Response if `key` is over the limit for `name`, else null.
  * Fails open: if Redis is unreachable, the request is allowed (availability over strictness).
  */
+/** What players see when a limit trips; `{s}` becomes the seconds until they can retry. */
+const MESSAGES: Partial<Record<LimitName, string>> = {
+  authEmail: "Too many sign-in emails from your network. Try again in {s} seconds.",
+  authVerify: "Too many code attempts from your network. Try again in {s} seconds.",
+};
+
 export async function rateLimit(name: LimitName, key: string): Promise<Response | null> {
   const l = limiter(name);
   if (!l) return null;
   try {
     const { success, reset } = await l.limit(key);
     if (success) return null;
-    const res = apiError("rate_limited", "Slow down a little and try again.", 429);
-    res.headers.set("Retry-After", String(Math.max(1, Math.ceil((reset - Date.now()) / 1000))));
+    const secs = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+    const msg = (MESSAGES[name] ?? "Slow down a little and try again in {s} seconds.").replace("{s}", String(secs));
+    const res = apiError("rate_limited", msg, 429);
+    res.headers.set("Retry-After", String(secs));
     return res;
   } catch (e) {
     console.error(`rate limit ${name} failed open`, e);
