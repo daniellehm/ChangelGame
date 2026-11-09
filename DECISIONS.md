@@ -307,3 +307,12 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
 - **The cross-check is Opus with web search, in batches of 5, and is never shown the values,** matching SPEC §8's "without seeing the draft's numbers"; a unit test enforces it. It also runs on data-backed questions.
 
 **Why:** Accuracy over volume: a wrong number going live is worse than a held-back good one, which Dani can approve from the Flagged queue.
+
+### 2026-11-09: M5 scheduler details
+**Decision:**
+- **Cold start.** The 7-day rule (SPEC §8) means an empty database can only fill days 7–30 on the first night. Days 0–6 get puzzles only as the window moves, so "30 days ready ahead" is reached after one week of nightly runs. Before launch this costs nothing. At launch, the dev-seed / launch week can be scheduled by hand from the admin Upcoming page, or the launch date set at least 7 days after the first run.
+- **When the balance rules can't be met:** a day more than 9 days out stays empty (tomorrow's candidates may include the missing trap or big mover). Within 9 days it takes the best day it can, marked `relaxed` and logged. Five different categories always hold.
+- **At most 2 data-backed questions per day,** so the roughly 50 world-level series last and days stay varied.
+- **Round order** within a day is a fixed shuffle by question id, so the trap isn't always round 1.
+
+**Why:** These follow from SPEC §8 plus Dani's global-only choice; this is my best reading of "fills 30 days" given the 7-day rule.

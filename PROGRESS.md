@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.5 (scheduler).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.6 (nightly cron orchestration).
 
 ## Needs from Dani
 
@@ -131,7 +131,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
   - researched (Opus + web search, two sources from different publishers)
   - blind `max_change` proposal (sees prompt, start value and years only)
 - [x] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
-- [ ] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
+- [x] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
 - [ ] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
 - [ ] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
 - [ ] 5.8 **Admin pages:**
@@ -163,6 +163,16 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.5 Scheduler:
+  - **`lib/content/schedule.ts`** (pure functions):
+    - fills days 7–30 ahead, keeps 10 verified spares, uses the oldest verified questions first;
+    - per day: 5 different categories, at least one trap, at least one big mover, at most 2 data-backed;
+    - a day that can't meet the trap/big-mover rule stays empty while more than 9 days out, then takes its best set (flagged `relaxed`);
+    - top-up = (open days × 5 + reserve − pool) × 1.2.
+  - **Migration `scheduler_functions`:** `schedule_puzzle` (atomic: ready puzzle + 5 rounds + `scheduled`; refuses taken/unverified questions and existing days) and `mark_used_questions`.
+  - **Cold-start acceptance** simulated in a unit test: an empty database has every one of the next 30 days ready after a week of nightly runs (the 7-day rule means the first week can't be auto-filled).
+  - Tests: 12 unit + 4 DB (266 unit total).
 
 - 2026-11-09: 5.4 Automatic checks (`lib/content/checks.ts`, `checkBatch`):
   - **Order:**
