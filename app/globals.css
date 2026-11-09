@@ -21,6 +21,9 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-
    renders at 800 there. Match that explicitly (DECISIONS.md). */
 h1,h2,h3,b,strong{font-weight:800}
 .wrap{max-width:520px;margin:0 auto;padding:20px 18px 48px}
+/* Buy Me a Coffee floating button (components/BuyMeACoffee.tsx): room to scroll clear of it, and hidden mid-round. */
+.has-bmc .wrap{padding-bottom:110px}
+html[data-playing] #bmc-wbtn{display:none!important}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .logo{font-weight:800;font-size:30px;letter-spacing:-1px;display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
 .logo .mark{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:20px}

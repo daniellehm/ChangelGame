@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { BuyMeACoffee } from "@/components/BuyMeACoffee";
 import { bricolage, jetbrainsMono } from "./fonts";
 import "./globals.css";
 
@@ -17,7 +18,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${bricolage.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {children}
+        <BuyMeACoffee />
+      </body>
     </html>
   );
 }
