@@ -218,7 +218,7 @@ _Newest first._
     - Upcoming (yesterday + the next 30 days with sources and check results); Pull (a spare from a category not already on that day; the old question goes to Flagged with the reason) and Swap (a chosen id);
     - Question editor: save rounds values like the importer, logs before/after in `question_edits`, sets `corrected_at` when the question is live or past, refuses edits the game can't play, and re-runs the checks (flagged/draft → verified if they pass);
     - Approve (human, from Flagged); Retire (swaps it out of future days first); Delete (only never-scheduled, never-played candidates);
-    - Bank (filters by status, origin, category, text and difficulty; stats per question: plays, average points, wrong-way %, report rate);
+    - Bank (filters by status, origin, category, text, difficulty and puzzle "Day #"; sort by newest added or by puzzle day, Day 1 first or latest first; a Day column shows each question's day, date and round; stats per question: plays, average points, wrong-way %, report rate);
     - Health (recent runs with logs, pass rate, spend by step, Run now).
   - **Database:** migration `admin_functions` (`question_stats`, `swap_round`; `reorder_rounds` needs a fix, see Needs from Dani).
   - **UI:** routes `/api/admin/{upcoming,upcoming/pull,questions,questions/:id,questions/:id/{approve,retire},health}`; pages `/admin/{upcoming,flagged,bank,health,questions/:id}` with a shared `QuestionCard`.

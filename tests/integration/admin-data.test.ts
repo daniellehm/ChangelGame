@@ -2,6 +2,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { approveQuestion, deleteCandidate, getQuestion, listQuestions, pullRound, retireQuestion, saveQuestion, statsFor } from "@/lib/admin/data";
 import type { Llm, LlmRequest } from "@/lib/content/llm";
+import { launchDate } from "@/lib/config";
+import { puzzleNumber } from "@/lib/dates";
 import { adminClient } from "@/lib/supabase/admin";
 
 const db = adminClient();
@@ -118,5 +120,26 @@ describe("bank", () => {
     expect(out.items[0]!.stats).toMatchObject({ plays: 0, valid_reports: 0 });
     const s = await statsFor([ids[1]!]);
     expect(s.get(ids[1]!)).toMatchObject({ plays: 0, report_rate: null });
+  });
+
+  it("shows each question's puzzle day and can list one day's questions in round order", async () => {
+    const day = puzzleNumber(DATE, launchDate());
+    const out = await listQuestions({ day, page: 0 });
+    expect(out.total).toBe(5);
+    expect(out.items.map((i) => i.rounds[0]!.position)).toEqual([1, 2, 3, 4, 5]);
+    expect(out.items.every((i) => i.rounds[0]!.day === day && i.rounds[0]!.date === DATE)).toBe(true);
+    // Filters still apply in day view.
+    expect((await listQuestions({ day, q: "question 3 about", page: 0 })).items.map((i) => i.id)).toEqual([ids[3]]);
+    // The default view (newest added) carries the day too; questions not on the day have none.
+    const added = await listQuestions({ q: "about widgets", page: 0 });
+    expect(added.items.find((i) => i.id === ids[3])!.rounds).toEqual([{ day, date: DATE, position: 4 }]);
+    const onDay = new Set(out.items.map((i) => i.id));
+    const off = added.items.filter((i) => !onDay.has(i.id));
+    expect(off.length).toBeGreaterThan(0);
+    expect(off.every((i) => i.rounds.length === 0)).toBe(true);
+    // Day 1 first vs latest first.
+    const asc = await listQuestions({ sort: "day_asc", page: 0 });
+    const desc = await listQuestions({ sort: "day_desc", page: 0 });
+    expect(asc.items[0]!.rounds[0]!.date <= desc.items[0]!.rounds[0]!.date).toBe(true);
   });
 });

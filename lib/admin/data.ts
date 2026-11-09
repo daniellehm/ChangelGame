@@ -3,8 +3,8 @@
  * caller has passed requireAdmin. Edits are logged in question_edits.
  */
 import { z } from "zod";
-import { CONTENT } from "../config";
-import { addDays } from "../dates";
+import { CONTENT, launchDate } from "../config";
+import { addDays, puzzleNumber } from "../dates";
 import { FORMATS } from "../format";
 import { checkBatch, flagReason, rangeCheck, sanityCheck, type CheckReport } from "../content/checks";
 import type { Candidate } from "../content/generate";
@@ -100,7 +100,18 @@ export const BankFilter = z.object({
   q: z.string().trim().max(100).optional(),
   difficulty: z.enum(["easy", "medium", "hard"]).optional(),
   page: z.coerce.number().int().min(0).max(1000).default(0),
+  /** "added": newest question first. "day_asc"/"day_desc": by puzzle day (only questions on a puzzle). */
+  sort: z.enum(["added", "day_asc", "day_desc"]).default("added"),
+  /** Puzzle number (Day 1 = launch date): only that day's questions, in round order. */
+  day: z.coerce.number().int().min(1).max(100_000).optional(),
 });
+
+/** Where a question appears: puzzle day number, date and round. */
+export interface BankRound {
+  day: number;
+  date: string;
+  position: number;
+}
 
 const PAGE = 50;
 /** A bank row: the summary fields (SUMMARY_FIELDS) plus anything else selected. */
@@ -115,19 +126,55 @@ export interface BankRow {
 /** Difficulty from avg points once played: easy ≥ 70, hard < 40. */
 export const difficultyOf = (avg: number | null) => (avg === null ? null : avg >= 70 ? "easy" : avg < 40 ? "hard" : "medium");
 
-export async function listQuestions(f: z.infer<typeof BankFilter>) {
-  let q = db().from("questions").select(SUMMARY_FIELDS, { count: "exact" }).order("id", { ascending: false });
-  if (f.status) q = q.eq("status", f.status);
-  if (f.category) q = q.ilike("category", f.category);
-  if (f.origin) q = q.eq("origin", f.origin);
-  if (f.q) q = q.ilike("prompt", `%${f.q.replace(/[%_]/g, "")}%`);
-  const { data, count, error } = await q.range(f.page * PAGE, f.page * PAGE + PAGE - 1);
-  if (error) throw error;
-  const rows = (data ?? []) as unknown as BankRow[];
+type BankInput = Omit<z.input<typeof BankFilter>, "page"> & { page: number };
+
+export async function listQuestions(input: BankInput) {
+  const f = BankFilter.parse(input);
+  const launch = launchDate();
+  const toRound = (r: { puzzle_date: string; position: number }): BankRound => ({ day: puzzleNumber(r.puzzle_date, launch), date: r.puzzle_date, position: r.position });
+  const from = f.page * PAGE;
+  let rows: BankRow[];
+  let total: number;
+  let roundsOf: Map<number, BankRound[]>;
+
+  if (f.sort !== "added" || f.day) {
+    // By puzzle day: page through puzzle_rounds (each question is on at most one day), filters apply to the joined question.
+    const prefix = "questions.";
+    let q = db()
+      .from("puzzle_rounds")
+      .select(`puzzle_date, position, questions!inner(${SUMMARY_FIELDS})`, { count: "exact" })
+      .order("puzzle_date", { ascending: f.sort !== "day_desc" })
+      .order("position", { ascending: true });
+    if (f.day) q = q.eq("puzzle_date", addDays(launch, f.day - 1));
+    if (f.status) q = q.eq(`${prefix}status`, f.status);
+    if (f.category) q = q.ilike(`${prefix}category`, f.category);
+    if (f.origin) q = q.eq(`${prefix}origin`, f.origin);
+    if (f.q) q = q.ilike(`${prefix}prompt`, `%${f.q.replace(/[%_]/g, "")}%`);
+    const { data, count, error } = await q.range(from, from + PAGE - 1);
+    if (error) throw error;
+    const joined = (data ?? []) as unknown as Array<{ puzzle_date: string; position: number; questions: BankRow }>;
+    rows = joined.map((j) => j.questions);
+    total = count ?? 0;
+    roundsOf = new Map(joined.map((j) => [j.questions.id, [toRound(j)]]));
+  } else {
+    let q = db().from("questions").select(SUMMARY_FIELDS, { count: "exact" }).order("id", { ascending: false });
+    if (f.status) q = q.eq("status", f.status);
+    if (f.category) q = q.ilike("category", f.category);
+    if (f.origin) q = q.eq("origin", f.origin);
+    if (f.q) q = q.ilike("prompt", `%${f.q.replace(/[%_]/g, "")}%`);
+    const { data, count, error } = await q.range(from, from + PAGE - 1);
+    if (error) throw error;
+    rows = (data ?? []) as unknown as BankRow[];
+    total = count ?? 0;
+    const placed = rows.length ? (must(await db().from("puzzle_rounds").select("question_id, puzzle_date, position").in("question_id", rows.map((r) => r.id))) as Array<{ question_id: number; puzzle_date: string; position: number }>) : [];
+    roundsOf = new Map();
+    for (const p of placed) roundsOf.set(p.question_id, [...(roundsOf.get(p.question_id) ?? []), toRound(p)]);
+  }
+
   const stats = await statsFor(rows.map((r) => r.id));
-  let items = rows.map((r) => ({ ...r, stats: stats.get(r.id) ?? null, difficulty: difficultyOf(stats.get(r.id)?.avg_points ?? null) }));
+  let items = rows.map((r) => ({ ...r, rounds: roundsOf.get(r.id) ?? [], stats: stats.get(r.id) ?? null, difficulty: difficultyOf(stats.get(r.id)?.avg_points ?? null) }));
   if (f.difficulty) items = items.filter((i) => i.difficulty === f.difficulty);
-  return { items, total: count ?? 0, page: f.page, pageSize: PAGE };
+  return { items, total, page: f.page, pageSize: PAGE };
 }
 
 export async function getQuestion(id: number) {
