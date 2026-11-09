@@ -196,7 +196,7 @@ html[data-returning] #intro{visibility:hidden}
 .confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
 
 /* Save your streak / account forms (M4) */
-.save-streak{display:grid;gap:10px;border:2px solid var(--ink);border-radius:16px;padding:16px;background:var(--bg);margin:0 0 18px}
+.save-streak{display:grid;gap:10px;margin:4px 0 6px}
 .save-title{font-weight:800;font-size:18px;letter-spacing:-.2px}
 .save-form{display:grid;gap:10px}
 .save-blurb{margin:0;font-size:14px;line-height:1.45;color:var(--ink-2)}
@@ -216,7 +216,7 @@ html[data-returning] #intro{visibility:hidden}
 .danger.solid{background:var(--r);color:var(--on-accent)}
 .danger:focus-visible{outline:3px solid var(--up);outline-offset:2px}
 .final-save{margin-top:18px}
-.final-save .save-streak{margin:0}
+.final-save .save-streak{margin:0;padding-top:16px;border-top:1px dashed var(--line)}
 .banner{border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:14px;background:var(--y)}
 
 @media (prefers-reduced-motion: reduce){
