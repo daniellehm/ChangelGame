@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M2 in progress on branch `m2-database-api`.** 2.1 done (env, region switched to Singapore). Next: 2.2, the core schema migration.
+**M2 in progress on branch `m2-database-api`.** 2.1–2.2 done. Next: 2.3, RLS policies + table grants.
 
 ## Needs from Dani
 
@@ -62,7 +62,7 @@ Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 **Milestone accepted when:** answers are absent from every network response before lock-in, and all date unit tests pass.
 
 - [x] 2.1 `supabase/migrations` set-up (applied via MCP, see DECISIONS); `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
-- [ ] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
+- [x] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
 - [ ] 2.3 RLS policies per SPEC section 6. *Accept:* the anon/authenticated roles cannot read questions/puzzle_rounds; a player can read only their own plays/guesses; advisors clean.
 - [ ] 2.4 `content/questions.csv` + import script; seed the 20 prototype questions as candidates. *Accept:* re-runnable (idempotent) import; seed puzzles available for dev dates.
 - [ ] 2.5 `lib/dates.ts` window check + every row of the SPEC section 4 edge-case table. *Accept:* all date tests pass with fixed clocks and time zones.
@@ -77,7 +77,7 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 - [ ] 3.1 Supabase auth config: anonymous sign-ins, Turnstile captcha. *Accept:* anonymous sign-in works from localhost and preview.
 - [ ] 3.2 Session creation on the first Play click, via `@supabase/ssr` HTTP-only cookies. *Accept:* no user row on a page load without Play.
 - [ ] 3.3 `POST /api/play` (start/resume). *Accept:* idempotent; returns answered rounds.
-- [ ] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
+- [ ] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. **Also cover the DB checks deferred from 2.2:** player-row trigger, account-delete cascade, one play per puzzle, insert-only guesses, guess tier/wrong-way check. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
 - [ ] 3.5 Resume mid-game + midnight crossing. *Accept:* a refresh resumes at the next unplayed round; the started puzzle persists past midnight.
 - [ ] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
 - [ ] 3.7 `player_stats` view, server streaks (date-line rule), `GET /api/me`. *Accept:* streak unit tests, including n−2 with a tz change.
@@ -133,6 +133,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 2.2 Core schema: migrations `20261109035556_core_schema` (players + auth trigger, questions incl. `flagged`/`checks`, puzzles incl. `rerun_of`, puzzle_rounds with question-once, plays incl. `source`, insert-only guesses incl. `question_id`, round_stats counters with derived avg/pct, merge_tokens (hashed), question_edits, reports) and `20261109040519_questions_change_check_guard` (a division-by-zero bug found by the tests). `supabase/tests/schema_constraints.sql`: 15/15 pass, rolled back. Checks needing an auth user moved to M3 (Claude Code's permission check blocks SQL writes to auth.users).
 - 2026-11-09: 2.1: Supabase project found in Singapore. Dani chose to move Vercel functions to `sin1`. `.env.local` filled in (URL, publishable key, LAUNCH_DATE) and the secret key verified with an admin call (HTTP 200). The DB was empty.
 - 2026-11-09: Design pass approved by Dani and merged into `main`.
 - 2026-11-09: Design pass: About removed and merged into How to play (redirect `/about` → `/how-to-play`, menu item removed). How to play rebuilt as an example round + 3 step tiles + tier stickers + "The deal". 141 unit + 18 E2E + 2 visual tests pass.
