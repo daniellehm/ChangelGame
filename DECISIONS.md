@@ -251,3 +251,156 @@ Each item is applied in the milestone where it comes up.
 - The PNGs were rendered from the SVG.
 
 **Why:** Dani's request.
+
+### 2026-11-09: M5 pipeline: models, spend cap, global mix
+**Decision (Dani):**
+- **Models:**
+  - Claude Opus 5.5 writes researched questions and does the independent cross-check (the steps that catch wrong numbers).
+  - Claude Sonnet 5.5 does everything else: source-quote check, like-for-like, topic safety, fact quality, wording for data-backed questions, and the blind `max_change` proposal.
+  - Both use the server-side refusal fallback (`fallbacks: "default"`).
+- **Hard cap of $50 a month on Claude spend.** Every call is metered: tokens × price, plus web searches at $10 per 1,000. No new call starts once the month's spend reaches the cap, and the admin page warns. The game keeps serving what's already scheduled.
+- **Global questions only, with no Australian bias.** This drops SPEC §8's "at least one AU question a week" balance rule. Country versions may come later.
+
+**To fit the cap** (my estimate for this model mix was about $65 a month at the spec's settings):
+- aim for about 70% data-backed questions (numbers from World Bank / Our World in Data, about half the cost of researched ones);
+- cap web searches per call;
+- run checks at low effort and the Opus steps at medium effort;
+- generate only 20% more candidates than needed.
+
+That targets about $35–45 a month. The one-time cold-start fill (about $55) spreads over two months.
+**Why:** Dani's choices (models, cap, region). The cost levers are mine.
+
+### 2026-11-09: M5 pipeline: how the nightly job runs
+**Decision:**
+- **State lives in the database.** A candidate's status (draft → verified / flagged → scheduled → used) and its `checks` record what's done, so any run can stop and the next one resumes.
+- **Hops.** Vercel Hobby runs a cron once a day, and one function call can't do a cold start's ~200 candidates. `/api/cron/content` (02:00 UTC) therefore works in **time-boxed hops** of about 4 minutes.
+  - Each hop takes a lease on the night's `content_runs` row (an atomic update, so two hops never run at once).
+  - At the end of a hop, if work remains and the run is under its hop limit and the spend cap, it triggers the next hop: a request to its own production URL with `CRON_SECRET`, sent via `after()`.
+  - Admin "Run now" uses the same entry point.
+- **QStash** would be more robust, but needs the Upstash account's QStash token. That's an account-wide secret, not a "changel" resource, so we don't use it.
+- **Tests** inject fake Claude and data-source clients, so the pipeline logic is tested for free. Real-model behaviour gets one small, paid smoke run (the planted wrong number) only once the key is in.
+
+**Why:** It works within the Hobby plan, survives timeouts and crashes mid-run, and touches no non-changel secrets.
+
+### 2026-11-09: M5: batching, duplicate check, data-backed share
+**Decision:**
+- **Data-backed questions are world-level only** (52 curated World Bank / OWID series), per Dani's "global, no country bias". That's roughly one question per series, about 50 in total. So in the long run most questions are researched. Data-backed series are spread in at about one per day while they last.
+- **To keep researched questions inside the $50 cap,** Opus researches **5 questions per call** (up to 8 web searches shared across them) and cross-checks in batches. The smoke run cost about $0.09 per drafted question, against about $0.27 estimated for one at a time.
+- **Duplicate check.**
+  - Data-backed: a duplicate is the same dataset series (source + id + entity).
+  - Otherwise: trigram similarity over 0.6 to an existing prompt gets a quick Sonnet "same measure?" call, instead of failing outright.
+  - Why: the spec's plain over-0.6 rule rejects different questions (solar vs wind share 0.80, wheat vs rice yields 0.74, measured).
+- **Range menu** for `max_change`: 1.05, 1.1, 1.2, 1.3, 1.5, 2, 3, 4, 5, 8, 10, 20, 30, 50, 100, 200, 500, 1000. Round numbers keep the slider's end labels readable.
+
+**Why:** It fits Dani's cap and "global only" choice, and the duplicate check stops rejecting genuinely different questions.
+
+### 2026-11-09: M5 checks: one combined review, order, fail-safe
+**Decision:**
+- **One Sonnet "review" call** returns three verdicts: like-for-like, topic safety and fact quality. That's cheaper than three calls, and SPEC §8 doesn't require separate calls.
+  - The code parts of those checks still run first for free: blocklist, money label, fact length.
+  - Researched facts may add other true, documented information. Data-backed facts may only use the two dataset values.
+- **Order** is cheapest first, and any failure skips the remaining paid checks. A flagged question records every result so far in `questions.checks` and a summary in `flag_reason`.
+- **Fail safe.** These all flag the question rather than letting it through:
+  - a source page that can't be fetched (or is a PDF, not read in v1);
+  - an estimate the cross-check can't find;
+  - an unusable model answer.
+- **The cross-check is Opus with web search, in batches of 5, and is never shown the values,** matching SPEC §8's "without seeing the draft's numbers"; a unit test enforces it. It also runs on data-backed questions.
+
+**Why:** Accuracy over volume: a wrong number going live is worse than a held-back good one, which Dani can approve from the Flagged queue.
+
+### 2026-11-09: M5 scheduler details
+**Decision:**
+- **Cold start.** The 7-day rule (SPEC §8) means an empty database can only fill days 7–30 on the first night. Days 0–6 get puzzles only as the window moves, so "30 days ready ahead" is reached after one week of nightly runs. Before launch this costs nothing. At launch, the dev-seed / launch week can be scheduled by hand from the admin Upcoming page, or the launch date set at least 7 days after the first run.
+- **When the balance rules can't be met:** a day more than 9 days out stays empty (tomorrow's candidates may include the missing trap or big mover). Within 9 days it takes the best day it can, marked `relaxed` and logged. Five different categories always hold.
+- **At most 2 data-backed questions per day,** so the roughly 50 world-level series last and days stay varied.
+- **Round order** within a day is a fixed shuffle by question id, so the trap isn't always round 1.
+
+**Why:** These follow from SPEC §8 plus Dani's global-only choice; this is my best reading of "fills 30 days" given the 7-day rule.
+
+### 2026-11-09: M5 admin: server-checked, client-rendered
+**Decision:**
+- Admin pages are client components that load everything from `/api/admin/*`.
+- Every admin route calls `requireAdmin`: the session must be signed in, not anonymous, with an email in ADMIN_EMAILS (comma-separated, case-insensitive; empty means nobody). Otherwise it returns 401 / 403.
+- Data is read only by the server, with the service role. There's no client database access, so the "in RLS" part of SPEC §11 is met by keeping every admin table closed to clients (RLS on, no policies) rather than with an admin RLS policy.
+- `/admin` is noindex.
+- Pages are client-rendered because route handlers can refresh an expired session cookie and server components can't. Server-rendered admin pages would show "signed out" an hour after sign-in.
+
+**Why:** It's simplest with the existing session plumbing, and admin data never leaves the server without the email check.
+
+### 2026-11-09: M5 reports: details
+**Decision:**
+- **A report is about the question the player actually answered** (`guesses.question_id`), so a same-day swap can't misdirect it. It must be on a round they locked in; the button only appears on reveals.
+- **The habitual-reporter rule** (ignore players who report more than 30% of their rounds) applies only once a player has **10 or more rounds**. Taken literally, a first-time player reporting their first round has reported 100% of their rounds and would be ignored. The rule is worked out live from each reporter's full history, so `reports.valid` only records the locked-in check.
+- **"Players who saw that round's reveal"** = guesses on that question.
+- **Local-only (offline) plays don't show the button**, because a report needs the server play.
+- **The queue is computed on demand** (SQL `report_queue`), so the badge and page are always current. Nothing is pulled or emailed automatically.
+- **A "Corrected" note shows on the reveal** for any question edited after it went live (`corrected_at`, set by the editor).
+
+**Why:** These are the simplest readings of SPEC §8 that avoid the literal-rule trap and misattributed reports.
+
+### 2026-11-09: M5 rerun fallback, same-day pull, alert emails
+**Decision:**
+- **Rerun source:** the most recent original (non-rerun) ready puzzle at least 365 days earlier (SPEC §8). Until the game is a year old there is none, so it uses the oldest original puzzle rather than serve nothing. The rerun is stored as a ready `puzzles` row with `rerun_of`, so every route serves the same rounds and players see "Rerun".
+- **When a rerun is created:** on the first lookup of a date whose window is open **by the real clock** with no ready puzzle. Tests use a simulated clock, so they can never create reruns on real dates (two existing tests ask about a real near-future date).
+- **Same-day pull:** the round's question is swapped atomically (`swap_round`). Players who already answered keep their stored guess and points, and the pulled question gets `corrected_at`, so their reveal says "Corrected". Players mid-game get `question_changed` on that round and reload it uncached (`?fresh=`).
+- **Alert emails go only to ADMIN_EMAILS, and only when the game is at risk:**
+  - fewer than 7 ready days;
+  - the nightly run failing two nights in a row;
+  - a rerun being served.
+
+  Each kind is sent at most once per 20 hours, and everything else stays on the admin banner. Tests set `CHANGEL_NO_ALERT_EMAIL=1`, so they record alerts without sending.
+
+**Why:** SPEC §8, plus the simplest safe choices where it's silent (the first year of reruns; never letting tests touch real dates or email Dani).
+
+## 2026-11-09: Content checks tuned after the first real runs (M5 review)
+
+**Context:** Dani's first "Run now" flagged 6 of 8 questions, and re-checking the 20 prototype questions showed the review failing true, neutral facts. Typical cases:
+- CO₂ levels and the minimum wage were called "political";
+- facts failed because a small detail "can't be confirmed";
+- a verdict was given before the reasoning ("on reflection the fact holds, so this fail is a mistake").
+
+The numbers themselves are already guarded by the source quote and the blind cross-check.
+
+**Decision:**
+- **Review schema puts the reason before the verdict** (and the source check puts quotes before "supported"), so the model reasons first.
+- **Review prompt:**
+  - like-for-like stays strict (when unsure, fail), and an ambiguous scope now fails;
+  - safety is strict on taking sides in live political disputes, but neutral measurements (CO₂, temperatures, wages, prices, populations, tax rates) are fine;
+  - the fact fails if it's false, misleading, an implied cause or an unsupported superlative, but not merely because a small detail can't be confirmed.
+- **Source check:**
+  - reads .csv/.txt data files served as `application/octet-stream`;
+  - finds the page's exact figure when the stored value is rounded to 3 s.f. (1,864 stored as 1,860).
+- **Duplicate detection ignores retired questions**, so a rejected near-copy can't block a good question forever (migration `similar_questions_skip_retired`).
+- **Re-checking:** pipeline questions that failed only on the old review (fact, like-for-like, safety) were requeued once for a re-check.
+- **Editing a live question:** changing only its sources or category doesn't mark it "Corrected"; changes to the question, numbers, slider range or fact still do.
+- **Re-checked scheduled questions:** a scheduled question that passes a re-check stays scheduled and is stamped verified. One that fails stays on its day with the reason shown (pull it to take it off).
+- **Approved questions on a day:** an approved or passing question already on a day becomes 'scheduled', never 'verified', so the scheduler can't put it on a second day.
+
+**Why:** these are false rejections. Each one costs a replacement question (about $0.30) and starves the schedule. Everything that guards correctness stays strict.
+
+## 2026-11-09: Filling days inside the 7-day lead (one-off, at Dani's request)
+
+**Context:** the nightly job only fills days 7–30 ahead, so 13–16 Nov (after the 4 dev days) would get reruns.
+
+**Decision:**
+- `npm run content:fill-days -- FIRST LAST` runs the real pipeline (same generator, checks, scheduling rules and cap) with only those dates open.
+- The nightly job's 7-day rule is unchanged.
+- The 20 prototype questions were fact-checked, with two sources each and corrections where the numbers were off, via `npm run content:apply-edits` (the editor's save, logged as "fact-check (Claude, for Dani)").
+
+**Why:** Dani asked for the first days to be filled with strong, checked questions now.
+
+## 2026-11-09: Admin edits are trusted; days can be filled by hand (Dani's request)
+
+**Decision:**
+- **Saving in the editor:**
+  - doesn't run the automatic checks;
+  - counts as approval: flagged or draft becomes verified (or scheduled if it's on a day), and any failed-check note is cleared;
+  - still refuses what the game can't play (answer outside the slider, values ≤ 0, end year not after start).
+- **"Run checks (second opinion)"** in the editor runs the full checks and shows the result, and never changes the status.
+- **Upcoming:**
+  - an empty day (today or later) has "Choose questions…" (pick 5 ready questions, in that order) and "Auto-fill" (the scheduler's balance rules, relaxed if needed);
+  - "Swap…" opens the same picker instead of asking for an id;
+  - same-category clashes are shown as a warning, not blocked.
+- **Scripts** (`content:apply-edits`) still run the full checks.
+
+**Why:** Dani's edits should be trusted, and the nightly job's assignment was invisible: nothing showed how a question gets onto a day.

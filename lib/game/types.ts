@@ -45,6 +45,8 @@ export interface RoundResult {
   source_url: string | null;
   /** Question actually answered (server results only). */
   question_id?: number;
+  /** The question was edited after it went live (shows a "Corrected" note). */
+  corrected?: boolean;
 }
 
 /**
@@ -52,6 +54,7 @@ export interface RoundResult {
  * M3 adds the session-backed source (/api/play, /api/guess).
  */
 export interface GameSource {
-  loadPuzzle(date: string): Promise<Puzzle>;
+  /** `fresh` bypasses the CDN cache (used after a same-day swap). */
+  loadPuzzle(date: string, opts?: { fresh?: boolean }): Promise<Puzzle>;
   lockIn(puzzle: Puzzle, position: number, guessLog: number): Promise<RoundResult>;
 }

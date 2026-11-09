@@ -23,6 +23,8 @@ export const LIMITS = {
   authEmail: { tokens: 10, window: "10 m" },
   /** Code attempts per IP: blunts guessing a 6-digit code. */
   authVerify: { tokens: 10, window: "10 m" },
+  /** Reports per player: at most one per question anyway. */
+  report: { tokens: 20, window: "10 m" },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

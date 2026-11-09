@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       fact: ans.fact,
       source_name: ans.source_name,
       source_url: ans.source_url,
+      ...(ans.corrected ? { corrected: true } : {}),
     });
   } catch (e) {
     console.error("POST /api/reveal failed", e);

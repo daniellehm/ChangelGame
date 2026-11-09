@@ -4,8 +4,10 @@
  */
 import { isFormat, type Format } from "../format";
 import type { PublicRound } from "../game/types";
-import { FULL_RANGE, rangeFromFactor, type GuessRange } from "../range";
+import { questionRange, type GuessRange } from "../range";
+import { isWindowOpen } from "../dates";
 import { adminClient } from "../supabase/admin";
+import { ensureRerun } from "./rerun";
 
 export interface StoredPuzzle {
   date: string;
@@ -16,7 +18,7 @@ export interface StoredPuzzle {
 }
 
 /** A ready puzzle for `date`, or null. */
-export async function findReadyPuzzle(date: string): Promise<StoredPuzzle | null> {
+async function readyPuzzle(date: string): Promise<StoredPuzzle | null> {
   const { data, error } = await adminClient()
     .from("puzzles")
     .select("puzzle_date, theme, status, rerun_of")
@@ -28,10 +30,19 @@ export async function findReadyPuzzle(date: string): Promise<StoredPuzzle | null
   return { date: data.puzzle_date, theme: data.theme, roundsDate: data.rerun_of ?? data.puzzle_date, rerunOf: data.rerun_of };
 }
 
-/** A question's guess range (÷max_change … ×max_change). Questions without one get the full ÷1000…×1000. */
-export function questionRange(q: { max_change?: number | null }): GuessRange {
-  return q.max_change != null ? rangeFromFactor(q.max_change) : FULL_RANGE;
+/**
+ * The ready puzzle for `date`. If there is none and the date's window is open by the
+ * REAL clock, a rerun is created (SPEC §8 rerun fallback, with an alert email).
+ * The real clock (not the test clock) so tests can't create reruns on real dates.
+ */
+export async function findReadyPuzzle(date: string): Promise<StoredPuzzle | null> {
+  const found = await readyPuzzle(date);
+  if (found || !isWindowOpen(date, Date.now())) return found;
+  return (await ensureRerun(date)) ? readyPuzzle(date) : null;
 }
+
+/** A question's guess range: lives in lib/range.ts (pure, so tests and the client can import it). */
+export { questionRange } from "../range";
 
 /** The 5 rounds WITHOUT answers: only these columns are ever selected. */
 export async function publicRounds(roundsDate: string): Promise<PublicRound[]> {
@@ -67,19 +78,21 @@ export interface RoundAnswer {
   fact: string;
   source_name: string;
   source_url: string | null;
+  /** Edited after it went live: the reveal says "Corrected" (SPEC §8). */
+  corrected: boolean;
 }
 
 /** One round's answer. Only call AFTER that round is locked. */
 export async function roundAnswer(roundsDate: string, position: number): Promise<RoundAnswer | null> {
   const { data, error } = await adminClient()
     .from("puzzle_rounds")
-    .select("question_id, questions!inner(start_value, end_value, max_change, fact, source_name, source_url)")
+    .select("question_id, questions!inner(start_value, end_value, max_change, fact, source_name, source_url, corrected_at)")
     .eq("puzzle_date", roundsDate)
     .eq("position", position)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const q = data.questions as unknown as { start_value: number; end_value: number; max_change: number | null; fact: string | null; source_name: string | null; source_url: string | null };
+  const q = data.questions as unknown as { start_value: number; end_value: number; max_change: number | null; fact: string | null; source_name: string | null; source_url: string | null; corrected_at: string | null };
   return {
     question_id: data.question_id,
     start_value: q.start_value,
@@ -88,6 +101,7 @@ export async function roundAnswer(roundsDate: string, position: number): Promise
     fact: q.fact ?? "",
     source_name: q.source_name ?? "",
     source_url: q.source_url,
+    corrected: !!q.corrected_at,
   };
 }
 
@@ -97,7 +111,7 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
   if (!ids.length) return out;
   const { data, error } = await adminClient()
     .from("questions")
-    .select("id, start_value, end_value, max_change, fact, source_name, source_url")
+    .select("id, start_value, end_value, max_change, fact, source_name, source_url, corrected_at")
     .in("id", ids);
   if (error) throw error;
   for (const q of data ?? []) {
@@ -109,6 +123,7 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
       fact: q.fact ?? "",
       source_name: q.source_name ?? "",
       source_url: q.source_url,
+      corrected: !!q.corrected_at,
     });
   }
   return out;

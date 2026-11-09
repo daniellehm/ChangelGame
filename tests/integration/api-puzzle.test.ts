@@ -4,6 +4,8 @@ import { GET } from "@/app/api/puzzle/route";
 import { get, seededRounds } from "./helpers";
 
 const SYD_MORNING = "2026-11-10T09:00:00+11:00";
+/** A date that never gets a puzzle (real days fill up as the game runs). */
+const EMPTY_DAY = "2097-03-03";
 const ANSWER_KEYS = ["end_value", "fact", "source_name", "source_url", "source_url_2", "actual_log", "notes", "checks"];
 
 describe("GET /api/puzzle", () => {
@@ -65,7 +67,7 @@ describe("GET /api/puzzle", () => {
   });
 
   it("404s when the window is open but no puzzle is scheduled", async () => {
-    const res = await GET(get("/api/puzzle?date=2026-11-13", "2026-11-13T09:00:00+11:00"));
+    const res = await GET(get(`/api/puzzle?date=${EMPTY_DAY}`, `${EMPTY_DAY}T09:00:00+11:00`));
     expect(res.status).toBe(404);
     expect((await res.json()).error.code).toBe("puzzle_not_found");
   });

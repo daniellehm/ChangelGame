@@ -340,8 +340,8 @@ export function Game({ launch }: { launch: string }) {
           } else dispatch({ type: "lockFailed" });
           return;
         } else if (g.kind === "question_changed") {
-          // Same-day swap (SPEC §8): load the updated rounds, keep what's answered.
-          const fresh = await source.loadPuzzle(s.puzzle.date);
+          // Same-day swap (SPEC §8): load the updated rounds (uncached), keep what's answered.
+          const fresh = await source.loadPuzzle(s.puzzle.date, { fresh: true });
           dispatch({ type: "puzzleUpdated", puzzle: fresh });
           dispatch({ type: "lockFailed" });
           showToast("This round was just updated");
@@ -419,6 +419,7 @@ export function Game({ launch }: { launch: string }) {
             onGuess={(value) => dispatch({ type: "guess", value })}
             onLock={lockIn}
             onNext={next}
+            playId={s.mode === "server" ? s.playId : null}
           />
         )}
         {s.phase === "final" && s.puzzle && stats && (

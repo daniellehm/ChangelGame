@@ -24,6 +24,8 @@ interface Props {
   onGuess: (v: number) => void;
   onLock: () => void;
   onNext: () => void;
+  /** Server play id, for the report button (null in local-only mode). */
+  playId?: string | null;
 }
 
 function announce(r: RoundResult, eps: number): string {
@@ -33,7 +35,7 @@ function announce(r: RoundResult, eps: number): string {
 /** Which gap between tick marks the guess is in (the readout pops when it changes). */
 const tickBucket = (marks: readonly number[], g: number) => marks.filter((l) => g >= l).length;
 
-export function Round({ round, index, guess, results, pending, motion, onGuess, onLock, onNext }: Props) {
+export function Round({ round, index, guess, results, pending, motion, onGuess, onLock, onNext, playId = null }: Props) {
   const qRef = useRef<HTMLDivElement>(null);
   const multRef = useRef<HTMLDivElement>(null);
   const range = round.range;
@@ -130,7 +132,7 @@ export function Round({ round, index, guess, results, pending, motion, onGuess, 
         {result ? announce(result, eps) : ""}
       </p>
 
-      {result && <Reveal key={round.position} result={result} range={range} isLast={index === ROUNDS - 1} motion={motion} onNext={onNext} />}
+      {result && <Reveal key={round.position} result={result} range={range} playId={playId} isLast={index === ROUNDS - 1} motion={motion} onNext={onNext} />}
     </section>
   );
 }

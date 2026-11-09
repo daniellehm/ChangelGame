@@ -38,6 +38,11 @@ async function main() {
     if (e3) throw e3;
     console.log(`${day.date}: scheduled ${day.slugs.join(", ")}`);
   }
+  // Questions on a puzzle are 'scheduled' (the nightly run moves them to 'used' once their day has passed),
+  // so the admin bank's status filter finds them. Only drafts are touched.
+  const onPuzzle = plan.flatMap((d) => d.slugs.map((s) => idBySlug.get(s)!));
+  const { error: e4 } = await db.from("questions").update({ status: "scheduled" }).in("id", onPuzzle).eq("status", "draft");
+  if (e4) throw e4;
 }
 
 main().catch((e) => {

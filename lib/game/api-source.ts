@@ -21,10 +21,11 @@ async function errorKind(res: Response): Promise<LoadErrorKind> {
 
 export function createApiSource(fetchImpl: typeof fetch = (...a) => fetch(...a)): GameSource {
   return {
-    async loadPuzzle(date: string): Promise<Puzzle> {
+    async loadPuzzle(date: string, opts?: { fresh?: boolean }): Promise<Puzzle> {
       let res: Response;
       try {
-        res = await fetchImpl(`/api/puzzle?date=${encodeURIComponent(date)}`);
+        // fresh: skip the 5-minute CDN cache (after a same-day swap the cached copy is out of date).
+        res = await fetchImpl(`/api/puzzle?date=${encodeURIComponent(date)}${opts?.fresh ? `&fresh=${Date.now()}` : ""}`);
       } catch {
         throw new PuzzleLoadError("network", "Network error");
       }

@@ -19,9 +19,14 @@
     "test:visual": "playwright test --project=visual",
     "content:import": "tsx --env-file=.env.local scripts/import-questions.ts",
     "content:seed-dev": "tsx --env-file=.env.local scripts/seed-dev-puzzles.ts",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "content:smoke": "tsx --env-file=.env.local scripts/content-smoke.ts",
+    "content:check-smoke": "tsx --env-file=.env.local scripts/content-check-smoke.ts",
+    "content:fill-days": "tsx --env-file=.env.local scripts/fill-days.ts",
+    "content:apply-edits": "tsx --env-file=.env.local scripts/apply-edits.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "@upstash/ratelimit": "^2.2.0",

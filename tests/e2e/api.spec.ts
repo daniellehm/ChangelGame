@@ -83,7 +83,7 @@ test("device clock 3 days ahead shows 'Check your device clock'", async ({ page 
 });
 
 test("a date with no puzzle shows 'No puzzle yet'", async ({ page }) => {
-  await setClock(page, syd("2026-11-13T09:00:00"));
+  await setClock(page, syd("2097-03-03T09:00:00")); // a date that never gets a puzzle
   await page.goto("/");
   await expect(page.locator("#loadError h1")).toHaveText("No puzzle yet");
 });

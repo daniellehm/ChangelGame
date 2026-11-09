@@ -6,18 +6,21 @@ import type { RoundResult } from "@/lib/game/types";
 import { epsilon, toPercent, type GuessRange } from "@/lib/range";
 import { TIERS } from "@/lib/scoring";
 import { confetti, useCountUp } from "./motion";
+import { ReportButton } from "./ReportButton";
 
 interface Props {
   result: RoundResult;
   /** The question's slider range: pins sit where they would on the slider. */
   range: GuessRange;
+  /** Server play id: shows "Something wrong with this?" (hidden in local-only mode). */
+  playId?: string | null;
   isLast: boolean;
   /** Count-up + confetti (false under reduced motion). */
   motion: boolean;
   onNext: () => void;
 }
 
-export function Reveal({ result, range, isLast, motion, onNext }: Props) {
+export function Reveal({ result, range, isLast, motion, onNext, playId = null }: Props) {
   const zero = `${toPercent(range, 0)}%`;
   const tier = TIERS[result.tier];
   const verdictRef = useRef<HTMLDivElement>(null);
@@ -67,6 +70,8 @@ export function Reveal({ result, range, isLast, motion, onNext }: Props) {
           result.source_name
         )}
       </div>
+      {result.corrected ? <p className="corrected" id="corrected">Corrected since it first went live.</p> : null}
+      {playId ? <ReportButton playId={playId} position={result.position} /> : null}
       <button className="btn" id="nextBtn" type="button" onClick={onNext}>
         {isLast ? "Score" : "Next"}
       </button>

@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). Next: a few UI tweaks Dani asked for on `main` (branch `ui-tweaks`), then **M6**. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -11,7 +11,29 @@
 - [x] Test the per-question ranges on the preview and approve the merge (2026-11-09)
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [x] Relative scoring approved and merged (2026-11-09)
-- [ ] Go-ahead for M5
+- [x] Go-ahead for M5 (2026-11-09)
+- [x] Review M5 and approve the merge (2026-11-10)
+- [ ] **Top up Anthropic credit** (console.anthropic.com → Plans & Billing). The 9–10 Nov fill run stopped with "credit balance is too low"; until then every nightly run fails.
+- [ ] Days 15–16 Nov are empty (Dani: "forget about the fill for now"). Fill by hand on Upcoming, or they get reruns.
+- [ ] Three prototype questions still fail the automatic checks (solar, pandas on days 1–2; Wikipedia was edited by Dani). Dani can approve them by saving in the editor.
+- [ ] **Approve one database fix** (Upcoming → reorder a day's rounds).
+  - Why: the MCP permission check declined it because it deletes and re-inserts the day's 5 rounds; it's only allowed on days nobody has played.
+  - How: approve the prompt when Claude retries, or run in the Supabase SQL editor, then Claude saves it as a migration:
+    ```sql
+    create or replace function public.reorder_rounds(p_date date, p_ids bigint[]) returns text language plpgsql set search_path = '' as $$
+    begin
+      if coalesce(array_length(p_ids, 1), 0) <> 5 or (select count(distinct x) from unnest(p_ids) as t(x)) <> 5 then
+        raise exception 'reorder_rounds needs 5 distinct ids' using errcode = '22023';
+      end if;
+      if exists (select 1 from public.plays where puzzle_date = p_date) then return 'played'; end if;
+      if (select count(*) from public.puzzle_rounds where puzzle_date = p_date and question_id = any (p_ids)) <> 5 then return 'mismatch'; end if;
+      delete from public.puzzle_rounds where puzzle_date = p_date;
+      insert into public.puzzle_rounds (puzzle_date, position, question_id) select p_date, t.ord, t.qid from unnest(p_ids) with ordinality as t(qid, ord);
+      return 'ok';
+    end; $$;
+    ```
+  - Until then the Upcoming page has Pull and Swap but no reorder.
+- [x] `ANTHROPIC_API_KEY` in `.env.local` and Vercel (done by Dani 2026-11-09; verified with a free models call). `ADMIN_EMAILS` set in Vercel by Claude.
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
 - [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
@@ -32,7 +54,6 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M5: Anthropic API key
 - [ ] M6: Sentry account/DSN; PostHog or Plausible account
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
@@ -116,17 +137,33 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Milestone 5: Content pipeline + admin
 
 **Milestone accepted when:** a cold start with an empty database fills 30 days with no human action; a planted wrong number is flagged; simulated reports from 11% of players add the question once to the Reports queue, send no email and leave it live, while 3 reports out of 5,000 players do nothing; and deleting a day triggers the rerun plus an alert.
+**Status:** all 10 tasks built and tested on branch `m5-content-admin` (2026-11-09); **waiting for Dani's review**, then merge. Decisions: DECISIONS 2026-11-09 "M5 pipeline: models, spend cap, global mix" and "M5 pipeline: how the nightly job runs".
 
-- [ ] 5.1 Pipeline tables: content_runs, check results, reports, events (+ `flagged` question status).
-- [ ] 5.2 Data-backed generators: OWID, World Bank.
-- [ ] 5.3 Researched generator (Claude + web search). Every generator also proposes `max_change` **without seeing the answer** (a separate step given only the prompt, start value and years). `rangeProblems()` must pass, raising max_change if the answer sits too close to the end.
-- [ ] 5.4 Automatic checks (source support, cross-check, like-for-like, sanity, duplicate, topic safety, fact quality). *Accept:* a planted wrong number is flagged.
-- [ ] 5.5 Scheduler with balance rules, the 7-day rule and the reserve of 10. *Accept:* cold-start fill.
-- [ ] 5.6 Nightly cron orchestration (fits Vercel limits), cost logging.
-- [ ] 5.7 Admin auth (ADMIN_EMAILS) + portal shell with queue badges and alert banner.
-- [ ] 5.8 Admin pages: Reports, Upcoming, Question editor (+ question_edits, "Corrected" note), Flagged, Question bank, Health.
-- [ ] 5.9 Report button + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
-- [ ] 5.10 Same-day pull / reserve swap; rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
+**How it works (summary):** a candidate question is inserted as `draft`. The checks run, and it becomes `verified` (all pass, `verified_by='auto'`) or `flagged` (any fail, `flag_reason`). The scheduler fills days 7–30 ahead with verified questions (status `scheduled`, puzzle `ready`) and keeps ≥10 verified spares. Once a puzzle date has passed, its questions become `used`. All of this state lives in the database, so the nightly job can stop at any point and resume in the next run.
+
+- [x] 5.1 **Pipeline tables:**
+  - `content_runs` (runs, leases, hops, tokens, searches, cost)
+  - `question_edits`, `reports`, `events`, `alerts_sent`
+  - question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`
+  - `pg_trgm` for duplicate checks
+- [x] 5.2 **Claude client wrapper** (`lib/content/llm.ts`): Opus 5.5 / Sonnet 5.5, spend metering against the $50/month cap, server-side fallbacks, typed results. Data sources: World Bank + OWID fetchers with fixtures.
+- [x] 5.3 **Generators:**
+  - data-backed (curated indicator list, global series; Claude writes only the wording and the fact)
+  - researched (Opus + web search, two sources from different publishers)
+  - blind `max_change` proposal (sees prompt, start value and years only)
+- [x] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
+- [x] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
+- [x] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
+- [x] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
+- [x] 5.8 **Admin pages:**
+  - Reports
+  - Upcoming
+  - Question editor (+ question_edits, "Corrected" note)
+  - Flagged
+  - Question bank
+  - Health (+ "Run now")
+- [x] 5.9 **Report button** + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
+- [x] 5.10 **Same-day pull / reserve swap;** rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
 
 ## Milestone 6: Virality + launch hardening
 
@@ -148,7 +185,141 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M5 review, round 2 (from Dani testing):
+  - **Admin edits are trusted:** saving doesn't re-run the checks and approves the question. "Run checks (second opinion)" is a separate button.
+  - **Assigning days:** Upcoming has "Choose questions…" and "Auto-fill" on empty days, and a question picker for Swap.
+  - **Fact-checked the 20 prototype questions:** two sources each, wrong numbers corrected (arctic ice, solar, internet users, CO₂, world population, years for minimum wage, stamp and cinema). 17 pass the full checks; solar, Wikipedia and pandas don't yet (sources don't state the value next to the year, or the year is ambiguous).
+  - **Checks tuned (DECISIONS):**
+    - the review puts the reason before the verdict and is fairer on neutral facts;
+    - the source check reads octet-stream CSVs, 3 s.f. figures and h:mm:ss times;
+    - duplicates ignore retired questions;
+    - the question writer must cite specific pages it opened with web_fetch.
+  - **Filling 13–16 Nov:** `npm run content:fill-days -- 2026-11-13 2026-11-16` is running.
+
+- 2026-11-09: M5 review fixes (from Dani testing the preview):
+  - Bank: a Day column (day, round, date), sort by newest added or by puzzle day, and a "Day #" filter.
+  - The dev seed's 20 questions were still 'draft' though they're on the 4 test days, so the status filter "scheduled" found nothing. The seed script now marks them 'scheduled', and the DB rows were fixed (19 updated; #19 Bitcoin was flagged by Dani's edit, left as is).
+  - A question already on a day that passes its re-check, or is approved, goes back to 'scheduled', not 'verified' (otherwise the scheduler could put it on a second day). Test added.
+  - The card label "Held back" is now "Failed checks" (a failed question already on a day is still played until it's pulled).
+  - Admin and alert email is now releasedani@gmail.com (Vercel and .env.local).
+
+- 2026-11-09: 5.10 Same-day pull, rerun fallback, alert emails:
+  - **Same-day pull:**
+    - pulling a live or past round sets `corrected_at` on the old question, so players who already answered keep their score and their reveal says Corrected;
+    - players who haven't reached the round get the replacement: the existing `question_changed` reload now asks for `?fresh=…`, which is never cached, so the 5-minute CDN cache can't serve the old round back.
+  - **Rerun fallback** (`lib/puzzles/rerun.ts`):
+    - when a date's window opens with no ready puzzle, a ready puzzle with `rerun_of` is created (the most recent original at least 365 days earlier, else the oldest original), labelled Rerun, and an alert is emailed;
+    - only by the real clock, so tests can't create reruns on real dates.
+  - **Alert emails** (`lib/admin/notify.ts`, Resend from hello@changel.app to ADMIN_EMAILS):
+    - only when the game is at risk (fewer than 7 ready days, two failed nights, a rerun served);
+    - at most once per kind per 20 hours, recorded in `alerts_sent`;
+    - sent after each nightly run ends;
+    - `CHANGEL_NO_ALERT_EMAIL=1` in every test run, so tests record alerts without sending.
+  - **Acceptance:** deleting a day → rerun served (labelled, the original's rounds) + one alert, idempotent (`tests/integration/rerun.test.ts`); same-day pull keeps scores and adds Corrected (`tests/integration/same-day-pull.test.ts`).
+  - `questionRange` moved to `lib/range.ts` (pure), so browser tests don't load server-only code.
+  - Final counts: unit 279, integration 95, E2E 35, visual 2, all passing. The DB was checked clean after the test runs: no reruns, no running runs, no test questions.
+
+- 2026-11-09: 5.9 Report button + Reports queue:
+  - **Player side:**
+    - "Something wrong with this?" on each reveal in server mode (`components/ReportButton.tsx`): 4 reasons plus an optional note, then "Thanks"; it never blocks the game.
+    - `POST /api/report`: only a locked-in round; the report is about the question actually answered; one per player per question; rate-limited.
+  - **Queue** (migration `report_queue`):
+    - rate = valid reports ÷ players who saw the reveal; queued over 10% with at least 10 valid;
+    - habitual reporters (over 30% of their rounds, once they've played 10+) are ignored, worked out live;
+    - a dismissed question comes back only at +10 points. Settings live in `REPORTS` (`lib/config.ts`).
+  - **Admin:** `/admin/reports` shows rate, counts, reasons and notes, with Pull and Dismiss; the badge count is on Home and Health.
+  - **Also (part of 5.10):** answers carry `corrected`, and the reveal shows "Corrected since it first went live."
+  - **Acceptance** (`tests/integration/reports.test.ts`, real DB, 100 players):
+    - 11% → in the queue exactly once, no email, question still scheduled and on its day;
+    - 3 reports → nothing; exactly 10% → nothing; a habitual reporter is ignored; dismiss and re-queue work.
+  - **Other tests:** 1 E2E for the button. The keyboard test now tabs through the report link. Reveal screenshots updated (the new link) and reviewed.
+
+- 2026-11-09: 5.8 Admin pages:
+  - **Data and actions** (`lib/admin/data.ts`):
+    - Upcoming (yesterday + the next 30 days with sources and check results); Pull (a spare from a category not already on that day; the old question goes to Flagged with the reason) and Swap (a chosen id);
+    - Question editor: save rounds values like the importer, logs before/after in `question_edits`, sets `corrected_at` when the question is live or past, refuses edits the game can't play, and re-runs the checks (flagged/draft → verified if they pass);
+    - Approve (human, from Flagged); Retire (swaps it out of future days first); Delete (only never-scheduled, never-played candidates);
+    - Bank (filters by status, origin, category, text, difficulty and puzzle "Day #"; sort by newest added or by puzzle day, Day 1 first or latest first; a Day column shows each question's day, date and round; stats per question: plays, average points, wrong-way %, report rate);
+    - Health (recent runs with logs, pass rate, spend by step, Run now).
+  - **Database:** migration `admin_functions` (`question_stats`, `swap_round`; `reorder_rounds` needs a fix, see Needs from Dani).
+  - **UI:** routes `/api/admin/{upcoming,upcoming/pull,questions,questions/:id,questions/:id/{approve,retire},health}`; pages `/admin/{upcoming,flagged,bank,health,questions/:id}` with a shared `QuestionCard`.
+  - **Tests:** 8 integration (real DB, throwaway 2099 data), 6 E2E.
+  - "Preview the day as a player" is shown as the day's question cards, not a full play-through.
+
+- 2026-11-09: 5.7 Admin auth + portal shell:
+  - **Access:** `lib/admin/auth.ts` (`requireAdmin`: signed in, not anonymous, email in ADMIN_EMAILS, case-insensitive; 401 / 403).
+  - **Alert rules** (`lib/admin/alerts.ts`):
+    - banner: under 14 ready days, over 40% of a night failing, a failed run, the spend cap;
+    - email: under 7 ready days, or 2 failed nights in a row.
+  - **Overview** (`lib/admin/overview.ts`, `GET /api/admin/overview`): queues, ready days ahead, spare verified questions, last run, month spend.
+  - **"Run now":** `POST /api/admin/run` uses the same leased hop as the cron (`lib/content/trigger.ts`).
+  - **UI:** `/admin` (noindex) with `AdminShell` (sign-in / no-access gates, section nav, works at 320 px) and a home page with alert banner and tiles.
+  - **Tests:** 8 unit, 3 integration (401 / 403 / admin), 1 E2E.
+
+- 2026-11-09: 5.6 Nightly orchestration:
+  - **`lib/content/pipeline.ts` (`runHop`)**, one time-boxed hop: mark used → schedule → check pending drafts → generate (one data-backed + a researched batch of 5) → repeat → schedule.
+    - The remaining need comes from simulating the schedule, so days still empty for lack of a trap or big mover, or of 5 different categories, ask for more candidates of that kind.
+    - At most 220 candidates per night.
+  - **`lib/content/store.ts`:** database adapter.
+  - **`lib/content/run.ts`:** `content_runs` bookkeeping (find or start tonight's run, lease, counters, log, fail-safe error recording; a run older than 20 h is closed as abandoned).
+  - **`/api/cron/content`** (Vercel Cron 02:00 UTC): replies 202 at once and does the hop afterwards; it chains the next hop by calling itself.
+  - **Tests:** an end-to-end cold start on fakes (30 days ready after a week; planted wrong numbers never scheduled; spend cap; deadline); run bookkeeping against the real table. 271 unit + 74 integration tests.
+  - **Bugs found by the tests and fixed:** the run could finish with days left empty when the pool was big enough but missing a kind, or lacking 5 different categories.
+
+- 2026-11-09: 5.5 Scheduler:
+  - **`lib/content/schedule.ts`** (pure functions):
+    - fills days 7–30 ahead, keeps 10 verified spares, uses the oldest verified questions first;
+    - per day: 5 different categories, at least one trap, at least one big mover, at most 2 data-backed;
+    - a day that can't meet the trap/big-mover rule stays empty while more than 9 days out, then takes its best set (flagged `relaxed`);
+    - top-up = (open days × 5 + reserve − pool) × 1.2.
+  - **Migration `scheduler_functions`:** `schedule_puzzle` (atomic: ready puzzle + 5 rounds + `scheduled`; refuses taken/unverified questions and existing days) and `mark_used_questions`.
+  - **Cold-start acceptance** simulated in a unit test: an empty database has every one of the next 30 days ready after a week of nightly runs (the 7-day rule means the first week can't be auto-filled).
+  - Tests: 12 unit + 4 DB (266 unit total).
+
+- 2026-11-09: 5.4 Automatic checks (`lib/content/checks.ts`, `checkBatch`):
+  - **Order:**
+    1. free code checks: sanity, range rules, topic blocklist, fact length;
+    2. duplicate: same dataset series, or trigram over 0.6 then a Sonnet "same measure?" call;
+    3. one Sonnet review covering like-for-like, safety and fact quality;
+    4. source support (researched only): our server fetches each page, keeps the passages mentioning the years or values, and Sonnet must quote the value;
+    5. independent cross-check: Opus with web search, batches of 5, never shown the values, held back if more than 15% off or not found.
+  - Any failure skips the later paid checks and fails safe (flagged, kept for a human).
+  - **Acceptance met on real models** (`npm run content:check-smoke`, $0.06):
+    - the correct UN question was verified through all 8 checks (both values quoted from un.org + Wikipedia; cross-check 0% off);
+    - the planted 293 was flagged, even with a fact written to agree with it;
+    - the US Open question with its mismatched fact was flagged.
+  - One prompt fix along the way: the reviewer had applied the data-backed fact rule to researched questions.
+  - 24 new unit tests (254 total).
+
+- 2026-11-09: 5.3 Generators (`lib/content/generate.ts`, `lib/content/catalog.ts`):
+  - **Catalog:** 52 world-level World Bank/OWID series, each checked live.
+  - **Data-backed:** code picks a round start year at least 10 years back and the latest year, and reads both values from the dataset; Sonnet writes only the prompt and the fact.
+  - **Researched:** batches drafted by Opus with up to 8 web searches.
+  - **Range:** a blind `max_change` proposal (never sees the end value; unit test enforces it), raised along a menu only if the range rules need it.
+  - **Fix:** OWID charts can ignore the country filter, so the fetcher downloads the full table and keeps only World rows. Multi-measure charts are refused and zero values dropped.
+  - **Real smoke run** (`npm run content:smoke`): $0.19, all calls OK. The US Open fact said $90M while the answer was $85M (prize money vs total pay), a good case for the fact-quality check.
+  - 230 unit tests.
+
 - 2026-11-09: Stats page note no longer says accounts are "coming soon" (requested by Dani). Signed in: "Your stats are saved to your account, so they follow you to any device you sign in on." Not signed in: "Stats are kept on this device. Add your email (link to /account) to keep your streak on any device." The note waits for the account check, so the wrong one never flashes. Branch `fix-stats-sync-note`. `npm run check` and the pages E2E pass.
+- 2026-11-09: 5.2 Claude wrapper + data sources:
+  - `lib/content/llm.ts` (`ClaudeLlm`):
+    - refuses to call Claude once the month reaches the $50 cap;
+    - structured JSON via Zod, with `fallbacks: "default"`;
+    - resumes paused web-search turns;
+    - refusals, truncated answers and bad JSON become `LlmUnusable` (the candidate gets flagged);
+    - prices each call by the model that actually answered and records it in `llm_calls`.
+  - `lib/content/ledger.ts`: month spend and recording.
+  - `lib/content/sources.ts`: World Bank + OWID fetchers, with recorded fixtures in `tests/fixtures/content/`.
+  - 12 unit tests (217 total). `CONTENT` settings live in `lib/config.ts`.
+  - Note: a second Claude session (Dani's, for a UI fix) briefly committed these files on its branch `fix-stats-sync-note` and then removed them. That branch was otherwise separate (Stats note only); Dani merged it to `main`.
+- 2026-11-09: 5.1 Pipeline tables: migration `content_pipeline_tables`.
+  - New tables: `content_runs` (+ atomic `lease_content_run`), `llm_calls` spend ledger (+ `llm_spend_since`), `alerts_sent`.
+  - Question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`, `source_data`; `reports.invalid_reason`.
+  - `pg_trgm` + `similar_questions`; `question_edits` and `reports` already existed from M2.
+  - Security advisors show only the expected items. 5 new integration tests (65 total).
+  - `@anthropic-ai/sdk` 1.6.0 installed; key verified.
+
+- 2026-11-09: M5 started (branch `m5-content-admin`). Dani's decisions: Opus 5.5 + Sonnet 5.5 mix, $50/month hard cap, global questions with no Australian bias. Admin email releasedani@gmail.com (changed from the work address at Dani's request).
 
 - 2026-11-09: Tab icon (logo mark: SVG + favicon.ico + apple-icon), and the Buy Me a Coffee popup fixed on phones (it ran off the left edge; pinned inside the screen below 480 px). Checked with a local production build at iPhone 13, iPhone SE, desktop→400 px and desktop sizes. E2E 28 and visual pass.
 

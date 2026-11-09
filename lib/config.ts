@@ -86,3 +86,46 @@ export const STORAGE_KEYS = {
   play: (puzzleDate: string) => `changel:v1:play:${puzzleDate}`,
   stats: "changel:v1:stats",
 } as const;
+
+/**
+ * Player reports (SPEC §8 "Safety nets"). Questions are never pulled automatically:
+ * past these thresholds they join the admin Reports queue, with no email.
+ */
+export const REPORTS = {
+  /** Valid reports ÷ players who saw the reveal, above which a question is queued. */
+  RATE: 0.1,
+  /** …and at least this many valid reports, so 2 of 15 early players don't trigger it. */
+  MIN_VALID: 10,
+  /** Players who report more than this share of the rounds they play are ignored… */
+  HABITUAL_SHARE: 0.3,
+  /** …once they've played this many rounds (otherwise a first report would be "100%"). */
+  HABITUAL_MIN_ROUNDS: 10,
+  /** A dismissed question re-queues only when its rate is this much higher. */
+  REQUEUE_POINTS: 0.1,
+  REASONS: ["number", "year", "fact", "other"] as const,
+} as const;
+
+type Price = { input: number; output: number; cacheRead: number; cacheWrite: number };
+
+/**
+ * Content pipeline (SPEC §8; DECISIONS 2026-11-09 "M5 pipeline: models, spend cap, global mix").
+ * Prices are Anthropic list prices in USD per million tokens; web search is per search.
+ */
+export const CONTENT = {
+  /** Hard monthly cap on Claude spend (Dani). No new call starts once the month reaches it. */
+  MONTHLY_CAP_USD: 50,
+  MODELS: { strong: "claude-opus-5-5", fast: "claude-sonnet-5-5" },
+  /** Effort per tier: the Opus steps think a bit; the checks stay quick. */
+  EFFORT: { strong: "medium", fast: "low" },
+  /** Includes the server-side fallback targets so their spend is priced too. */
+  PRICES: {
+    "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
+    "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+    "claude-opus-5": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+    "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+    "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+  } as Readonly<Record<string, Price>>,
+  WEB_SEARCH_USD: 0.01,
+  /** Server-tool loops that hit their iteration limit pause; resume at most this many times. */
+  MAX_CONTINUATIONS: 3,
+} as const;

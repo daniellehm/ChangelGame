@@ -75,6 +75,7 @@ export function toRoundResult(g: Pick<GuessRow, "position" | "question_id" | "gu
     fact: a.fact,
     source_name: a.source_name,
     source_url: a.source_url,
+    ...(a.corrected ? { corrected: true } : {}),
   };
 }
 
