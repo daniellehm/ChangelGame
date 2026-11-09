@@ -182,6 +182,13 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M5 review fixes (from Dani testing the preview):
+  - Bank: a Day column (day, round, date), sort by newest added or by puzzle day, and a "Day #" filter.
+  - The dev seed's 20 questions were still 'draft' though they're on the 4 test days, so the status filter "scheduled" found nothing. The seed script now marks them 'scheduled', and the DB rows were fixed (19 updated; #19 Bitcoin was flagged by Dani's edit, left as is).
+  - A question already on a day that passes its re-check, or is approved, goes back to 'scheduled', not 'verified' (otherwise the scheduler could put it on a second day). Test added.
+  - The card label "Held back" is now "Failed checks" (a failed question already on a day is still played until it's pulled).
+  - Admin and alert email is now releasedani@gmail.com (Vercel and .env.local).
+
 - 2026-11-09: 5.10 Same-day pull, rerun fallback, alert emails:
   - **Same-day pull:**
     - pulling a live or past round sets `corrected_at` on the old question, so players who already answered keep their score and their reveal says Corrected;

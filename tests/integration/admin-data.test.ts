@@ -90,7 +90,19 @@ describe("approve / retire / delete", () => {
   it("approve moves a flagged question to verified", async () => {
     await db.from("questions").update({ status: "flagged" }).eq("id", ids[6]);
     expect((await approveQuestion(ids[6]!, ED)).status).toBe("ok");
+    expect((await db.from("questions").select("status").eq("id", ids[6]).single()).data!.status).toBe("verified");
     expect((await approveQuestion(ids[6]!, ED)).status).toBe("not_flagged");
+  });
+
+  it("a question already on a day goes back to 'scheduled', never 'verified' (or the scheduler could reuse it)", async () => {
+    await db.from("questions").update({ status: "flagged", flag_reason: "sanity: no source" }).eq("id", ids[3]); // on DATE, round 4
+    expect((await approveQuestion(ids[3]!, ED)).status).toBe("ok");
+    expect((await db.from("questions").select("status, flag_reason").eq("id", ids[3]).single()).data).toEqual({ status: "scheduled", flag_reason: null });
+    // Same when an edit's re-check passes.
+    await db.from("questions").update({ status: "flagged" }).eq("id", ids[3]);
+    const page = async () => new Response("<p>Widgets: 100 in 2000 and 160 in 2020.</p>", { headers: { "content-type": "text/html" } });
+    expect((await saveQuestion(ids[3]!, { category: "CatD2" }, ED, { llm: passing, fetchFn: page })).status).toBe("ok");
+    expect((await db.from("questions").select("status").eq("id", ids[3]).single()).data!.status).toBe("scheduled");
   });
 
   it("retiring a question on an upcoming day swaps it out first", async () => {

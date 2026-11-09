@@ -277,7 +277,12 @@ export async function saveQuestion(id: number, patch: z.infer<typeof QuestionEdi
     const llm = deps.llm ?? new ClaudeLlm(sdkParse(), dbLedger());
     report = (await checkBatch([{ id, candidate: cand }], { llm, now, fetchFn: deps.fetchFn, similarPrompts: store.similarPrompts, seriesUsed: store.seriesUsed }))[0] ?? null;
     const statusNow = before.status as string;
-    const patchStatus = statusNow === "draft" || statusNow === "flagged" ? (report!.passed ? { status: "verified", verified_by: editor, verified_at: now.toISOString(), flag_reason: null } : { status: "flagged", flag_reason: flagReason(report!) }) : {};
+    const patchStatus =
+      statusNow === "draft" || statusNow === "flagged"
+        ? report!.passed
+          ? { status: await passedStatus(id), verified_by: editor, verified_at: now.toISOString(), flag_reason: null }
+          : { status: "flagged", flag_reason: flagReason(report!) }
+        : {};
     must(await db().from("questions").update({ checks: report, ...patchStatus }).eq("id", id).select("id"));
   }
   return { status: "ok" as const, changed: Object.keys(changes), corrected: live, report };
@@ -290,9 +295,21 @@ export async function approveQuestion(id: number, editor: string, now = new Date
   if (!["flagged", "draft"].includes(q.status as string)) return { status: "not_flagged" as const };
   const range = rangeCheck(toCandidate(q));
   if (!range.pass) return { status: "invalid" as const, detail: range.detail };
-  must(await db().from("questions").update({ status: "verified", verified_by: editor, verified_at: now.toISOString(), flag_reason: null }).eq("id", id).select("id"));
-  await db().from("question_edits").insert({ question_id: id, edited_by: editor, before: { status: q.status }, after: { status: "verified" }, note: "approved by a human" });
+  const status = await passedStatus(id);
+  must(await db().from("questions").update({ status, verified_by: editor, verified_at: now.toISOString(), flag_reason: null }).eq("id", id).select("id"));
+  await db().from("question_edits").insert({ question_id: id, edited_by: editor, before: { status: q.status }, after: { status }, note: "approved by a human" });
   return { status: "ok" as const };
+}
+
+/**
+ * Status for a question that passed (checks or a human): 'scheduled' if it's already on a
+ * puzzle day (the nightly run moves it to 'used' once that day passes), else 'verified'.
+ * Never 'verified' while on a day, or the scheduler could put it on a second day.
+ */
+async function passedStatus(id: number): Promise<"scheduled" | "verified"> {
+  const { count, error } = await db().from("puzzle_rounds").select("question_id", { count: "exact", head: true }).eq("question_id", id);
+  if (error) throw error;
+  return count ? "scheduled" : "verified";
 }
 
 /** Retire: a question on a future puzzle is swapped out first. Past plays are untouched. */

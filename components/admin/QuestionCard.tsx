@@ -59,7 +59,7 @@ export function QuestionCard({ q, actions, showChecks = true }: { q: QuestionSum
           </a>
         ))}
       </p>
-      {q.flag_reason ? <p className="qcard-flag">Held back: {q.flag_reason}</p> : null}
+      {q.flag_reason ? <p className="qcard-flag">Failed checks: {q.flag_reason}</p> : null}
       {showChecks && results.length > 0 && (
         <details className="qcard-checks">
           <summary>{q.checks?.passed ? "All checks passed" : "Check results"}</summary>
