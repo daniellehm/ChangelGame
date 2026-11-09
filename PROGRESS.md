@@ -145,6 +145,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Copy polish 3 (Dani): removed the duplicate "Account" label above "Your account".
 - 2026-11-09: Copy polish 2 (Dani): no box inside a box. The save/sign-in form now sits directly in the page card (a dashed divider on the final screen).
 - 2026-11-09: Copy polish (Dani): the save/sign-in card holds one message (main line, "or", sign-in line); removed the extra paragraphs around it on /account and the final screen. Branch `account-copy`.
 - 2026-11-09: M4 approved by Dani and merged into `main` (production at changel.app now has email sign-in).

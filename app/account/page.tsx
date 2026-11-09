@@ -7,7 +7,6 @@ export const metadata: Metadata = { title: "Account · Changel" };
 export default function Account() {
   return (
     <PageShell>
-      <div className="cat">Account</div>
       <h1>Your account</h1>
       <AccountView />
     </PageShell>
