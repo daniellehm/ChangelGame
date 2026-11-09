@@ -298,7 +298,7 @@ _Newest first._
   - Security advisors show only the expected items. 5 new integration tests (65 total).
   - `@anthropic-ai/sdk` 1.6.0 installed; key verified.
 
-- 2026-11-09: M5 started (branch `m5-content-admin`). Dani's decisions: Opus 5.5 + Sonnet 5.5 mix, $50/month hard cap, global questions with no Australian bias. Admin email danielle.moussa@mseq.vc.
+- 2026-11-09: M5 started (branch `m5-content-admin`). Dani's decisions: Opus 5.5 + Sonnet 5.5 mix, $50/month hard cap, global questions with no Australian bias. Admin email releasedani@gmail.com (changed from the work address at Dani's request).
 
 - 2026-11-09: Tab icon (logo mark: SVG + favicon.ico + apple-icon), and the Buy Me a Coffee popup fixed on phones (it ran off the left edge; pinned inside the screen below 480 px). Checked with a local production build at iPhone 13, iPhone SE, desktop→400 px and desktop sizes. E2E 28 and visual pass.
 
