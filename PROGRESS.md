@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.7 (admin auth + portal shell). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.8 (admin pages). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
 
 ## Needs from Dani
 
@@ -133,7 +133,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
 - [x] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
 - [x] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
-- [ ] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
+- [x] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
 - [ ] 5.8 **Admin pages:**
   - Reports
   - Upcoming
@@ -163,6 +163,16 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.7 Admin auth + portal shell:
+  - **Access:** `lib/admin/auth.ts` (`requireAdmin`: signed in, not anonymous, email in ADMIN_EMAILS, case-insensitive; 401 / 403).
+  - **Alert rules** (`lib/admin/alerts.ts`):
+    - banner: under 14 ready days, over 40% of a night failing, a failed run, the spend cap;
+    - email: under 7 ready days, or 2 failed nights in a row.
+  - **Overview** (`lib/admin/overview.ts`, `GET /api/admin/overview`): queues, ready days ahead, spare verified questions, last run, month spend.
+  - **"Run now":** `POST /api/admin/run` uses the same leased hop as the cron (`lib/content/trigger.ts`).
+  - **UI:** `/admin` (noindex) with `AdminShell` (sign-in / no-access gates, section nav, works at 320 px) and a home page with alert banner and tiles.
+  - **Tests:** 8 unit, 3 integration (401 / 403 / admin), 1 E2E.
 
 - 2026-11-09: 5.6 Nightly orchestration:
   - **`lib/content/pipeline.ts` (`runHop`)**, one time-boxed hop: mark used → schedule → check pending drafts → generate (one data-backed + a researched batch of 5) → repeat → schedule.

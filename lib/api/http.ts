@@ -16,6 +16,8 @@ export type ErrorCode =
   | "invalid_code"
   | "email_taken"
   | "email_failed"
+  | "forbidden"
+  | "not_found"
   | "internal_error";
 
 export function apiError(code: ErrorCode, message: string, status: number): NextResponse {

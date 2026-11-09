@@ -7,10 +7,9 @@
  * calls this route again (?run=<id>) to start the next hop. A lease on the run
  * stops two hops overlapping, so duplicate calls are harmless.
  */
-import { after } from "next/server";
 import { apiError } from "@/lib/api/http";
 import { isCronAuthorized } from "@/lib/api/cron";
-import { runContentHop } from "@/lib/content/run";
+import { startContentHop } from "@/lib/content/trigger";
 
 export const maxDuration = 300;
 
@@ -18,19 +17,6 @@ export async function GET(req: Request) {
   if (!isCronAuthorized(req)) return apiError("unauthorized", "Cron secret required.", 401);
   const url = new URL(req.url);
   const runId = Number(url.searchParams.get("run")) || null;
-  const trigger = url.searchParams.get("trigger") === "manual" ? "manual" : "cron";
-
-  after(async () => {
-    const outcome = await runContentHop(trigger, runId);
-    console.log("content hop", JSON.stringify(outcome));
-    if (outcome.status === "continue" && outcome.runId) {
-      // Start the next hop. It replies at once, so this returns quickly.
-      await fetch(`${url.origin}/api/cron/content?run=${outcome.runId}`, {
-        headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
-        signal: AbortSignal.timeout(15_000),
-      }).catch((e) => console.error("content hop chain failed", e));
-    }
-  });
-
+  startContentHop(url.origin, "cron", runId);
   return Response.json({ accepted: true, run: runId }, { status: 202, headers: { "Cache-Control": "no-store" } });
 }

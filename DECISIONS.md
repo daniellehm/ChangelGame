@@ -316,3 +316,13 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
 - **Round order** within a day is a fixed shuffle by question id, so the trap isn't always round 1.
 
 **Why:** These follow from SPEC §8 plus Dani's global-only choice; this is my best reading of "fills 30 days" given the 7-day rule.
+
+### 2026-11-09: M5 admin: server-checked, client-rendered
+**Decision:**
+- Admin pages are client components that load everything from `/api/admin/*`.
+- Every admin route calls `requireAdmin`: the session must be signed in, not anonymous, with an email in ADMIN_EMAILS (comma-separated, case-insensitive; empty means nobody). Otherwise it returns 401 / 403.
+- Data is read only by the server, with the service role. There's no client database access, so the "in RLS" part of SPEC §11 is met by keeping every admin table closed to clients (RLS on, no policies) rather than with an admin RLS policy.
+- `/admin` is noindex.
+- Pages are client-rendered because route handlers can refresh an expired session cookie and server components can't. Server-rendered admin pages would show "signed out" an hour after sign-in.
+
+**Why:** It's simplest with the existing session plumbing, and admin data never leaves the server without the email check.
