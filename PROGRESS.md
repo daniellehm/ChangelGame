@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.2 (Claude client wrapper + data sources).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.3 (generators).
 
 ## Needs from Dani
 
@@ -125,7 +125,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
   - `question_edits`, `reports`, `events`, `alerts_sent`
   - question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`
   - `pg_trgm` for duplicate checks
-- [ ] 5.2 **Claude client wrapper** (`lib/content/llm.ts`): Opus 5.5 / Sonnet 5.5, spend metering against the $50/month cap, server-side fallbacks, typed results. Data sources: World Bank + OWID fetchers with fixtures.
+- [x] 5.2 **Claude client wrapper** (`lib/content/llm.ts`): Opus 5.5 / Sonnet 5.5, spend metering against the $50/month cap, server-side fallbacks, typed results. Data sources: World Bank + OWID fetchers with fixtures.
 - [ ] 5.3 **Generators:**
   - data-backed (curated indicator list, global series; Claude writes only the wording and the fact)
   - researched (Opus + web search, two sources from different publishers)
@@ -164,6 +164,17 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 5.2 Claude wrapper + data sources:
+  - `lib/content/llm.ts` (`ClaudeLlm`):
+    - refuses to call Claude once the month reaches the $50 cap;
+    - structured JSON via Zod, with `fallbacks: "default"`;
+    - resumes paused web-search turns;
+    - refusals, truncated answers and bad JSON become `LlmUnusable` (the candidate gets flagged);
+    - prices each call by the model that actually answered and records it in `llm_calls`.
+  - `lib/content/ledger.ts`: month spend and recording.
+  - `lib/content/sources.ts`: World Bank + OWID fetchers, with recorded fixtures in `tests/fixtures/content/`.
+  - 12 unit tests (217 total). `CONTENT` settings live in `lib/config.ts`.
+  - Note: a second Claude session (Dani's, for a UI fix) briefly committed these files on its branch `fix-stats-sync-note` and then removed them. That branch is otherwise separate (Stats note only) and not merged.
 - 2026-11-09: 5.1 Pipeline tables: migration `content_pipeline_tables`.
   - New tables: `content_runs` (+ atomic `lease_content_run`), `llm_calls` spend ledger (+ `llm_spend_since`), `alerts_sent`.
   - Question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`, `source_data`; `reports.invalid_reason`.
