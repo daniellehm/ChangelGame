@@ -24,6 +24,9 @@ h1,h2,h3,b,strong{font-weight:800}
 /* Buy Me a Coffee floating button (components/BuyMeACoffee.tsx): room to scroll clear of it, and hidden mid-round. */
 .has-bmc .wrap{padding-bottom:110px}
 html[data-playing] #bmc-wbtn{display:none!important}
+/* Phones: the widget opens its popup at a fixed 420 px wide and picks its phone/desktop layout only at load,
+   so on narrow (or resized) screens it ran off the edge. Pin it inside the screen, above the button. */
+@media (max-width:479px){#bmc-iframe{left:8px!important;right:auto!important;width:calc(100% - 16px)!important;max-width:none!important;top:auto!important;bottom:92px!important;min-height:0!important;max-height:calc(100dvh - 104px)!important}}
 header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .logo{font-weight:800;font-size:30px;letter-spacing:-1px;display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none}
 .logo .mark{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:20px}
