@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.3 (generators).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.4 (automatic checks).
 
 ## Needs from Dani
 
@@ -126,7 +126,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
   - question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`
   - `pg_trgm` for duplicate checks
 - [x] 5.2 **Claude client wrapper** (`lib/content/llm.ts`): Opus 5.5 / Sonnet 5.5, spend metering against the $50/month cap, server-side fallbacks, typed results. Data sources: World Bank + OWID fetchers with fixtures.
-- [ ] 5.3 **Generators:**
+- [x] 5.3 **Generators:**
   - data-backed (curated indicator list, global series; Claude writes only the wording and the fact)
   - researched (Opus + web search, two sources from different publishers)
   - blind `max_change` proposal (sees prompt, start value and years only)
@@ -163,6 +163,15 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.3 Generators (`lib/content/generate.ts`, `lib/content/catalog.ts`):
+  - **Catalog:** 52 world-level World Bank/OWID series, each checked live.
+  - **Data-backed:** code picks a round start year at least 10 years back and the latest year, and reads both values from the dataset; Sonnet writes only the prompt and the fact.
+  - **Researched:** batches drafted by Opus with up to 8 web searches.
+  - **Range:** a blind `max_change` proposal (never sees the end value; unit test enforces it), raised along a menu only if the range rules need it.
+  - **Fix:** OWID charts can ignore the country filter, so the fetcher downloads the full table and keeps only World rows. Multi-measure charts are refused and zero values dropped.
+  - **Real smoke run** (`npm run content:smoke`): $0.19, all calls OK. The US Open fact said $90M while the answer was $85M (prize money vs total pay), a good case for the fact-quality check.
+  - 230 unit tests.
 
 - 2026-11-09: Stats page note no longer says accounts are "coming soon" (requested by Dani). Signed in: "Your stats are saved to your account, so they follow you to any device you sign in on." Not signed in: "Stats are kept on this device. Add your email (link to /account) to keep your streak on any device." The note waits for the account check, so the wrong one never flashes. Branch `fix-stats-sync-note`. `npm run check` and the pages E2E pass.
 - 2026-11-09: 5.2 Claude wrapper + data sources:

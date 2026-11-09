@@ -41,7 +41,8 @@ async function getOk(fetchFn: FetchLike, url: string): Promise<Response> {
   return res;
 }
 
-const finite = (p: { year: number; value: number }) => Number.isInteger(p.year) && Number.isFinite(p.value);
+/** Usable points only: whole years and positive values (a question's values must be > 0). */
+const finite = (p: { year: number; value: number }) => Number.isInteger(p.year) && Number.isFinite(p.value) && p.value > 0;
 
 interface WbRow {
   date: string;
@@ -80,13 +81,18 @@ interface OwidMeta {
 }
 
 export async function fetchOwid(slug: string, entity = "OWID_WRL", fetchFn: FetchLike = fetch): Promise<Series> {
-  const q = `v=1&csvType=filtered&useColumnShortNames=true&country=~${encodeURIComponent(entity)}`;
+  // csvType=full: many charts ignore the country filter and return one year for every country,
+  // so download the whole table and keep only this entity's rows.
+  const q = "v=1&csvType=full&useColumnShortNames=true";
   const base = `https://ourworldindata.org/grapher/${encodeURIComponent(slug)}`;
   const [csvRes, metaRes] = await Promise.all([getOk(fetchFn, `${base}.csv?${q}`), getOk(fetchFn, `${base}.metadata.json?${q}`)]);
-  const records = parseCsvRecords(await csvRes.text());
+  const records = parseCsvRecords(await csvRes.text()).filter((r) => r.code === entity);
   const meta = (await metaRes.json()) as OwidMeta;
   if (!records.length) throw new Error(`OWID ${slug}/${entity}: no data`);
-  const valueCol = Object.keys(records[0]!).find((k) => !["entity", "code", "year"].includes(k));
+  const valueCols = Object.keys(records[0]!).filter((k) => !["entity", "code", "year"].includes(k));
+  // One measure per series: a chart with several value columns is ambiguous, so it isn't used.
+  if (valueCols.length !== 1) throw new Error(`OWID ${slug}: expected 1 value column, got ${valueCols.length}`);
+  const valueCol = valueCols[0];
   if (!valueCol) throw new Error(`OWID ${slug}: no value column`);
   const col = meta.columns[valueCol] ?? Object.values(meta.columns)[0] ?? {};
   return {

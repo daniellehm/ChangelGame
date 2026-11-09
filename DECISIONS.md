@@ -281,3 +281,15 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
 - **Tests** inject fake Claude and data-source clients, so the pipeline logic is tested for free. Real-model behaviour gets one small, paid smoke run (the planted wrong number) only once the key is in.
 
 **Why:** It works within the Hobby plan, survives timeouts and crashes mid-run, and touches no non-changel secrets.
+
+### 2026-11-09: M5: batching, duplicate check, data-backed share
+**Decision:**
+- **Data-backed questions are world-level only** (52 curated World Bank / OWID series), per Dani's "global, no country bias". That's roughly one question per series, about 50 in total. So in the long run most questions are researched. Data-backed series are spread in at about one per day while they last.
+- **To keep researched questions inside the $50 cap,** Opus researches **5 questions per call** (up to 8 web searches shared across them) and cross-checks in batches. The smoke run cost about $0.09 per drafted question, against about $0.27 estimated for one at a time.
+- **Duplicate check.**
+  - Data-backed: a duplicate is the same dataset series (source + id + entity).
+  - Otherwise: trigram similarity over 0.6 to an existing prompt gets a quick Sonnet "same measure?" call, instead of failing outright.
+  - Why: the spec's plain over-0.6 rule rejects different questions (solar vs wind share 0.80, wheat vs rice yields 0.74, measured).
+- **Range menu** for `max_change`: 1.05, 1.1, 1.2, 1.3, 1.5, 2, 3, 4, 5, 8, 10, 20, 30, 50, 100, 200, 500, 1000. Round numbers keep the slider's end labels readable.
+
+**Why:** It fits Dani's cap and "global only" choice, and the duplicate check stops rejecting genuinely different questions.

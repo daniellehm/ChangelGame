@@ -50,6 +50,24 @@ describe("Our World in Data", () => {
     expect(s.url).toBe("https://ourworldindata.org/grapher/life-expectancy");
     expect(valueAt(s, 1800)).toBe(28.5);
     expect(s.points.length).toBeGreaterThan(20);
-    expect(f.urls.every((u) => u.includes("country=~OWID_WRL"))).toBe(true);
+    expect(f.urls.every((u) => u.includes("csvType=full"))).toBe(true);
+  });
+
+  it("keeps only the requested entity's rows (charts can ignore the country filter)", async () => {
+    const mixed = "entity,code,year,share\nAfghanistan,AFG,2025,25.9\nWorld,OWID_WRL,1950,28.8\nZimbabwe,ZWE,2025,40.5\nWorld,OWID_WRL,2025,57.8\n";
+    const meta = JSON.stringify({ columns: { share: { titleShort: "Urban share", unit: "%" } } });
+    const g = fakeFetch({ "https://ourworldindata.org/grapher/urban.csv": mixed, "https://ourworldindata.org/grapher/urban.metadata.json": meta });
+    const s = await fetchOwid("urban", "OWID_WRL", g);
+    expect(s.points).toEqual([{ year: 1950, value: 28.8 }, { year: 2025, value: 57.8 }]);
+  });
+
+  it("refuses charts with several measures, and drops zero values", async () => {
+    const two = "entity,code,year,a,b\nWorld,OWID_WRL,2000,1,2\n";
+    const meta = JSON.stringify({ columns: {} });
+    const g = fakeFetch({ "https://ourworldindata.org/grapher/two.csv": two, "https://ourworldindata.org/grapher/two.metadata.json": meta });
+    await expect(fetchOwid("two", "OWID_WRL", g)).rejects.toThrow(/expected 1 value column/);
+    const zeros = "entity,code,year,v\nWorld,OWID_WRL,1960,0\nWorld,OWID_WRL,2000,5\n";
+    const h = fakeFetch({ "https://ourworldindata.org/grapher/z.csv": zeros, "https://ourworldindata.org/grapher/z.metadata.json": meta });
+    expect((await fetchOwid("z", "OWID_WRL", h)).points).toEqual([{ year: 2000, value: 5 }]);
   });
 });
