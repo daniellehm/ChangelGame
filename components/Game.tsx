@@ -11,6 +11,7 @@ import {
   isComplete,
   isReturningPlayer,
   loadPlay,
+  rangesWereMissing,
   loadStats,
   pruneOldPlays,
   recordCompleted,
@@ -137,6 +138,27 @@ function fromPlay(p: StoredPlay): PlayInfo & { phase: Phase } {
   };
 }
 
+/**
+ * A play saved before per-question ranges gets its rounds' ranges from the
+ * server (same question, same position), keeping its results. If that fails
+ * (offline, puzzle closed), loadPlay's full-range fallback stays.
+ */
+async function refreshRanges(source: GameSource, p: StoredPlay): Promise<StoredPlay> {
+  if (!rangesWereMissing(p)) return p;
+  try {
+    const fresh = await source.loadPuzzle(p.puzzle.date);
+    const rounds = p.puzzle.rounds.map((r) => {
+      const f = fresh.rounds.find((x) => x.position === r.position && (r.question_id === undefined || x.question_id === r.question_id));
+      return f ? { ...r, range: f.range } : r;
+    });
+    const up: StoredPlay = { ...p, puzzle: { ...p.puzzle, rounds } };
+    savePlay(up);
+    return up;
+  } catch {
+    return p;
+  }
+}
+
 async function boot(source: GameSource, opts: { preferIntro?: boolean } = {}): Promise<PlayInfo & { phase: Phase }> {
   const tz = deviceTimeZone();
   const today = localDate(new Date(), tz);
@@ -152,13 +174,13 @@ async function boot(source: GameSource, opts: { preferIntro?: boolean } = {}): P
     } catch {
       /* malformed */
     }
-    if (p && !isComplete(p) && age <= 1) return fromPlay(p);
+    if (p && !isComplete(p) && age <= 1) return fromPlay(await refreshRanges(source, p));
     setActiveDate(null);
   }
 
   // Already played (or started) today, including after flying back across the date line.
   const existing = loadPlay(today);
-  if (existing) return fromPlay(existing);
+  if (existing) return fromPlay(await refreshRanges(source, existing));
 
   const puzzle = await source.loadPuzzle(today);
   // Returning players skip the intro and go straight to round 1 (SPEC §9).
