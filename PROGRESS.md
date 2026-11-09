@@ -2,11 +2,12 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). **1.11 blocked**: MCP access + GitHub login connection are done, but the Vercel GitHub app is installed for selected repos only and `ChangelGame` isn't one of them (400). Waiting for Dani to add the repo (see Needs from Dani). Then: run `create_git_project` (repo `daniellehm/ChangelGame`, name `changel`, teamId `team_aHOu0Tqfx6VbGGGipjmx66jE`, deploy false), set Node 22.x, push to trigger the branch preview, verify, then stop for M1 review. Branch `m1-scaffold-visuals` is pushed to GitHub.
+**Milestone 1 complete (2026-11-09). Waiting for Dani's review and go-ahead.** Preview: https://changel-git-m1-scaffold-visuals-releasedani.vercel.app (Vercel login required). On approval: merge `m1-scaffold-visuals` into `main`, then start M2 on a new branch `m2-database-api`.
 
 ## Needs from Dani
 
-**Now (blocks M1 or its plan):**
+**Now:**
+- [ ] Review M1 (preview URL above + side-by-sides via `npm run test:parity` → `test-results/parity/`) and give the go-ahead for M2
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
 - [x] Approve the Vercel MCP connection for the `releasedani` scope, and confirm it's the right account (done 2026-11-09)
@@ -29,6 +30,7 @@
 
 Next.js app, tokens, fonts, all game screens ported from the prototype, running on hard-coded data.
 **Milestone accepted when:** side-by-side screenshots match the prototype at 390 px and 1280 px.
+**Status:** all tasks done; parity = 0 px difference on all 14 screenshots. Awaiting Dani's review.
 
 - [x] **1.1 Scaffold.** Next.js (App Router, TypeScript strict, ESLint), Vitest, Playwright, npm scripts, `.nvmrc`, `.env.example`, repo layout from SPEC section 3.
   *Accept:* `npm run dev` serves a page; `npm run typecheck`, `npm run lint` and `npm test` pass; `.env.example` lists every variable from SPEC section 11 with no values.
@@ -50,7 +52,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
   *Accept:* reachable by keyboard and mouse at 390 px; no layout break at 320 px.
 - [x] **1.10 Visual parity test.** A Playwright spec that opens `reference/prototype.html` and the app with the same frozen clock, plays the same slider values, and screenshots intro, round (slider at 0 and at +0.38), reveal and final at 390 px and 1280 px. It also writes side-by-side PNGs to `test-results/parity/`.
   *Accept:* every pair is within a 0.5% pixel-diff threshold (emoji glyph AA allowed); Dani has reviewed the side-by-sides.
-- [ ] **1.11 Preview deploy.** Vercel project "changel" linked to `daniellehm/ChangelGame`, functions region syd1 (`vercel.json`), with a preview deploy of the branch.
+- [x] **1.11 Preview deploy.** Vercel project "changel" linked to `daniellehm/ChangelGame`, functions region syd1 (`vercel.json`), with a preview deploy of the branch.
   *Accept:* a preview URL serves the game; no env vars needed yet.
 
 ## Milestone 2: Database + puzzle API
@@ -130,6 +132,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.11 Preview deploy: first build green on Vercel (26 s, 6 static routes, syd1). Preview verified live (200, intro HTML, fonts preloaded, noindex). **M1 complete.**
 - 2026-11-09: 1.11: Vercel project `changel` created and linked to `daniellehm/ChangelGame` (prj_4qiuH4a01M4Il52WrKi8zd75EjCS), with Node 22.x, Next.js preset and functions in syd1. Previews are behind Vercel Authentication.
 - 2026-11-09: 1.11: GitHub login connected. Retry failed with "install the GitHub integration first". The app is restricted to selected repos and `search_repo` can't see ChangelGame.
 - 2026-11-09: 1.11: Dani approved MCP access and confirmed the Vercel account. The retry failed: "add a Login Connection to your GitHub account first".
