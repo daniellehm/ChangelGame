@@ -2,11 +2,12 @@
 
 ## Current status
 
-**M2 in progress on branch `m2-database-api`.** 2.1–2.6 done. Next: 2.7, switch the client to the API, delete the fixture, network-spy E2E, Vercel env vars + preview.
+**M2 complete in code (2026-11-09), waiting on one Vercel setting from Dani, then review.** All tasks 2.1–2.7 done and both acceptance criteria met locally. The Vercel preview needs `SUPABASE_SERVICE_ROLE_KEY` added by Dani (see Needs from Dani); then verify the preview, then stop for Dani's M2 review.
 
 ## Needs from Dani
 
 **Now:**
+- [ ] **Blocks the M2 preview:** add `SUPABASE_SERVICE_ROLE_KEY` in Vercel → project changel → Settings → Environment Variables. Value = the same `sb_secret_…` key as in `.env.local`, type **Sensitive**, environments **Production + Preview**. (Claude Code blocks Claude from reading secrets, so this one is manual.) The other 3 vars are already set.
 - [x] Review M1 (approved 2026-11-09)
 - [x] Pick which design-playground ideas to keep (2026-11-09: all five, but keep the round label; see DECISIONS)
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
@@ -61,6 +62,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
 
 Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 **Milestone accepted when:** answers are absent from every network response before lock-in, and all date unit tests pass.
+**Status:** both met (E2E `tests/e2e/api.spec.ts` spies on every response; all date tests pass). Waiting on the Vercel secret, the preview check and Dani's review.
 
 - [x] 2.1 `supabase/migrations` set-up (applied via MCP, see DECISIONS); `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
 - [x] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
@@ -68,7 +70,7 @@ Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 - [x] 2.4 `content/questions.csv` + import script; seed the 20 prototype questions as candidates. *Accept:* re-runnable (idempotent) import; seed puzzles available for dev dates.
 - [x] 2.5 `lib/dates.ts` window check + every row of the SPEC section 4 edge-case table. *Accept:* all date tests pass with fixed clocks and time zones.
 - [x] 2.6 `GET /api/puzzle?date=D` + stateless `POST /api/reveal` (DECISIONS 2026-11-09) (Zod, error envelope, 403 `puzzle_not_available`, edge cache 5 min). *Accept:* the response has no end_value/fact/source; out-of-window dates return 403; the client shows "Check your device clock".
-- [ ] 2.7 Client switched from the fixture to the API; fixture deleted. *Accept:* a Playwright network spy finds no answer fields in any response before lock-in.
+- [x] 2.7 Client switched from the fixture to the API; fixture deleted. *Accept:* a Playwright network spy finds no answer fields in any response before lock-in.
 
 ## Milestone 3: Anonymous play + scoring on the server
 
@@ -134,6 +136,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 2.7 Client on the API: `lib/game/api-source.ts` (GET /api/puzzle, POST /api/reveal, typed load errors), `components/LoadError.tsx` (device clock / no puzzle / offline, with retry). Fixture + fixture source deleted (no answers in JS bundles). E2E pins the server clock to the browser clock (`setClock`, dev server runs with `ALLOW_TEST_CLOCK=1`). New `tests/e2e/api.spec.ts`: no answer in any document/script/API response before its lock-in, one reveal per lock-in, clock-error and no-puzzle screens. Visual baselines refreshed (values now rounded to 3 s.f.). 166 unit + 24 integration + 21 E2E + 2 visual pass. Vercel env: URL, publishable key, LAUNCH_DATE set; the secret key is pending (Dani).
 - 2026-11-09: 2.6 API: `GET /api/puzzle` (Zod, window 403, 404 if not ready, 5-min edge cache on 200s only, number from LAUNCH_DATE, rerun-aware) and `POST /api/reveal` (window + 6 h grace, clamp, one round's answer + score, no-store). `lib/puzzles/repo.ts` selects public columns and answers in separate functions. Test clock header (`ALLOW_TEST_CLOCK=1`, never on Vercel production). New `npm run test:integration` (real DB): 24 pass, incl. no answer fields or values in any puzzle response. 176 unit tests pass.
 - 2026-11-09: 2.5 Date window: `puzzleWindow`, `isWindowOpen`, `isGuessAcceptable` (6 h grace), `servableDates` in `lib/dates.ts`; `tests/unit/dates-window.test.ts` covers the window boundaries, that every real local date in UTC−12…+14 is always servable, and all 7 rows of the SPEC §4 edge-case table. 172 unit tests pass.
 - 2026-11-09: 2.4 Content: migration `question_slug_puzzle_number_optional`; `lib/content/csv.ts` (RFC 4180 parser), `lib/content/questions.ts` (Zod schema mirroring DB checks, 3 s.f. rounding), `content/questions.csv` (20 prototype questions), `scripts/import-questions.ts` (`npm run content:import`, idempotent by slug, `--dry-run`), `lib/content/dev-seed.ts` + `scripts/seed-dev-puzzles.ts` (`npm run content:seed-dev`, 4 ready puzzles 2026-11-09…12). Imported + seeded; second runs are no-ops. 161 unit tests pass.
