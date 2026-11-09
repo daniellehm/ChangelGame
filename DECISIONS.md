@@ -240,6 +240,14 @@ Each item is applied in the milestone where it comes up.
 - **How it loads:** the official script only initialises on window `DOMContentLoaded`, which has already fired when a client component mounts. The component inserts the same script tag and replays that event once the script has loaded.
 - **Production builds only.** Dev, E2E and the visual baselines never load the third-party script.
 - **Hidden mid-round** (`html[data-playing]`, set by Game). At phone size the fixed 64 px button covered the right end of "Next" on the reveal. It shows on the intro, final, How to play, Stats and Account screens, and `html.has-bmc` adds 110 px of bottom padding so the last button can scroll clear of it.
+- **Phones:** the widget always opens its popup at a fixed 420 px wide, and it picks its phone or desktop layout only once, at page load. On narrow or resized screens the popup ran off the edge. Below 480 px, CSS pins `#bmc-iframe` 8 px from each side and above the button (`max-height: calc(100dvh - 104px)`). Checked at iPhone 13, iPhone SE and desktop-resized-to-400 sizes: it fits on screen and closes cleanly.
 - **Security:** checked the widget script. It reads `document.cookie` only to set its own one-day `visited` cookie. Changel's session cookies are HTTP-only, so it can't read them. There's no CSP to update.
 
 **Why:** Dani's request. Hiding it mid-round is a small visual departure, made so it never blocks play.
+
+### 2026-11-09: Tab icon is the logo mark
+**Decision:** The favicon is the header's logo mark: ink rounded square #16130f with the ⇅ arrows in #f6f1e7. It's drawn as SVG paths, not the font glyph, so it renders the same everywhere.
+- Files use the Next.js file conventions: `app/icon.svg` (modern browsers), `app/favicon.ico` (16 + 32 px PNGs, for older browsers), and `app/apple-icon.png` (180 px, full-bleed square, because iOS rounds it).
+- The PNGs were rendered from the SVG.
+
+**Why:** Dani's request.

@@ -148,6 +148,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Tab icon (logo mark: SVG + favicon.ico + apple-icon), and the Buy Me a Coffee popup fixed on phones (it ran off the left edge; pinned inside the screen below 480 px). Checked with a local production build at iPhone 13, iPhone SE, desktop→400 px and desktop sizes. E2E 28 and visual pass.
+
 - 2026-11-09: Buy Me a Coffee floating button (production builds only; hidden mid-round so it never covers Next; extra bottom room). Checked with a local production build at 375×667 and 390×844: it shows on the intro, final and How to play screens, is hidden on rounds and reveals, doesn't overlap Share or Save, and causes no page errors. E2E 28 and visual pass.
 
 - 2026-11-09: Relative scoring approved by Dani and merged into `main`.
