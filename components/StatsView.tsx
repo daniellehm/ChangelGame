@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { addDays, localDate, puzzleNumber } from "@/lib/dates";
 import { fetchMe } from "@/lib/game/session-client";
@@ -17,6 +18,8 @@ interface Loaded {
 
 export function StatsView({ launch }: { launch: string }) {
   const [data, setData] = useState<Loaded | null>(null);
+  // Signed into a real account? (null = unknown/no session → offer sign-in.)
+  const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -27,6 +30,7 @@ export function StatsView({ launch }: { launch: string }) {
       setData({ stats, today, summary });
       // Server stats win when there's a session (SPEC §4); local stays as the fallback.
       void fetchMe(today, tz).then((me) => {
+        setSignedIn(!!me && !me.anonymous);
         if (me && me.games_played >= summary.played) {
           setData({ stats, today, summary: { ...summary, played: me.games_played, streak: me.current_streak, maxStreak: me.max_streak, best: me.best_total ?? 0, average: me.avg_total ?? 0 } });
         }
@@ -39,7 +43,19 @@ export function StatsView({ launch }: { launch: string }) {
   const { summary: s, stats, today } = data;
 
   if (s.played === 0) {
-    return <p>No games yet. Play today&apos;s Changel and your stats will show up here.</p>;
+    return (
+      <>
+        <p>No games yet. Play today&apos;s Changel and your stats will show up here.</p>
+        {!signedIn && (
+          <>
+            <div className="save-or" aria-hidden="true">or</div>
+            <p>
+              <Link href="/account" className="text-link">Sign in to restore your stats</Link> from another device.
+            </p>
+          </>
+        )}
+      </>
+    );
   }
 
   const totalRounds = ORDER.reduce((a, t) => a + s.tierCounts[t], 0);
