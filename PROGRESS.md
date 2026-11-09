@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). Next: a few UI tweaks Dani asked for on `main` (branch `ui-tweaks`), then **M6**. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). Next: UI tweaks (branch `ui-tweaks`, done), then **M6**. **`main` is merged locally but not pushed: waiting for Dani's OK to deploy to production.** Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -184,6 +184,10 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-10: M5 merged into `main` locally (approved by Dani: "ready to move on"); pushing `main` needs Dani's explicit OK (production deploy).
+  - UI tweaks on branch `ui-tweaks`: a stats day pop-up (score + each round), and removed the "saved to your account" note, the Export my data button and the Delete account heading (DECISIONS 2026-11-10).
+  - Tests: unit 283, integration 101, E2E all passing, visual baselines updated (reveal text only).
 
 - 2026-11-09: M5 review, round 2 (from Dani testing):
   - **Admin edits are trusted:** saving doesn't re-run the checks and approves the question. "Run checks (second opinion)" is a separate button.
