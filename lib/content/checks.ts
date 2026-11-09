@@ -140,7 +140,9 @@ function digitHints(v: number): string[] {
 
 /** Passages around the years and values, capped so a source check stays cheap. */
 export function relevantPassages(text: string, c: Candidate, maxChars = 12_000): string {
-  const needles = [String(c.start_year), String(c.end_year), ...digitHints(c.start_value), ...digitHints(c.end_value)];
+  // Also the values as players see them ("2:21:06" for a time stored as 8466 s, "$0.38").
+  const shown = [c.start_value, c.end_value].map((v) => formatValue(v, c.format).replace(/^\$/, "")).filter((h) => h.replace(/\D/g, "").length >= 2);
+  const needles = [String(c.start_year), String(c.end_year), ...digitHints(c.start_value), ...digitHints(c.end_value), ...shown];
   const chunks = text.split(/\n/).flatMap((line) => (line.length > 600 ? line.match(/[\s\S]{1,600}/g)! : [line]));
   const hits: string[] = [];
   let size = 0;
@@ -330,7 +332,7 @@ export async function checkBatch(targets: CheckTarget[], deps: CheckDeps): Promi
           runId: deps.runId,
           questionId: id,
           system: SOURCE_SYSTEM,
-          prompt: `Measure: ${c.prompt}\nStart: ${c.start_value} in ${c.start_year}\nEnd: ${c.end_value} in ${c.end_year}\n\nPage ${url}:\n"""\n${passages}\n"""`,
+          prompt: `Measure: ${c.prompt}\nStart: ${c.start_value} (shown as ${formatValue(c.start_value, c.format)}) in ${c.start_year}\nEnd: ${c.end_value} (shown as ${formatValue(c.end_value, c.format)}) in ${c.end_year}\n\nPage ${url}:\n"""\n${passages}\n"""`,
           schema: SourceVerdict,
         });
         pages.push({ url, verdict });

@@ -122,6 +122,12 @@ describe("page text", () => {
     const c = researched({ prompt: "Wild giant pandas", start_year: 1003, start_value: 1600, end_year: 1014, end_value: 1860 });
     expect(relevantPassages(text, c)).toContain("1,864 wild pandas");
   });
+
+  it("finds times written as h:mm:ss when the value is stored in seconds", () => {
+    const text = "Intro.\n2:21:06 Ingrid Kristiansen Norway London Marathon\nOther.";
+    const c = researched({ prompt: "Women's marathon world record", format: "time", start_year: 1001, start_value: 8466, end_year: 1002, end_value: 7796 });
+    expect(relevantPassages(text, c)).toContain("2:21:06 Ingrid");
+  });
 });
 
 describe("source pages", () => {
