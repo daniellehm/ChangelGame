@@ -2,11 +2,14 @@
 
 ## Current status
 
-**M4 in progress on branch `m4-login-merge` (email-only, no Google).** All code done and tested; Resend verified; Dani's Supabase email checklist done. Next: Dani's real sign-in test on the preview, then the M4 review.
+**M4 approved by Dani and merged to `main` (2026-11-09).** Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
 
 ## Needs from Dani
 
 **Now:**
+- [x] M4 reviewed and approved (2026-11-09)
+- [ ] Go-ahead for M5
+- [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
 - [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
 - [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
@@ -96,15 +99,16 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 
 Magic link, Google, upgrade in place, merge-token flow, account page with export/delete.
 **Milestone accepted when:** an anonymous player with 3 plays logs in on a second device holding 2 other plays and ends with all 5 (earlier-started kept on clashes). Email-only; Google dropped by Dani (DECISIONS 2026-11-09).
+**Status:** ✅ met (integration test `api-auth.test.ts` + E2E `replay-merge.spec.ts`); Dani tested real sign-in, email change and the replay case on the preview. Approved and merged to `main` on 2026-11-09.
 
-- [ ] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded sign-in email (link + 6-digit code) from hello@changel.app; changel.app added to Vercel; DNS table for GoDaddy.
+- [x] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded sign-in email (link + 6-digit code) from hello@changel.app; changel.app added to Vercel; DNS table for GoDaddy.
 - [x] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`; verify by 6-digit code or link; sessions persist (no re-entering codes).
 - [~] 4.3 Google via `linkIdentity`: **dropped by Dani** (email-only).
 - [x] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
 - [x] 4.5 Account page: change email, export JSON, delete account (hard delete).
 - [x] 4.6 Sign out → fresh anonymous state + local cache cleared.
 - [x] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
-- [ ] 4.8 E2E: magic link via test inbox → stats persist in a second browser context; the 3 + 2 = 5 acceptance scenario.
+- [x] 4.8 (integration acceptance with real Supabase codes via the admin API + E2E replay/sign-in; Dani's real-inbox test) E2E: magic link via test inbox → stats persist in a second browser context; the 3 + 2 = 5 acceptance scenario.
 
 ## Milestone 5: Content pipeline + admin
 
@@ -141,6 +145,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M4 approved by Dani and merged into `main` (production at changel.app now has email sign-in).
 - 2026-11-09: Dani's replay case: the server already kept the account's first score (checked: 323 intact), but the device kept showing the replay. Added `lib/game/sync.ts` (`refreshFromAccount` after sign-in reloads this device's plays from the account) + a banner explaining the outcome. New E2E `replay-merge.spec.ts` (account plays first → replay elsewhere → sign in → first score shown, replay discarded, 1 play in DB). 177 unit + 58 integration + 28 Playwright pass.
 - 2026-11-09: Dani hit our per-IP sign-in email limit ("Slow down a little"; old preview still had 5/10 min). Rate-limit messages now say what tripped + seconds left (feeds the form's countdown). Vercel hadn't built the previous push; re-pushed.
 - 2026-11-09: M4 feedback from Dani's preview test (sign-in + email change worked): save button under Share from game 1 (auto-open from game 2); Supabase's 60 s per-address email cooldown surfaced as a countdown (not a generic "too many emails"); per-IP email limit 10/10 min; `email_taken` (409) when an account changes to another account's email. Visual baselines refreshed (final screen). 173 unit + 58 integration + 27 Playwright pass.
