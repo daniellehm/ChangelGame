@@ -13,6 +13,9 @@ export type ErrorCode =
   | "out_of_order"
   | "already_answered"
   | "question_changed"
+  | "invalid_code"
+  | "email_taken"
+  | "email_failed"
   | "internal_error";
 
 export function apiError(code: ErrorCode, message: string, status: number): NextResponse {

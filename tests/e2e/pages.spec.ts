@@ -4,7 +4,7 @@ import { next, playRound, syd, setClock } from "./helpers";
 const PAGES = [
   { label: "How to play", path: "/how-to-play", h1: "Guess the change." },
   { label: "Stats", path: "/stats", h1: "Your Changel" },
-  { label: "Account", path: "/account", h1: "Save your streak" },
+  { label: "Account", path: "/account", h1: "Your account" },
 ];
 
 test.beforeEach(async ({ page }) => {
@@ -75,4 +75,10 @@ test("stats page reflects a completed game", async ({ page }) => {
   await expect(page.locator("#sStreak")).toHaveText("1");
   await expect(page.locator(".strip i.played")).toHaveCount(1);
   await expect(page.locator(".strip")).toHaveAttribute("aria-label", "Played 1 of the last 30 days");
+});
+
+test("account page on a fresh browser offers sign-in (no account created just by visiting)", async ({ page }) => {
+  await page.goto("/account");
+  await expect(page.locator(".save-title")).toHaveText("Sign in");
+  await expect(page.getByRole("button", { name: "Email me a code" })).toBeVisible();
 });

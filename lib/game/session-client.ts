@@ -24,10 +24,22 @@ async function call(path: string, init: RequestInit): Promise<{ status: number; 
 
 const errCode = (b: Json | null) => ((b?.error as Json | undefined)?.code as string | undefined) ?? "unknown";
 
-/** Ensure a session cookie exists (creates an anonymous user if needed). */
-export async function ensureSession(tz: string): Promise<boolean> {
-  const r = await call("/api/session", { method: "POST", body: JSON.stringify({ tz }) });
-  return r.status === 200;
+let sessionInFlight: Promise<boolean> | null = null;
+
+/**
+ * Ensure a session cookie exists (creates an anonymous user if needed).
+ * Single-flight: concurrent callers (React dev double-effects, a double tap,
+ * load + start racing) share one request, so only ONE anonymous user is made.
+ */
+export function ensureSession(tz: string): Promise<boolean> {
+  if (!sessionInFlight) {
+    sessionInFlight = call("/api/session", { method: "POST", body: JSON.stringify({ tz }) })
+      .then((r) => r.status === 200)
+      .finally(() => {
+        sessionInFlight = null;
+      });
+  }
+  return sessionInFlight;
 }
 
 export type BeginResult =
@@ -75,6 +87,8 @@ export async function syncLocalPlay(date: string, tz: string, startedAt: string,
 }
 
 export interface ServerStats {
+  anonymous: boolean;
+  email: string | null;
   games_played: number;
   current_streak: number;
   max_streak: number;
@@ -86,4 +100,47 @@ export interface ServerStats {
 export async function fetchMe(date: string, tz: string): Promise<ServerStats | null> {
   const r = await call(`/api/me?date=${encodeURIComponent(date)}&tz=${encodeURIComponent(tz)}`, { method: "GET", headers: {} });
   return r.status === 200 && r.body ? (r.body as unknown as ServerStats) : null;
+}
+
+/** Like fetchMe, but tells "no session" (null) apart from errors (undefined). */
+export async function fetchAccount(): Promise<ServerStats | null | undefined> {
+  const r = await call("/api/me", { method: "GET", headers: {} });
+  if (r.status === 200 && r.body) return r.body as unknown as ServerStats;
+  if (r.status === 401) return null;
+  return undefined;
+}
+
+export type EmailStep = { ok: true } | { ok: false; message: string; retryAfter?: number };
+
+export async function sendSignInEmail(email: string): Promise<EmailStep> {
+  const r = await call("/api/auth/email", { method: "POST", body: JSON.stringify({ email }) });
+  if (r.status === 200) return { ok: true };
+  if (r.status === 400) return { ok: false, message: "That doesn't look like an email address." };
+  const message = ((r.body?.error as Json | undefined)?.message as string) ?? "Couldn't send the email. Try again.";
+  const retryAfter = r.status === 429 ? Number(/(\d+) seconds/.exec(message)?.[1]) || 60 : undefined;
+  return { ok: false, message, retryAfter };
+}
+
+export interface MergeSummary {
+  merged: number;
+  kept: number;
+  replaced: number;
+}
+
+export type VerifyStep = { ok: true; email: string; merged: MergeSummary | null } | { ok: false; message: string; retryAfter?: number };
+
+export async function verifyCode(code: string): Promise<VerifyStep> {
+  const r = await call("/api/auth/verify", { method: "POST", body: JSON.stringify({ code }) });
+  if (r.status === 200 && r.body) return { ok: true, email: r.body.email as string, merged: (r.body.merged as MergeSummary | null) ?? null };
+  const message = ((r.body?.error as Json | undefined)?.message as string) ?? "That code didn't work.";
+  return { ok: false, message, retryAfter: r.status === 429 ? Number(/(\d+) seconds/.exec(message)?.[1]) || 60 : undefined };
+}
+
+export async function signOut(): Promise<void> {
+  await call("/api/auth/signout", { method: "POST", body: "{}" });
+}
+
+export async function deleteAccount(): Promise<boolean> {
+  const r = await call("/api/account/delete", { method: "POST", body: JSON.stringify({ confirm: "DELETE" }) });
+  return r.status === 200;
 }

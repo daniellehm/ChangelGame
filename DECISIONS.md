@@ -148,3 +148,34 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: E2E test players are tagged and cleaned up; test IPs
 **Decision:** When the test clock is on (`ALLOW_TEST_CLOCK=1`, never in production) and the request carries the test-clock header, `/api/session` tags new anonymous users with `user_metadata.e2e = true`. A Playwright global teardown deletes exactly those users. E2E pages send a stable fake `x-forwarded-for` from the RFC 2544 test range, so local runs don't exhaust Supabase's per-IP sign-up limit for the developer's machine. Test games still add to the crowd-stat counters of the dev seed puzzles. That's harmless, since those puzzles are deleted before launch.
 **Why:** The tests share the one Supabase project. Tagging makes cleanup exact without risking real players. Vercel overwrites `x-forwarded-for` (no spoofing in production), so the fake IP only matters locally.
+
+### 2026-11-09: M4 login is email-only (no Google), sessions persist
+**Decision:**
+- **No Google sign-in** (Dani: "I don't want Google full stop"). Login is passwordless email only: a sign-in link and a 6-digit code in the same email, either of which works. This drops SPEC §5 `linkIdentity({ provider: 'google' })`, the Google OAuth setup and the launch-checklist item on Google consent-screen verification.
+- **Players stay logged in** in a browser after signing in once. The session lives in the HTTP-only cookie (400-day max-age, refreshed as they play). Supabase's time-box and inactivity limits stay off, so a code is only needed on a new browser or device, or after signing out or clearing site data.
+- DNS for changel.app is at **GoDaddy**. Claude adds only `changel.app` to the existing Resend team and creates one sending-only key restricted to it. Other Resend domains and keys are never touched.
+**Why:** Dani's instructions. Email login covers everyone without a third-party account, and the persistent cookie avoids re-entering codes.
+
+### 2026-11-09: changel.app DNS is hosted on Vercel (nameservers moved from GoDaddy)
+**Decision:** There's no GoDaddy MCP, and GoDaddy's DNS API is limited to large accounts, so Dani pointed changel.app's nameservers at `ns1/ns2.vercel-dns.com`. The domain stays registered and billed at GoDaddy. Vercel serves the apex and `www` automatically (`www` → 308 → apex). Claude added the Resend records via the Vercel API: DKIM `resend._domainkey`, `send` MX + SPF TXT, `rsend` CNAME, and `_dmarc` (`p=none`). Vercel only accepted records once it had created the zone, about 12 minutes after nameserver verification. `docs/setup/godaddy-dns.md` (manual GoDaddy records) is superseded.
+**Why:** Claude can then manage DNS directly. It's one edit at GoDaddy instead of eleven, and it can be reversed by restoring GoDaddy's nameservers.
+
+### 2026-11-09: Sign-in UX and single-flight sessions
+**Decision:**
+- One reusable `SaveStreak` card (email → 6-digit code) in three modes: save (anonymous), sign in (no session) and change email. It appears on the final screen from the 2nd completed game for players without an account (never blocking), and on `/account`.
+- `/account` shows "Sign in" when there's no session (visiting creates no user), "Save your streak" for anonymous players, and email + change email / export / sign out / delete (two-step) for accounts. Sign-out and delete clear every `changel:*` localStorage key (SPEC §5).
+- Sign-in emails (Supabase templates in `supabase/templates/`) put the code first, with a link as the alternative. The link goes to `/auth/confirm` via `{{ .RedirectTo }}`, so it works on previews and in production once each origin is allow-listed.
+- **Bug fixed:** concurrent `ensureSession()` calls could create two anonymous users (React dev double-effects on the returning-player auto-start; also two tabs at once). It's now single-flight per page, with a unit test and an E2E regression test.
+**Why:** Matches SPEC §5 with Dani's email-only choice. The duplicate-user race broke guesses ("play not found").
+
+### 2026-11-09: Save button from the 1st game; email cooldowns; one account per email
+**Decision:**
+- Players without an account get a **"Save your streak"** button under Share on **every** final screen (Dani's request). It opens one email form that covers both creating an account and signing in (the email decides). From the 2nd completed game the form opens by itself (SPEC §5). It never blocks play.
+- Supabase allows **one email per address per 60 s**, which Dani kept hitting while testing. The API now returns "You can ask for another in N seconds", and the form shows a live countdown on "Email me a code" / "Send a new code" (60 s after each send). Our own per-IP limit is relaxed from 5 to 10 emails per 10 minutes.
+- A **signed-in account can't change to an email another account uses** (409 `email_taken`). Before, it would silently have signed into that other account. This tells a signed-in player that the email is registered, which is acceptable; anonymous and signed-out flows still never reveal it.
+- Games are never copied between accounts. Each play belongs to exactly one player. Signing into an existing account from an anonymous browser *moves* that browser's games into it (earlier-started wins on clashes). Signing out starts a fresh, empty anonymous player.
+**Why:** Dani's feedback from testing M4 on the preview.
+
+### 2026-11-09: One attempt per day per account, shown honestly after sign-in
+**Decision:** Signing in can never let a replay count. The server already kept the **first** attempt on a same-day clash and discarded the other (`merge_players`). The bug was on the device: after signing in, the browser kept showing the replay's score. Now, after any sign-in (final screen or account page), `refreshFromAccount()` uploads offline games, then reloads this device's recent plays from the account (`/api/play` per stored date). The screen therefore shows the account's result. A banner then explains what happened, e.g. "You'd already played that day on your account, so your first score stands. This device's replay was discarded."
+**Why:** Dani found that signing in after replaying today on another browser looked as if the replay counted. A browser can't know who someone is before they sign in, so it can't block the replay itself. Instead the replay is never kept and never shown as counting.

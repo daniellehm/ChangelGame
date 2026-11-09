@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { ROUNDS } from "@/lib/config";
 import { daysBetween, deviceTimeZone, localDate } from "@/lib/dates";
 import { createApiSource, PuzzleLoadError, type LoadErrorKind } from "@/lib/game/api-source";
-import { beginPlay, ensureSession, fetchMe, submitGuess, syncLocalPlay, type ServerStats } from "@/lib/game/session-client";
+import { beginPlay, ensureSession, fetchMe, submitGuess, type ServerStats } from "@/lib/game/session-client";
+import { refreshFromAccount, syncPending } from "@/lib/game/sync";
 import {
   getActiveDate,
   isComplete,
@@ -16,7 +17,6 @@ import {
   savePlay,
   setActiveDate,
   summarize,
-  unsyncedLocalPlays,
   type StatsSummary,
   type StoredPlay,
 } from "@/lib/game/storage";
@@ -188,17 +188,6 @@ async function beginOnServer(puzzle: Puzzle, tz: string): Promise<{ mode: Mode; 
   return { mode: "local", playId: null, startedAt: new Date().toISOString(), results: [] };
 }
 
-/** Upload finished local-only plays once a session exists (SPEC §5). Quiet on failure. */
-async function syncPending(tz: string): Promise<void> {
-  const pending = unsyncedLocalPlays().filter(isComplete);
-  if (!pending.length || !(await ensureSession(tz))) return;
-  for (const p of pending) {
-    const r = await syncLocalPlay(p.puzzle.date, p.tz || tz, p.started_at, p.results);
-    if (r.ok) savePlay({ ...p, synced: true, play_id: r.playId, results: r.answered.length === ROUNDS ? r.answered : p.results });
-    else if (r.permanent) savePlay({ ...p, synced: true });
-  }
-}
-
 const toSummary = (s: ServerStats, local: StatsSummary): StatsSummary => ({
   ...local,
   played: s.games_played,
@@ -213,6 +202,8 @@ export function Game({ launch }: { launch: string }) {
   const [s, dispatch] = useReducer(reducer, initial);
   const motion = !useReducedMotion();
   const [toast, setToast] = useState({ message: "Copied to clipboard", show: false });
+  // Survives the reload after signing in from the final screen.
+  const [savedNote, setSavedNote] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const showToast = useCallback((message: string) => {
@@ -399,7 +390,24 @@ export function Game({ launch }: { launch: string }) {
           />
         )}
         {s.phase === "final" && s.puzzle && stats && (
-          <Final puzzle={s.puzzle} results={s.results} stats={stats} animate={s.justFinished && motion} onToast={showToast} />
+          <Final
+            puzzle={s.puzzle}
+            results={s.results}
+            stats={stats}
+            animate={s.justFinished && motion}
+            // Button for anyone without an account; the form opens itself from the 2nd game (SPEC §5). Never blocks play.
+            offerSave={s.serverStats ? s.serverStats.anonymous : true}
+            saveOpen={stats.played >= 2}
+            onSaved={async (note) => {
+              // The account's games are the record: reload today's result from it,
+              // then explain what happened (so the old score never sits next to the note).
+              await refreshFromAccount(s.tz);
+              await load();
+              setSavedNote(note);
+            }}
+            note={savedNote}
+            onToast={showToast}
+          />
         )}
       </div>
       <Toast message={toast.message} show={toast.show} />

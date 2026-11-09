@@ -117,3 +117,23 @@ test("a browser that won't keep cookies falls back to local play", async ({ page
   expect(stored.mode).toBe("local");
   expect(stored.results).toHaveLength(5);
 });
+
+test("returning local player auto-starting creates exactly ONE anonymous user (regression)", async ({ page }) => {
+  await setClock(page, syd(`${DAY1}T09:00:00`));
+  const createdHere: string[] = [];
+  page.on("response", async (res) => {
+    if (!res.url().endsWith("/api/session") || res.status() !== 200) return;
+    const body = await res.json().catch(() => ({}));
+    if (body.created) {
+      createdHere.push(body.user_id);
+      created.add(body.user_id);
+    }
+  });
+  // Has played before on this device (so the intro is skipped), but has no session cookie.
+  await page.addInitScript(() => {
+    localStorage.setItem("changel:v1:stats", JSON.stringify({ v: 1, plays: [{ date: "2026-11-09", number: 1, tz: "Australia/Sydney", total: 200, tiers: ["meh", "meh", "meh", "meh", "meh"] }] }));
+  });
+  await page.goto("/");
+  await playRound(page, DAY1, 0, 0.2); // locks in through /api/guess without "play not found"
+  expect(createdHere).toHaveLength(1);
+});

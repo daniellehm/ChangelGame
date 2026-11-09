@@ -2,13 +2,18 @@
 
 ## Current status
 
-**M3 approved by Dani and merged to `main` (2026-11-09).** Next: M4 (login + merge) on branch `m4-login-merge`, once Dani gives the go-ahead. M4 needs from Dani: DNS records for changel.app (Resend), a Google OAuth client, and a short Supabase auth checklist (redirect URLs, SMTP, providers).
+**M4 approved by Dani and merged to `main` (2026-11-09).** Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
 
 ## Needs from Dani
 
 **Now:**
+- [x] M4 reviewed and approved (2026-11-09)
+- [ ] Go-ahead for M5
+- [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
+- [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
+- [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
 - [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
-- [ ] Go-ahead for M4
+- [x] Go-ahead for M4 (2026-11-09): email-only, no Google; stay logged in
 - [x] Review M2 (approved 2026-11-09)
 - [x] Go-ahead for M3 (2026-11-09): dashboard checklist for Supabase, Turnstile deferred to M6
 - [x] (done 2026-11-09) **Supabase dashboard checklist:** project Changel → **Authentication → Sign In / Providers** → turn on **Allow anonymous sign-ins** → Save. Then **Authentication → Rate Limits** → **IP Address Forwarding** → turn it on → Save. Leave the anonymous sign-ins limit at its default of 30/hour.
@@ -24,8 +29,6 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M4: DNS records for changel.app at the registrar (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
-- [ ] M4: Google OAuth client (Google Cloud console) for Supabase
 - [ ] M5: Anthropic API key
 - [ ] M6: Sentry account/DSN; PostHog or Plausible account
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
@@ -95,16 +98,17 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 ## Milestone 4: Login + merge
 
 Magic link, Google, upgrade in place, merge-token flow, account page with export/delete.
-**Milestone accepted when:** an anonymous player with 3 plays logs in on a second device holding 2 other plays and ends with all 5 (earlier-started kept on clashes).
+**Milestone accepted when:** an anonymous player with 3 plays logs in on a second device holding 2 other plays and ends with all 5 (earlier-started kept on clashes). Email-only; Google dropped by Dani (DECISIONS 2026-11-09).
+**Status:** ✅ met (integration test `api-auth.test.ts` + E2E `replay-merge.spec.ts`); Dani tested real sign-in, email change and the replay case on the preview. Approved and merged to `main` on 2026-11-09.
 
-- [ ] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded magic-link email from hello@changel.app.
-- [ ] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`.
-- [ ] 4.3 Google via `linkIdentity`.
-- [ ] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
-- [ ] 4.5 Account page: change email, export JSON, delete account (hard delete).
-- [ ] 4.6 Sign out → fresh anonymous state + local cache cleared.
-- [ ] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
-- [ ] 4.8 E2E: magic link via test inbox → stats persist in a second browser context; the 3 + 2 = 5 acceptance scenario.
+- [x] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded sign-in email (link + 6-digit code) from hello@changel.app; changel.app added to Vercel; DNS table for GoDaddy.
+- [x] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`; verify by 6-digit code or link; sessions persist (no re-entering codes).
+- [~] 4.3 Google via `linkIdentity`: **dropped by Dani** (email-only).
+- [x] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
+- [x] 4.5 Account page: change email, export JSON, delete account (hard delete).
+- [x] 4.6 Sign out → fresh anonymous state + local cache cleared.
+- [x] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
+- [x] 4.8 (integration acceptance with real Supabase codes via the admin API + E2E replay/sign-in; Dani's real-inbox test) E2E: magic link via test inbox → stats persist in a second browser context; the 3 + 2 = 5 acceptance scenario.
 
 ## Milestone 5: Content pipeline + admin
 
@@ -141,6 +145,17 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M4 approved by Dani and merged into `main` (production at changel.app now has email sign-in).
+- 2026-11-09: Dani's replay case: the server already kept the account's first score (checked: 323 intact), but the device kept showing the replay. Added `lib/game/sync.ts` (`refreshFromAccount` after sign-in reloads this device's plays from the account) + a banner explaining the outcome. New E2E `replay-merge.spec.ts` (account plays first → replay elsewhere → sign in → first score shown, replay discarded, 1 play in DB). 177 unit + 58 integration + 28 Playwright pass.
+- 2026-11-09: Dani hit our per-IP sign-in email limit ("Slow down a little"; old preview still had 5/10 min). Rate-limit messages now say what tripped + seconds left (feeds the form's countdown). Vercel hadn't built the previous push; re-pushed.
+- 2026-11-09: M4 feedback from Dani's preview test (sign-in + email change worked): save button under Share from game 1 (auto-open from game 2); Supabase's 60 s per-address email cooldown surfaced as a countdown (not a generic "too many emails"); per-IP email limit 10/10 min; `email_taken` (409) when an account changes to another account's email. Visual baselines refreshed (final screen). 173 unit + 58 integration + 27 Playwright pass.
+- 2026-11-09: Dani finished the Supabase email settings (Supabase defaults had secure email change on and 8-digit codes; both changed). Found the branch preview link pointing at an older build (a queued build finished last); redeployed.
+- 2026-11-09: 4.7 Cleanup cron: migration `cleanup_candidates` (anonymous + no plays after 7 days, or inactive 400 days; never permanent accounts), `GET /api/cron/cleanup` (Bearer CRON_SECRET, timing-safe; deletes in batches of 500; drops expired merge tokens), `vercel.json` cron at 17:30 UTC daily. CRON_SECRET generated into `.env.local` + Vercel (Sensitive). Resend domain verified. 173 unit + 57 integration pass.
+- 2026-11-09: M4 UI: `SaveStreak` (email → code), final-screen prompt from the 2nd game, `/account` (sign in / save / change email / export / sign out / two-step delete), branded email templates + `docs/setup/supabase-email.md`. Fixed a duplicate-anonymous-user race (single-flight `ensureSession`; unit + E2E regression). Idle toast now hidden. 173 unit, 54 integration, 27 Playwright pass.
+- 2026-11-09: 4.2/4.4/4.5/4.6 server side: `POST /api/auth/email` (always `{sent:true}`; flow kept in an HTTP-only cookie; upgrade in place via updateUser, or a merge token + sign-in code for an existing email), `POST /api/auth/verify` (6-digit code → session + merge), `GET /auth/confirm` (email link), `POST /api/merge`, `POST /api/auth/signout`, `GET /api/account/export`, `POST /api/account/delete`. Rate limits: 5 emails / 10 codes per 10 min per IP. Integration test of the M4 acceptance passes (5 plays end up on the account, earlier-started kept on the clash, anonymous user deleted, token single-use). UI + Supabase email config still to do.
+- 2026-11-09: DNS: Dani moved changel.app nameservers to Vercel; Claude added the 5 Resend records via the Vercel API (after Vercel created the zone) and started Resend verification. https://changel.app returns 200 over HTTPS (public, serves `main`); the www certificate is pending. Migrations `merge_players` (earlier-started wins on clashes) and `email_registered` (server-only) applied.
+- 2026-11-09: 4.1 (part): Resend domain `changel.app` created (sending only, ap-northeast-1, no tracking; the other Resend domain untouched); sending-only key restricted to changel.app in `.env.local` + Vercel (Sensitive). `changel.app` + `www` (308 → apex) added to the Vercel project. DNS instructions for Dani: `docs/setup/godaddy-dns.md`.
+- 2026-11-09: M4 started (branch `m4-login-merge`). Dani: email-only login, no Google; players must stay logged in; DNS is at GoDaddy; don't touch other Resend domains or keys.
 - 2026-11-09: M3 approved by Dani and merged into `main`. Dani's preview game verified in the DB (Nov 9, 423, anonymous, server-scored). With Dani's OK, deleted 16 untagged test players from the earliest real-sign-in E2E runs (cascaded 18 plays). The DB now holds just Dani's player and play.
 - 2026-11-09: M3 preview check: `/api/puzzle` 200 from sin1 (rate limiter loads with the Vercel Upstash env), `/api/me` 401 without a session (body not visible to the fetch tool). **M3 complete**, awaiting Dani's review.
 - 2026-11-09: 3.1/3.2/3.9: Dani enabled anonymous sign-ins + IP forwarding. The spec E2E passes with real anonymous players (play → refresh resumes from the server with local storage wiped → finish → exact share text → next day streak 2), and a cookie-refusing browser falls back to local play. Integration tests now use real anonymous sign-in. E2E users tagged e2e + global teardown (deleted 15); per-page fake IPs. Vercel docs confirm x-forwarded-for can't be spoofed. 170 unit + 47 integration + 25 Playwright pass.
