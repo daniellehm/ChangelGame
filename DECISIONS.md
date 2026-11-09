@@ -50,3 +50,7 @@ Each item is applied in the milestone where it comes up.
 14. **Supabase auth config (M3).** The MCP can't change auth settings or read the secret key. Dani provides these (see PROGRESS "Needs from Dani").
 15. **Puzzle #1 date.** `LAUNCH_DATE` is an env var read by `lib/config.ts`. M1 uses the prototype's epoch, 2026-11-09, so its numbers match the prototype.
 16. **Admin authorisation (M5).** Admin checks happen server-side against `ADMIN_EMAILS`. RLS can't read env vars, and admin routes use the service role anyway.
+
+### 2026-11-09: Formats `aud` and `pct`, and no "trillion"
+**Decision:** `aud` follows the prototype's `usd` rules with an `A$` prefix (cents still show as `¢`). `pct` shows the value to 3 significant figures plus `%` (e.g. `3.46%`). `big` keeps the prototype's behaviour above 1e12, so the slider can read "1290 billion". All formatting is pinned to the `en-US` locale.
+**Why:** The spec names `aud` and `pct` but doesn't define them. A "trillion" step would have changed the prototype's slider readout, and the prototype is the reference for copy. Pinning the locale makes server and client render the same, matching how the prototype looks in an en-US/en-AU browser.

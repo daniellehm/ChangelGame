@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.3 done. Next: task 1.4, formatting.
+**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.4 done. Next: task 1.5, basic dates.
 
 ## Needs from Dani
 
@@ -34,7 +34,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
   *Accept:* no hard-coded colour outside `:root`; fonts self-hosted (no request to fonts.googleapis.com); reduced-motion disables pop/pin/toast animations.
 - [x] **1.3 Config + scoring.** `lib/config.ts` (SPAN, ε, tier cut-offs, slider range/step/nudge/snap, final titles, LAUNCH_DATE) and a pure `lib/scoring.ts` that matches the prototype's `score`/`tier`.
   *Accept:* Vitest covers exact hit = 100, 2× off ≈ 60, ~5.6× off = 0, wrong way = 0 + flag, both sides within ε are never wrong-way, clamp to [−3, 3], every tier boundary (89/90, 64/65, 29/30) and every title boundary.
-- [ ] **1.4 Formatting.** `lib/format.ts`: `fmt` (big, int, usd, sec, m, yrs, time from the prototype; plus aud, pct), `multLabel`, `pct`, using a fixed `en-US` locale so output is deterministic.
+- [x] **1.4 Formatting.** `lib/format.ts`: `fmt` (big, int, usd, sec, m, yrs, time from the prototype; plus aud, pct), `multLabel`, `pct`, using a fixed `en-US` locale so output is deterministic.
   *Accept:* a Vitest case per format (and per branch, e.g. usd ≥1000 / ≥1 / ¢ / tiny), and multLabel up/down/no-change. Output is identical to the prototype for all 20 pool values.
 - [ ] **1.5 Basic dates.** `lib/dates.ts`: local date via `Intl` (never UTC), puzzle number from LAUNCH_DATE, time to the next local midnight. The full edge-case table is M2.
   *Accept:* unit tests with fixed clocks for Sydney, London and LA; countdown is correct across a Sydney DST night.
@@ -128,6 +128,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.4 Formatting: `lib/format.ts` (9 formats, multLabel, pctChange, multSpoken for aria); tests compare against functions loaded live from `reference/prototype.html` (`tests/helpers/prototype.ts`) across the full slider range.
 - 2026-11-09: 1.3 Config + scoring: `lib/config.ts` (all tunables, versioned storage keys, LAUNCH_DATE as a server-only env passed to the client as a prop) and pure `lib/scoring.ts`; 30 tests incl. a full-range parity sweep against the prototype's score().
 - 2026-11-09: 1.2 Tokens + fonts: prototype CSS ported to `app/globals.css` with all colours tokenised (test enforces no colours outside `:root`), reduced-motion rule, Bricolage (variable, opsz) + JetBrains Mono self-hosted via `app/fonts.ts`.
 - 2026-11-09: 1.1 Scaffold: Next 16.4 + React 19.3, TS 5.9 strict, ESLint 9, Vitest 5, Playwright 1.65, Node 22, `.env.example` + test that it lists every var. (8 moderate npm-audit advisories, all in dev-only typescript-eslint; not shipped.)
