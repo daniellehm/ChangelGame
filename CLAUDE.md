@@ -26,7 +26,7 @@ PROGRESS.md says where we are and what's next. DECISIONS.md records every choice
 - Ask before deleting anything, and before any change to production once we've launched.
 - Set things up yourself via MCP instead of asking Dani to click through dashboards. Only ask for what you truly can't do: account sign-ups, DNS records at the registrar (give an exact table), Google OAuth setup, the Anthropic API key and Cloudflare Turnstile keys. Add each to "Needs from Dani" in PROGRESS.md and keep working on whatever isn't blocked.
 - Set up infrastructure only when the current milestone needs it, not all up front.
-- Supabase: org "Changel", project "changel" (Sydney). Data API on, auto-expose new tables OFF, automatic RLS ON.
+- Supabase: org "Changel", project "Changel", ref `icnxbpyoldnlpgxsgmcn` (Singapore, ap-southeast-1). Data API on, auto-expose new tables OFF, automatic RLS ON.
 
 ## Key commands
 
@@ -41,5 +41,5 @@ _Filled in as they come to exist._
 | E2E tests | `npm run test:e2e` (Playwright, `tests/e2e`) |
 | Visual regression | `npm run test:visual` (after an intended visual change: `npm run test:visual -- --update-snapshots`, then review the PNGs) |
 | Typecheck + lint + unit | `npm run check` (run before every commit) |
-| Migrations | _TBD (M2)_ |
-| Deploy | Push a branch → Vercel preview (project `changel`, id `prj_4qiuH4a01M4Il52WrKi8zd75EjCS`, team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Node 22, functions syd1). Merge to `main` → production. Previews are behind Vercel Authentication. |
+| Migrations | Write `supabase/migrations/<version>_<name>.sql`, apply with Supabase MCP `apply_migration` (project `icnxbpyoldnlpgxsgmcn`), then check `list_migrations` matches |
+| Deploy | Push a branch → Vercel preview (project `changel`, id `prj_4qiuH4a01M4Il52WrKi8zd75EjCS`, team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Node 22, functions sin1). Merge to `main` → production. Previews are behind Vercel Authentication. |

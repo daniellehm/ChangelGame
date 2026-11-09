@@ -2,7 +2,7 @@
 
 ## Current status
 
-**Design pass approved by Dani and merged to `main` (2026-11-09). Next: Milestone 2 (Database + puzzle API) on branch `m2-database-api`.** First step is task 2.1: Supabase CLI + migrations set-up and `.env.local`. That needs the Supabase service-role key from Dani.
+**M2 in progress on branch `m2-database-api`.** 2.1 done (env, region switched to Singapore). Next: 2.2, the core schema migration.
 
 ## Needs from Dani
 
@@ -16,7 +16,7 @@
 - [x] Add `ChangelGame` to the Vercel GitHub app's repository access (done 2026-11-09)
 
 **Later (not blocking yet, listed so nothing surprises us):**
-- [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
+- [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M3: Supabase auth settings (anonymous sign-ins, captcha, rate limits, redirect URLs, custom SMTP). The MCP has no auth-config tool. Either Dani gives a Supabase personal access token (scoped use: Management API for project "changel" only), or follows a short dashboard checklist that I'll write.
 - [ ] M3: Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
 - [ ] M4: DNS records for changel.app at the registrar (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
@@ -61,7 +61,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
 Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 **Milestone accepted when:** answers are absent from every network response before lock-in, and all date unit tests pass.
 
-- [ ] 2.1 Supabase CLI + `supabase/migrations` set-up; `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
+- [x] 2.1 `supabase/migrations` set-up (applied via MCP, see DECISIONS); `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
 - [ ] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
 - [ ] 2.3 RLS policies per SPEC section 6. *Accept:* the anon/authenticated roles cannot read questions/puzzle_rounds; a player can read only their own plays/guesses; advisors clean.
 - [ ] 2.4 `content/questions.csv` + import script; seed the 20 prototype questions as candidates. *Accept:* re-runnable (idempotent) import; seed puzzles available for dev dates.
@@ -133,6 +133,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 2.1: Supabase project found in Singapore. Dani chose to move Vercel functions to `sin1`. `.env.local` filled in (URL, publishable key, LAUNCH_DATE) and the secret key verified with an admin call (HTTP 200). The DB was empty.
 - 2026-11-09: Design pass approved by Dani and merged into `main`.
 - 2026-11-09: Design pass: About removed and merged into How to play (redirect `/about` → `/how-to-play`, menu item removed). How to play rebuilt as an example round + 3 step tiles + tier stickers + "The deal". 141 unit + 18 E2E + 2 visual tests pass.
 - 2026-11-09: Design pass: How to play page cleaned up (Dani's request). Trimmed rules, score tiers shown as stickers, titles list dropped (players discover them), new visual baseline `7-how-to-play`.

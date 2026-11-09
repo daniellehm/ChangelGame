@@ -95,3 +95,15 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: About merged into How to play
 **Decision:** The About page is removed, and its content is now "The deal" on How to play: same five for everyone, new puzzle at midnight, free with no account, every number sourced. `/about` permanently redirects to `/how-to-play`, and the menu now has How to play, Stats and Account. How to play is rebuilt as a worked example round (scored with the real `lib/scoring`), three step tiles, tier stickers and the deal list.
 **Why:** Dani asked to drop About, fold it into How to play, and make that page more fun and less wordy.
+
+### 2026-11-09: Region is Singapore for both database and functions
+**Decision:** The Supabase project "Changel" (`icnxbpyoldnlpgxsgmcn`) is in ap-southeast-1 (Singapore), not Sydney as assumed. Dani chose to keep it and move Vercel functions to Singapore (`sin1`), both in the project settings and in `vercel.json`. All the earlier `syd1` mentions are superseded.
+**Why:** A Supabase region can't be changed after creation. Putting functions next to the database keeps each guess to one short round trip. Singapore costs Australian players ~50 ms and is about the same or better for Asia, the US and the UK.
+
+### 2026-11-09: Migrations applied via the Supabase MCP, mirrored in the repo
+**Decision:** Each migration is written to `supabase/migrations/<version>_<name>.sql`, where `<version>` is the one the database records, and applied with the Supabase MCP `apply_migration`. `list_migrations` must match the files in the repo. No local Supabase stack for now (it needs Docker).
+**Why:** It's the simplest setup that keeps a reviewable migration history in git without new tooling. We can add the CLI later for local testing.
+
+### 2026-11-09: Supabase key format
+**Decision:** `NEXT_PUBLIC_SUPABASE_ANON_KEY` holds the new-style publishable key (`sb_publishable_…`), and `SUPABASE_SERVICE_ROLE_KEY` holds the secret key (`sb_secret_…`). The env var names stay as written in the spec.
+**Why:** Supabase recommends the new key formats (they can be rotated independently). Keeping the spec's names avoids churn.
