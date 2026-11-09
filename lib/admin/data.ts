@@ -12,6 +12,7 @@ import { dbLedger, monthStartUtc } from "../content/ledger";
 import { ClaudeLlm, sdkParse, type Llm } from "../content/llm";
 import { schedulingToday } from "../content/run";
 import { dbStore } from "../content/store";
+import { pickDay } from "../content/schedule";
 import { roundForStorage } from "../content/questions";
 import type { FetchLike } from "../content/sources";
 import { adminClient } from "../supabase/admin";
@@ -243,7 +244,11 @@ async function isLiveOrPast(id: number, now: Date): Promise<boolean> {
  * question that now passes becomes verified; a scheduled/used one keeps its status
  * and shows the new check results.
  */
-export async function saveQuestion(id: number, patch: z.infer<typeof QuestionEdit>, editor: string, deps: { llm?: Llm; now?: Date; runChecks?: boolean; fetchFn?: FetchLike } = {}) {
+/**
+ * Save an edit. `trusted` (the admin editor): no automatic checks, and saving approves it.
+ * Otherwise (scripts) the full checks re-run and set the status.
+ */
+export async function saveQuestion(id: number, patch: z.infer<typeof QuestionEdit>, editor: string, deps: { llm?: Llm; now?: Date; runChecks?: boolean; trusted?: boolean; fetchFn?: FetchLike } = {}) {
   const now = deps.now ?? new Date();
   const before = must(await db().from("questions").select(`${SUMMARY_FIELDS}, source_data`).eq("id", id).maybeSingle()) as Record<string, unknown> | null;
   if (!before) return { status: "not_found" as const };
@@ -275,7 +280,16 @@ export async function saveQuestion(id: number, patch: z.infer<typeof QuestionEdi
   }
 
   let report: CheckReport | null = null;
-  if (deps.runChecks !== false) {
+  if (deps.trusted) {
+    // An admin's save is trusted: no automatic checks, and it counts as approval
+    // (flagged/draft → verified, or scheduled if it's on a day; a failed-check note is cleared).
+    const statusNow = before.status as string;
+    if (["draft", "flagged", "verified", "scheduled"].includes(statusNow)) {
+      const status = statusNow === "draft" || statusNow === "flagged" ? await passedStatus(id) : statusNow;
+      must(await db().from("questions").update({ status, verified_by: editor, verified_at: now.toISOString(), flag_reason: null }).eq("id", id).select("id"));
+      if (status !== statusNow) await db().from("question_edits").insert({ question_id: id, edited_by: editor, before: { status: statusNow }, after: { status }, note: "approved by saving" });
+    }
+  } else if (deps.runChecks !== false) {
     const store = dbStore();
     const llm = deps.llm ?? new ClaudeLlm(sdkParse(), dbLedger());
     report = (await checkBatch([{ id, candidate: cand }], { llm, now, fetchFn: deps.fetchFn, similarPrompts: store.similarPrompts, seriesUsed: store.seriesUsed }))[0] ?? null;
@@ -319,6 +333,38 @@ async function passedStatus(id: number): Promise<"scheduled" | "verified"> {
   const { count, error } = await db().from("puzzle_rounds").select("question_id", { count: "exact", head: true }).eq("question_id", id);
   if (error) throw error;
   return count ? "scheduled" : "verified";
+}
+
+/** "Run checks" in the editor: a second opinion. Stores the report; never changes the status (the human decides). */
+export async function recheckQuestion(id: number, deps: { llm?: Llm; now?: Date; fetchFn?: FetchLike } = {}) {
+  const q = must(await db().from("questions").select(`${SUMMARY_FIELDS}, source_data`).eq("id", id).maybeSingle()) as Record<string, unknown> | null;
+  if (!q) return { status: "not_found" as const };
+  const store = dbStore();
+  const llm = deps.llm ?? new ClaudeLlm(sdkParse(), dbLedger());
+  const report = (await checkBatch([{ id, candidate: toCandidate(q) }], { llm, now: deps.now, fetchFn: deps.fetchFn, similarPrompts: store.similarPrompts, seriesUsed: store.seriesUsed }))[0]!;
+  must(await db().from("questions").update({ checks: report }).eq("id", id).select("id"));
+  return { status: "ok" as const, report, reason: flagReason(report) };
+}
+
+/**
+ * Put 5 questions on an empty day: the ones the admin chose (in that order), or
+ * auto-picked from the ready pool with the scheduler's balance rules (5 categories,
+ * a near-unchanged one and a big mover when available).
+ */
+export async function fillDay(date: string, editor: string, ids?: number[]) {
+  let chosen = ids;
+  let relaxed = false;
+  if (!chosen) {
+    const pool = (await dbStore().pool()).sort((a, b) => a.verified_at.localeCompare(b.verified_at) || a.id - b.id);
+    const pick = pickDay(pool, true) ?? pickDay(pool, false);
+    if (!pick) return { status: "not_enough" as const, available: pool.length };
+    chosen = pick.ids;
+    relaxed = pick.relaxed;
+  }
+  const r = must(await db().rpc("schedule_puzzle", { p_date: date, p_question_ids: chosen })) as "ok" | "exists" | "unavailable";
+  if (r !== "ok") return { status: r };
+  await db().from("question_edits").insert(chosen.map((qid, i) => ({ question_id: qid, edited_by: editor, before: null, after: { puzzle_date: date, position: i + 1 }, note: ids ? "put on a day by hand" : "auto-filled a day" })));
+  return { status: "ok" as const, ids: chosen, relaxed };
 }
 
 /** Retire: a question on a future puzzle is swapped out first. Past plays are untouched. */

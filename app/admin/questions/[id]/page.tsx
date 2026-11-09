@@ -108,9 +108,7 @@ function EditorBody({
 
   const save = async () => {
     setBusy(true);
-    setMsg(
-      "Saving and re-running the automatic checks (this can take a minute)…",
-    );
+    setMsg("Saving…");
     const patch: Record<string, unknown> = { format: form.format };
     for (const [k, , type] of FIELDS)
       patch[k] =
@@ -123,11 +121,25 @@ function EditorBody({
       const r = await adminSend<{
         changed: string[];
         corrected: boolean;
-        report: { passed: boolean } | null;
       }>(`/api/admin/questions/${id}`, "PATCH", patch);
       setMsg(
-        `${r.changed.length ? `Saved ${r.changed.join(", ")}.` : "No changes."}${r.corrected ? ' Players will see a "Corrected" note.' : ""} Checks ${r.report?.passed ? "passed" : "failed (see below)"}.`,
+        `${r.changed.length ? `Saved ${r.changed.join(", ")}.` : "Saved (no field changes)."}${r.corrected ? ' Players will see a "Corrected" note.' : ""} Your edit counts as approval; the automatic checks didn't run.`,
       );
+      reload();
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** A second opinion: runs the automatic checks and shows the result. Doesn't change the status. */
+  const check = async () => {
+    setBusy(true);
+    setMsg("Running the automatic checks (this can take a minute and costs a few cents)…");
+    try {
+      const r = await adminSend<{ report: { passed: boolean }; reason: string | null }>(`/api/admin/questions/${id}/check`, "POST");
+      setMsg(r.report.passed ? "The automatic checks passed." : `The automatic checks would fail it: ${r.reason}. Nothing changed; it's your call.`);
       reload();
     } catch (e) {
       setMsg((e as Error).message);
@@ -202,9 +214,12 @@ function EditorBody({
           </select>
         </label>
         <button type="submit" className="btn" disabled={busy}>
-          Save and re-check
+          Save
         </button>
       </form>
+      <button type="button" className="btn ghost" onClick={check} disabled={busy}>
+        Run checks (second opinion)
+      </button>
       <button
         type="button"
         className="btn ghost"

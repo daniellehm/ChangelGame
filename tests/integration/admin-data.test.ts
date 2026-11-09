@@ -1,6 +1,6 @@
 /** M5 task 5.8: admin actions against the real DB on throwaway questions and a 2099 puzzle. */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { approveQuestion, deleteCandidate, getQuestion, listQuestions, pullRound, retireQuestion, saveQuestion, statsFor } from "@/lib/admin/data";
+import { approveQuestion, deleteCandidate, fillDay, getQuestion, listQuestions, pullRound, recheckQuestion, retireQuestion, saveQuestion, statsFor } from "@/lib/admin/data";
 import type { Llm, LlmRequest } from "@/lib/content/llm";
 import { launchDate } from "@/lib/config";
 import { puzzleNumber } from "@/lib/dates";
@@ -8,11 +8,12 @@ import { adminClient } from "@/lib/supabase/admin";
 
 const db = adminClient();
 const DATE = "2099-06-01";
+const FILL_DATE = "2099-06-02";
 const ED = "itest-admin@example.com";
 let ids: number[] = []; // 0–4 on the puzzle, 5 spare (new category), 6 flagged, 7 spare (same category as 0)
 
 async function cleanup() {
-  await db.from("puzzles").delete().eq("puzzle_date", DATE);
+  await db.from("puzzles").delete().in("puzzle_date", [DATE, FILL_DATE]);
   await db.from("questions").delete().like("slug", "itest-admin-%");
 }
 
@@ -167,5 +168,48 @@ describe("bank", () => {
     const asc = await listQuestions({ sort: "day_asc", page: 0 });
     const desc = await listQuestions({ sort: "day_desc", page: 0 });
     expect(asc.items[0]!.rounds[0]!.date <= desc.items[0]!.rounds[0]!.date).toBe(true);
+  });
+});
+
+describe("trusted edits and filling a day", () => {
+  /** Fails the test if anything calls Claude. */
+  const noClaude: Llm = {
+    async json() {
+      throw new Error("a trusted save must not call Claude");
+    },
+  };
+
+  it("an admin's save is trusted: no checks run, and saving a flagged question approves it", async () => {
+    const { data: x } = await db.from("questions").insert({ slug: "itest-admin-trust", category: "Trust", prompt: "Trusted edit question about widgets", start_year: 2000, start_value: 100, end_year: 2020, end_value: 150, format: "int", max_change: 3, origin: "researched", status: "flagged", flag_reason: "fact_quality: unsure", tags: ["itest"] }).select("id").single();
+    const out = await saveQuestion(x!.id, { fact: "A fact the admin knows is right." }, ED, { trusted: true, llm: noClaude });
+    expect(out).toMatchObject({ status: "ok", changed: ["fact"], report: null });
+    expect((await db.from("questions").select("status, flag_reason, verified_by").eq("id", x!.id).single()).data).toEqual({ status: "verified", flag_reason: null, verified_by: ED });
+    // Still refuses what the game can't play.
+    expect((await saveQuestion(x!.id, { end_value: 100000 }, ED, { trusted: true, llm: noClaude })).status).toBe("invalid");
+  });
+
+  it("Run checks is a second opinion: stores the report, never changes the status", async () => {
+    const { data: x } = await db.from("questions").select("id, status").eq("slug", "itest-admin-trust").single();
+    const failing: Llm = {
+      async json<T>(req: LlmRequest<T>) {
+        if (req.purpose === "review") return req.schema.parse({ like_for_like: { reason: "different scope", pass: false }, safety: { reason: "ok", pass: true }, fact: { reason: "ok", pass: true } });
+        return passing.json(req);
+      },
+    };
+    const r = await recheckQuestion(x!.id, { llm: failing });
+    expect(r).toMatchObject({ status: "ok", report: { passed: false } });
+    expect((await db.from("questions").select("status").eq("id", x!.id).single()).data!.status).toBe(x!.status);
+  });
+
+  it("fills an empty day with 5 chosen questions, in order, and refuses a day that has one", async () => {
+    const rows = Array.from({ length: 5 }, (_, i) => ({ slug: `itest-admin-fill-${i}`, category: `Fill${i}`, prompt: `Fill test question ${i} about widgets`, start_year: 2000, start_value: 100, end_year: 2020, end_value: 160, format: "int", max_change: 3, origin: "researched", status: "verified", tags: ["itest"] }));
+    const { data } = await db.from("questions").insert(rows).select("id, slug");
+    const fillIds = rows.map((r) => data!.find((d) => d.slug === r.slug)!.id as number).reverse();
+    expect(await fillDay(FILL_DATE, ED, fillIds)).toMatchObject({ status: "ok", ids: fillIds });
+    const { data: rounds } = await db.from("puzzle_rounds").select("position, question_id").eq("puzzle_date", FILL_DATE).order("position");
+    expect(rounds!.map((r) => r.question_id)).toEqual(fillIds);
+    const { data: st } = await db.from("questions").select("status").in("id", fillIds);
+    expect(st!.every((q) => q.status === "scheduled")).toBe(true);
+    expect((await fillDay(FILL_DATE, ED, fillIds)).status).toBe("exists");
   });
 });

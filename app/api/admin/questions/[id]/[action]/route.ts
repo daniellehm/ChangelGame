@@ -1,7 +1,9 @@
-/** POST /api/admin/questions/:id/approve | /retire → human approval (Flagged) or retirement (editor). */
+/** POST /api/admin/questions/:id/approve | /retire | /check → human approval, retirement, or a second-opinion run of the checks (status unchanged). */
 import { apiError } from "@/lib/api/http";
 import { requireAdmin } from "@/lib/admin/auth";
-import { approveQuestion, retireQuestion } from "@/lib/admin/data";
+import { approveQuestion, recheckQuestion, retireQuestion } from "@/lib/admin/data";
+
+export const maxDuration = 300; // "check" runs the web cross-check
 
 type Ctx = { params: Promise<{ id: string; action: string }> };
 
@@ -12,6 +14,10 @@ export async function POST(req: Request, ctx: Ctx) {
   const id = Number(raw);
   if (!Number.isInteger(id) || id <= 0) return apiError("invalid_request", "Bad id.", 400);
   const editor = a.user.email!;
+  if (action === "check") {
+    const r = await recheckQuestion(id);
+    return r.status === "ok" ? a.sb.applyCookies(Response.json(r, { headers: { "Cache-Control": "no-store" } })) : apiError("not_found", "No such question.", 404);
+  }
   const out = action === "approve" ? await approveQuestion(id, editor) : action === "retire" ? await retireQuestion(id, editor) : null;
   if (!out) return apiError("not_found", "Unknown action.", 404);
   switch (out.status) {

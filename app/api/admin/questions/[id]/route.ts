@@ -1,13 +1,12 @@
 /**
  * GET    /api/admin/questions/:id → every field, edit history, stats, reports.
- * PATCH  /api/admin/questions/:id → save (logs the edit, adds "Corrected" if live/past, re-runs the checks).
+ * PATCH  /api/admin/questions/:id → save (trusted: no automatic checks, counts as approval; logs the edit, adds "Corrected" if live/past).
  * DELETE /api/admin/questions/:id → delete a flagged/draft candidate that was never scheduled or played.
  */
 import { apiError, invalid } from "@/lib/api/http";
 import { requireAdmin } from "@/lib/admin/auth";
 import { deleteCandidate, getQuestion, QuestionEdit, saveQuestion } from "@/lib/admin/data";
 
-export const maxDuration = 300; // saving re-runs the checks, including the web cross-check
 
 type Ctx = { params: Promise<{ id: string }> };
 const idOf = async (ctx: Ctx) => {
@@ -33,7 +32,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const parsed = QuestionEdit.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return invalid(parsed.error);
   try {
-    const out = await saveQuestion(id, parsed.data, a.user.email!);
+    const out = await saveQuestion(id, parsed.data, a.user.email!, { trusted: true });
     if (out.status === "not_found") return apiError("not_found", "No such question.", 404);
     if (out.status === "invalid") return apiError("invalid_request", out.detail, 400);
     return a.sb.applyCookies(json(out));
