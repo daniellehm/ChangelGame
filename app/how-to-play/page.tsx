@@ -78,7 +78,7 @@ export default function HowToPlay() {
       </ol>
 
       <h2>Points</h2>
-      <p>Up to 100 a round, 500 a day. Off by 2× still gets you about 60.</p>
+      <p>Up to 100 a round, 500 a day.</p>
       <ul className="tier-chips">
         {TIER_CHIPS.map(([id, pts, tilt]) => (
           <li key={id}>
