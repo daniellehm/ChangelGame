@@ -250,3 +250,30 @@ html[data-returning] #intro{visibility:hidden}
 .tile-n{font-size:28px;font-weight:800;line-height:1}
 .badge{align-self:flex-start;font-family:var(--font-mono-stack);font-size:11px;text-transform:uppercase;letter-spacing:.5px;background:var(--ink);color:var(--bg);border-radius:6px;padding:2px 6px}
 @media (min-width:700px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tiles li>div{display:flex;flex-direction:column;gap:4px;height:100%;border:2px solid var(--ink);border-radius:14px;padding:12px;background:var(--bg)}
+.btn.small{width:auto;padding:8px 12px;font-size:14px;border-radius:10px;min-height:40px}
+.qcard{border:2px solid var(--line);border-radius:14px;padding:12px;margin:10px 0;background:var(--bg)}
+.qcard-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.qcard-q{font-weight:800;font-size:18px;margin:6px 0}
+.qcard-v{margin:4px 0;font-family:var(--font-mono-stack);font-size:13px;overflow-wrap:anywhere}
+.qcard-fact{margin:6px 0;font-size:14px}
+.qcard-src{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;margin:4px 0;overflow-wrap:anywhere}
+.qcard-flag{color:var(--r);font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.qcard-checks{font-size:13px;margin-top:6px}
+.qcard-checks ul{margin:6px 0;padding-left:16px}
+.qcard-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.qlink{font-weight:800;color:var(--ink)}
+.days{list-style:none;padding:0;margin:0}
+.day{margin-bottom:18px}
+.day h2{display:flex;gap:8px;align-items:center;font-size:18px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.filters label,.editor label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
+.filters select,.filters input,.editor input,.editor textarea,.editor select{font:inherit;font-weight:400;border:2px solid var(--ink);border-radius:10px;padding:8px;background:var(--card);color:var(--ink);min-height:40px}
+.editor{display:grid;gap:10px;margin-bottom:12px}
+.table-wrap{overflow-x:auto;margin:8px 0 14px}
+.bank{border-collapse:collapse;width:100%;font-size:13px}
+.bank th,.bank td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.pager{display:flex;gap:8px}
+.history{padding-left:16px;font-size:13px}
+.history code{overflow-wrap:anywhere;font-size:12px}
+.log{white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto}

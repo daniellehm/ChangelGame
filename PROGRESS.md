@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.8 (admin pages). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.9 (report button + Reports queue). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
 
 ## Needs from Dani
 
@@ -12,6 +12,23 @@
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [x] Relative scoring approved and merged (2026-11-09)
 - [x] Go-ahead for M5 (2026-11-09)
+- [ ] **Approve one database fix** (Upcoming → reorder a day's rounds).
+  - Why: the MCP permission check declined it because it deletes and re-inserts the day's 5 rounds; it's only allowed on days nobody has played.
+  - How: approve the prompt when Claude retries, or run in the Supabase SQL editor, then Claude saves it as a migration:
+    ```sql
+    create or replace function public.reorder_rounds(p_date date, p_ids bigint[]) returns text language plpgsql set search_path = '' as $$
+    begin
+      if coalesce(array_length(p_ids, 1), 0) <> 5 or (select count(distinct x) from unnest(p_ids) as t(x)) <> 5 then
+        raise exception 'reorder_rounds needs 5 distinct ids' using errcode = '22023';
+      end if;
+      if exists (select 1 from public.plays where puzzle_date = p_date) then return 'played'; end if;
+      if (select count(*) from public.puzzle_rounds where puzzle_date = p_date and question_id = any (p_ids)) <> 5 then return 'mismatch'; end if;
+      delete from public.puzzle_rounds where puzzle_date = p_date;
+      insert into public.puzzle_rounds (puzzle_date, position, question_id) select p_date, t.ord, t.qid from unnest(p_ids) with ordinality as t(qid, ord);
+      return 'ok';
+    end; $$;
+    ```
+  - Until then the Upcoming page has Pull and Swap but no reorder.
 - [x] `ANTHROPIC_API_KEY` in `.env.local` and Vercel (done by Dani 2026-11-09; verified with a free models call). `ADMIN_EMAILS` set in Vercel by Claude.
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
@@ -134,7 +151,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
 - [x] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
 - [x] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
-- [ ] 5.8 **Admin pages:**
+- [x] 5.8 **Admin pages** (Reports page comes with 5.9):
   - Reports
   - Upcoming
   - Question editor (+ question_edits, "Corrected" note)
@@ -163,6 +180,18 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.8 Admin pages:
+  - **Data and actions** (`lib/admin/data.ts`):
+    - Upcoming (yesterday + the next 30 days with sources and check results); Pull (a spare from a category not already on that day; the old question goes to Flagged with the reason) and Swap (a chosen id);
+    - Question editor: save rounds values like the importer, logs before/after in `question_edits`, sets `corrected_at` when the question is live or past, refuses edits the game can't play, and re-runs the checks (flagged/draft → verified if they pass);
+    - Approve (human, from Flagged); Retire (swaps it out of future days first); Delete (only never-scheduled, never-played candidates);
+    - Bank (filters by status, origin, category, text and difficulty; stats per question: plays, average points, wrong-way %, report rate);
+    - Health (recent runs with logs, pass rate, spend by step, Run now).
+  - **Database:** migration `admin_functions` (`question_stats`, `swap_round`; `reorder_rounds` needs a fix, see Needs from Dani).
+  - **UI:** routes `/api/admin/{upcoming,upcoming/pull,questions,questions/:id,questions/:id/{approve,retire},health}`; pages `/admin/{upcoming,flagged,bank,health,questions/:id}` with a shared `QuestionCard`.
+  - **Tests:** 8 integration (real DB, throwaway 2099 data), 6 E2E.
+  - "Preview the day as a player" is shown as the day's question cards, not a full play-through.
 
 - 2026-11-09: 5.7 Admin auth + portal shell:
   - **Access:** `lib/admin/auth.ts` (`requireAdmin`: signed in, not anonymous, email in ADMIN_EMAILS, case-insensitive; 401 / 403).
