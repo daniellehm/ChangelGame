@@ -87,6 +87,24 @@ export const STORAGE_KEYS = {
   stats: "changel:v1:stats",
 } as const;
 
+/**
+ * Player reports (SPEC §8 "Safety nets"). Questions are never pulled automatically:
+ * past these thresholds they join the admin Reports queue, with no email.
+ */
+export const REPORTS = {
+  /** Valid reports ÷ players who saw the reveal, above which a question is queued. */
+  RATE: 0.1,
+  /** …and at least this many valid reports, so 2 of 15 early players don't trigger it. */
+  MIN_VALID: 10,
+  /** Players who report more than this share of the rounds they play are ignored… */
+  HABITUAL_SHARE: 0.3,
+  /** …once they've played this many rounds (otherwise a first report would be "100%"). */
+  HABITUAL_MIN_ROUNDS: 10,
+  /** A dismissed question re-queues only when its rate is this much higher. */
+  REQUEUE_POINTS: 0.1,
+  REASONS: ["number", "year", "fact", "other"] as const,
+} as const;
+
 type Price = { input: number; output: number; cacheRead: number; cacheWrite: number };
 
 /**

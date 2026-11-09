@@ -419,6 +419,7 @@ export function Game({ launch }: { launch: string }) {
             onGuess={(value) => dispatch({ type: "guess", value })}
             onLock={lockIn}
             onNext={next}
+            playId={s.mode === "server" ? s.playId : null}
           />
         )}
         {s.phase === "final" && s.puzzle && stats && (

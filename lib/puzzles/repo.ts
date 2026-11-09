@@ -67,19 +67,21 @@ export interface RoundAnswer {
   fact: string;
   source_name: string;
   source_url: string | null;
+  /** Edited after it went live: the reveal says "Corrected" (SPEC §8). */
+  corrected: boolean;
 }
 
 /** One round's answer. Only call AFTER that round is locked. */
 export async function roundAnswer(roundsDate: string, position: number): Promise<RoundAnswer | null> {
   const { data, error } = await adminClient()
     .from("puzzle_rounds")
-    .select("question_id, questions!inner(start_value, end_value, max_change, fact, source_name, source_url)")
+    .select("question_id, questions!inner(start_value, end_value, max_change, fact, source_name, source_url, corrected_at)")
     .eq("puzzle_date", roundsDate)
     .eq("position", position)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const q = data.questions as unknown as { start_value: number; end_value: number; max_change: number | null; fact: string | null; source_name: string | null; source_url: string | null };
+  const q = data.questions as unknown as { start_value: number; end_value: number; max_change: number | null; fact: string | null; source_name: string | null; source_url: string | null; corrected_at: string | null };
   return {
     question_id: data.question_id,
     start_value: q.start_value,
@@ -88,6 +90,7 @@ export async function roundAnswer(roundsDate: string, position: number): Promise
     fact: q.fact ?? "",
     source_name: q.source_name ?? "",
     source_url: q.source_url,
+    corrected: !!q.corrected_at,
   };
 }
 
@@ -97,7 +100,7 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
   if (!ids.length) return out;
   const { data, error } = await adminClient()
     .from("questions")
-    .select("id, start_value, end_value, max_change, fact, source_name, source_url")
+    .select("id, start_value, end_value, max_change, fact, source_name, source_url, corrected_at")
     .in("id", ids);
   if (error) throw error;
   for (const q of data ?? []) {
@@ -109,6 +112,7 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
       fact: q.fact ?? "",
       source_name: q.source_name ?? "",
       source_url: q.source_url,
+      corrected: !!q.corrected_at,
     });
   }
   return out;

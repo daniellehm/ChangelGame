@@ -277,3 +277,14 @@ html[data-returning] #intro{visibility:hidden}
 .history{padding-left:16px;font-size:13px}
 .history code{overflow-wrap:anywhere;font-size:12px}
 .log{white-space:pre-wrap;font-size:12px;max-height:300px;overflow:auto}
+/* Report button + Corrected note on the reveal (M5) */
+.report-link{background:none;border:0;padding:8px 0;margin:0 0 6px;font:inherit;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer;min-height:32px}
+.report-form{border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px}
+.report-form fieldset{border:0;padding:0;margin:0 0 8px;display:grid;gap:4px}
+.report-form legend{font-weight:800;margin-bottom:4px}
+.report-form label{display:flex;gap:6px;align-items:center;min-height:32px}
+.report-note{flex-direction:column;align-items:stretch!important}
+.report-note textarea{font:inherit;border:2px solid var(--ink);border-radius:10px;padding:6px;background:var(--card);color:var(--ink)}
+.report-actions{display:flex;gap:8px;margin-top:8px}
+.report-done{font-size:13px;color:var(--muted);margin:0 0 8px}
+.corrected{font-size:13px;font-weight:700;margin:0 0 6px}

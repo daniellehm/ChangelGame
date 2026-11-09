@@ -45,6 +45,8 @@ export interface RoundResult {
   source_url: string | null;
   /** Question actually answered (server results only). */
   question_id?: number;
+  /** The question was edited after it went live (shows a "Corrected" note). */
+  corrected?: boolean;
 }
 
 /**

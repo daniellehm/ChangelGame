@@ -326,3 +326,14 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
 - Pages are client-rendered because route handlers can refresh an expired session cookie and server components can't. Server-rendered admin pages would show "signed out" an hour after sign-in.
 
 **Why:** It's simplest with the existing session plumbing, and admin data never leaves the server without the email check.
+
+### 2026-11-09: M5 reports: details
+**Decision:**
+- **A report is about the question the player actually answered** (`guesses.question_id`), so a same-day swap can't misdirect it. It must be on a round they locked in; the button only appears on reveals.
+- **The habitual-reporter rule** (ignore players who report more than 30% of their rounds) applies only once a player has **10 or more rounds**. Taken literally, a first-time player reporting their first round has reported 100% of their rounds and would be ignored. The rule is worked out live from each reporter's full history, so `reports.valid` only records the locked-in check.
+- **"Players who saw that round's reveal"** = guesses on that question.
+- **Local-only (offline) plays don't show the button**, because a report needs the server play.
+- **The queue is computed on demand** (SQL `report_queue`), so the badge and page are always current. Nothing is pulled or emailed automatically.
+- **A "Corrected" note shows on the reveal** for any question edited after it went live (`corrected_at`, set by the editor).
+
+**Why:** These are the simplest readings of SPEC §8 that avoid the literal-rule trap and misattributed reports.

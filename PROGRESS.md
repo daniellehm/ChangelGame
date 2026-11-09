@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.9 (report button + Reports queue). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.10 (same-day pull, rerun fallback, alert emails). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
 
 ## Needs from Dani
 
@@ -151,14 +151,14 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
 - [x] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
 - [x] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
-- [x] 5.8 **Admin pages** (Reports page comes with 5.9):
+- [x] 5.8 **Admin pages:**
   - Reports
   - Upcoming
   - Question editor (+ question_edits, "Corrected" note)
   - Flagged
   - Question bank
   - Health (+ "Run now")
-- [ ] 5.9 **Report button** + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
+- [x] 5.9 **Report button** + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
 - [ ] 5.10 **Same-day pull / reserve swap;** rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
 
 ## Milestone 6: Virality + launch hardening
@@ -180,6 +180,21 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.9 Report button + Reports queue:
+  - **Player side:**
+    - "Something wrong with this?" on each reveal in server mode (`components/ReportButton.tsx`): 4 reasons plus an optional note, then "Thanks"; it never blocks the game.
+    - `POST /api/report`: only a locked-in round; the report is about the question actually answered; one per player per question; rate-limited.
+  - **Queue** (migration `report_queue`):
+    - rate = valid reports ÷ players who saw the reveal; queued over 10% with at least 10 valid;
+    - habitual reporters (over 30% of their rounds, once they've played 10+) are ignored, worked out live;
+    - a dismissed question comes back only at +10 points. Settings live in `REPORTS` (`lib/config.ts`).
+  - **Admin:** `/admin/reports` shows rate, counts, reasons and notes, with Pull and Dismiss; the badge count is on Home and Health.
+  - **Also (part of 5.10):** answers carry `corrected`, and the reveal shows "Corrected since it first went live."
+  - **Acceptance** (`tests/integration/reports.test.ts`, real DB, 100 players):
+    - 11% → in the queue exactly once, no email, question still scheduled and on its day;
+    - 3 reports → nothing; exactly 10% → nothing; a habitual reporter is ignored; dismiss and re-queue work.
+  - **Other tests:** 1 E2E for the button. The keyboard test now tabs through the report link. Reveal screenshots updated (the new link) and reviewed.
 
 - 2026-11-09: 5.8 Admin pages:
   - **Data and actions** (`lib/admin/data.ts`):

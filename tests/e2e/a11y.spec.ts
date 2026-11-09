@@ -60,6 +60,8 @@ test("keyboard-only: a full game can be played without a pointer", async ({ page
     // Focus moves to the verdict; the result is announced.
     await expect(page.locator("#verdict")).toBeFocused();
     await expect(page.locator("#revealAnnounce")).toContainText("points");
+    await page.keyboard.press("Tab"); // "Something wrong with this?" (report) comes before Next
+    await expect(page.getByRole("button", { name: "Something wrong with this?" })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(page.locator("#nextBtn")).toBeFocused();
     await page.keyboard.press("Enter");
