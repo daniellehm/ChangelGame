@@ -85,7 +85,8 @@ export async function newPlayer(): Promise<{ id: string; cookie: string; anonymo
 }
 
 export function req(path: string, opts: { method?: string; body?: unknown; cookie?: string; now?: string } = {}): Request {
-  const headers: Record<string, string> = { "content-type": "application/json", "x-changel-test-now": opts.now ?? TEST_NOW };
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  if (!path.startsWith("/api/cron/")) headers["x-changel-test-now"] = opts.now ?? TEST_NOW; // cron tests use the real clock
   if (opts.cookie) headers.cookie = opts.cookie;
   return new Request(`http://localhost${path}`, { method: opts.method ?? "GET", headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
 }

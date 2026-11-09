@@ -2,11 +2,12 @@
 
 ## Current status
 
-**M4 in progress on branch `m4-login-merge` (email-only, no Google).** DNS done (Vercel DNS); changel.app serves over HTTPS. Resend domain verification is running. Next: Supabase email checklist for Dani, then the login/merge code (DB functions `merge_players` + `email_registered` already applied).
+**M4 in progress on branch `m4-login-merge` (email-only, no Google).** All code done and tested. Resend domain **verified**. Waiting on Dani's Supabase email checklist (`docs/setup/supabase-email.md`), then a real sign-in test with Dani's email on the preview, then the M4 review.
 
 ## Needs from Dani
 
 **Now:**
+- [ ] **Supabase email checklist:** follow `docs/setup/supabase-email.md` (custom SMTP via Resend, 3 email templates, redirect URLs, email settings, email rate limit)
 - [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
 - [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
 - [x] Go-ahead for M4 (2026-11-09): email-only, no Google; stay logged in
@@ -102,7 +103,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
 - [x] 4.5 Account page: change email, export JSON, delete account (hard delete).
 - [x] 4.6 Sign out → fresh anonymous state + local cache cleared.
-- [ ] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
+- [x] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
 - [ ] 4.8 E2E: magic link via test inbox → stats persist in a second browser context; the 3 + 2 = 5 acceptance scenario.
 
 ## Milestone 5: Content pipeline + admin
@@ -140,6 +141,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 4.7 Cleanup cron: migration `cleanup_candidates` (anonymous + no plays after 7 days, or inactive 400 days; never permanent accounts), `GET /api/cron/cleanup` (Bearer CRON_SECRET, timing-safe; deletes in batches of 500; drops expired merge tokens), `vercel.json` cron at 17:30 UTC daily. CRON_SECRET generated into `.env.local` + Vercel (Sensitive). Resend domain verified. 173 unit + 57 integration pass.
 - 2026-11-09: M4 UI: `SaveStreak` (email → code), final-screen prompt from the 2nd game, `/account` (sign in / save / change email / export / sign out / two-step delete), branded email templates + `docs/setup/supabase-email.md`. Fixed a duplicate-anonymous-user race (single-flight `ensureSession`; unit + E2E regression). Idle toast now hidden. 173 unit, 54 integration, 27 Playwright pass.
 - 2026-11-09: 4.2/4.4/4.5/4.6 server side: `POST /api/auth/email` (always `{sent:true}`; flow kept in an HTTP-only cookie; upgrade in place via updateUser, or a merge token + sign-in code for an existing email), `POST /api/auth/verify` (6-digit code → session + merge), `GET /auth/confirm` (email link), `POST /api/merge`, `POST /api/auth/signout`, `GET /api/account/export`, `POST /api/account/delete`. Rate limits: 5 emails / 10 codes per 10 min per IP. Integration test of the M4 acceptance passes (5 plays end up on the account, earlier-started kept on the clash, anonymous user deleted, token single-use). UI + Supabase email config still to do.
 - 2026-11-09: DNS: Dani moved changel.app nameservers to Vercel; Claude added the 5 Resend records via the Vercel API (after Vercel created the zone) and started Resend verification. https://changel.app returns 200 over HTTPS (public, serves `main`); the www certificate is pending. Migrations `merge_players` (earlier-started wins on clashes) and `email_registered` (server-only) applied.

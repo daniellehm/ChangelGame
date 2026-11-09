@@ -43,5 +43,6 @@ _Filled in as they come to exist._
 | Visual regression | `npm run test:visual` (after an intended visual change: `npm run test:visual -- --update-snapshots`, then review the PNGs) |
 | Typecheck + lint + unit | `npm run check` (run before every commit) |
 | Migrations | Write `supabase/migrations/<version>_<name>.sql`, apply with Supabase MCP `apply_migration` (project `icnxbpyoldnlpgxsgmcn`), then check `list_migrations` matches |
+| Cron (local) | `curl -H "Authorization: Bearer $CRON_SECRET" localhost:3000/api/cron/cleanup` (Vercel runs it daily at 17:30 UTC) |
 | Content | `npm run content:import [-- --dry-run]` (CSV → questions), `npm run content:seed-dev` (dev puzzles) |
 | Deploy | Push a branch → Vercel preview (project `changel`, id `prj_4qiuH4a01M4Il52WrKi8zd75EjCS`, team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Node 22, functions sin1). Merge to `main` → production. Previews are behind Vercel Authentication. |
