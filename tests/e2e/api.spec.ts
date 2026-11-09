@@ -46,8 +46,9 @@ test("no answer reaches the browser before its round is locked in", async ({ pag
       }
     }
     await playRound(page, DAY, i, 0.25);
-    // After locking: exactly one reveal for this position.
-    const reveals = seen.filter((r) => r.url.endsWith("/api/reveal"));
+    // After locking: exactly one answer response for this position
+    // (/api/guess with a session, /api/reveal in local mode).
+    const reveals = seen.filter((r) => r.url.endsWith("/api/guess") || r.url.endsWith("/api/reveal"));
     expect(reveals).toHaveLength(i + 1);
     expect(JSON.parse(reveals[i]!.body).position).toBe(i + 1);
     await next(page);

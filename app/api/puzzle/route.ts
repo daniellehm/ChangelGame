@@ -6,6 +6,8 @@
 import { z } from "zod";
 import { apiError, invalid } from "@/lib/api/http";
 import { serverNow } from "@/lib/api/clock";
+import { rateLimit } from "@/lib/api/ratelimit";
+import { clientIp } from "@/lib/supabase/request";
 import { launchDate } from "@/lib/config";
 import { isDateString, isWindowOpen, puzzleNumber } from "@/lib/dates";
 import { findReadyPuzzle, publicRounds } from "@/lib/puzzles/repo";
@@ -18,6 +20,8 @@ export async function GET(req: Request) {
   const parsed = Query.safeParse(Object.fromEntries(new URL(req.url).searchParams));
   if (!parsed.success) return invalid(parsed.error);
   const { date } = parsed.data;
+  const limited = await rateLimit("puzzle", clientIp(req) ?? "unknown");
+  if (limited) return limited;
 
   if (!isWindowOpen(date, serverNow(req))) {
     return apiError("puzzle_not_available", "That puzzle isn't available right now. Check your device clock.", 403);

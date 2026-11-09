@@ -3,7 +3,7 @@ import { GET } from "@/app/api/puzzle/route";
 import { get, seededRounds } from "./helpers";
 
 const SYD_MORNING = "2026-11-10T09:00:00+11:00";
-const ANSWER_KEYS = ["end_value", "fact", "source_name", "source_url", "source_url_2", "actual_log", "question_id", "notes", "checks"];
+const ANSWER_KEYS = ["end_value", "fact", "source_name", "source_url", "source_url_2", "actual_log", "notes", "checks"];
 
 describe("GET /api/puzzle", () => {
   afterEach(() => {
@@ -19,6 +19,7 @@ describe("GET /api/puzzle", () => {
     expect(body.rounds.map((r: { prompt: string }) => r.prompt)).toEqual(expected.map((q) => q.prompt));
     expect(body.rounds[0]).toEqual({
       position: 1,
+      question_id: expect.any(Number),
       category: expected[0]!.category,
       prompt: expected[0]!.prompt,
       start_year: expected[0]!.start_year,

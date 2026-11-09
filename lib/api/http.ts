@@ -6,6 +6,13 @@ export type ErrorCode =
   | "invalid_request"
   | "puzzle_not_available"
   | "puzzle_not_found"
+  | "unauthorized"
+  | "rate_limited"
+  | "signup_unavailable"
+  | "play_not_found"
+  | "out_of_order"
+  | "already_answered"
+  | "question_changed"
   | "internal_error";
 
 export function apiError(code: ErrorCode, message: string, status: number): NextResponse {

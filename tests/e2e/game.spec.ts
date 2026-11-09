@@ -135,6 +135,8 @@ test("returning player next day skips the intro and builds a streak of 2", async
 test("no console errors or hydration warnings through a game", async ({ page }) => {
   const problems: string[] = [];
   page.on("console", (m) => {
+    // A 503 from /api/session is the expected local-mode fallback while anonymous sign-ins are off.
+    if (m.location().url.includes("/api/session") && /status of 503/.test(m.text())) return;
     if (m.type() === "error" || /hydrat/i.test(m.text())) problems.push(`${m.type()}: ${m.text()}`);
   });
   page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));

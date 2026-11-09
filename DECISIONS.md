@@ -118,3 +118,33 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: `POST /api/reveal` for M2 (and the M3 offline fallback)
 **Decision:** M2 adds a stateless `POST /api/reveal { date, position, guess_log }`. It checks the date window, then returns that one round's answer and score, and stores nothing. The M2 client uses it on "Lock in" until M3's session-based `/api/guess` replaces it. M3's local-only fallback then reuses it, instead of putting every answer in the puzzle response (this refines decision item 7).
 **Why:** It's needed to switch the client to the API in M2 (task 2.7) before sessions exist. It keeps answers out of the page bundle and the puzzle response. Peeking costs one deliberate request per round, which was already accepted for the offline mode. Rate limits arrive in M3.
+
+### 2026-11-09: M3 auth setup (Dani's choices) and how sign-up is rate-limited
+**Decision:**
+- Supabase auth settings are applied by Dani from a dashboard checklist (option b), not via a personal access token. That avoids sharing an account-wide key.
+- Turnstile moves to M6 (launch hardening). M3 keeps a slot for it in `POST /api/session` but doesn't require it.
+- `POST /api/session` signs players in anonymously on the server with the **secret** key, forwarding the player's IP in the `Sb-Forwarded-For` header. Supabase then applies its anonymous sign-in limit (30/hour) **per player IP**, not per Vercel server, which would otherwise throttle everyone. This needs "IP Address Forwarding" enabled in Supabase (checklist). Supabase's own per-IP limit replaces our planned Upstash limit for sign-ups. Upstash still covers guesses and puzzle reads.
+**Why:** Dani asked to use the checklist and to defer Turnstile. Supabase's docs say server-side sign-ins are rate-limited by the server's IP unless `Sb-Forwarded-For` is sent with a secret key and forwarding is enabled.
+
+### 2026-11-09: Guess transaction and stats split
+**Decision:** `POST /api/guess` scores in TypeScript (`lib/scoring.ts`, the only scoring code), then calls `public.submit_guess`. That Postgres function (execute: service_role only) locks the play row and, in one transaction, rejects duplicates and out-of-order positions, inserts the guess, increments `round_stats` (server-scored plays only), and completes the play on round 5. The `player_stats` view holds games played, best, average and tier counts. **Streaks are computed in TypeScript** from the player's plays with `lib/streaks.ts`, because the date-line n−2 rule needs each play's time zone.
+**Why:** Keeps one scoring implementation while getting real transactional guarantees, which a double-tap can't break. Streak logic in SQL would duplicate `lib/streaks.ts` and risk the two disagreeing.
+
+### 2026-11-09: Client modes and offline sync
+**Decision:**
+- On Play the client calls `/api/session`, then `/api/play`. If either fails (sign-in off, cookies blocked, rate-limited, offline), the game runs in **local mode**: each round is revealed via `/api/reveal` and saved in localStorage.
+- Server-mode lock-ins use `/api/guess`. On a refresh, the server's answered rounds win. Edge cases:
+  - `out_of_order`: another tab moved ahead, so the game resyncs from the server.
+  - `question_changed`: the round was swapped, so the game reloads the rounds and keeps what's answered.
+  - `unauthorized`: the session was lost mid-game, so the game finishes in local mode.
+- Finished local plays are uploaded with `POST /api/sync` the next time a session exists. The server re-scores from `guess_log`, stores `source='local'` (no crowd stats), ignores the upload if it already has a play for that date (server wins), and refuses anything older than 7 days. Partly played local games aren't synced.
+- Server mode shows `/api/me` stats (games played, streak, best) on the final screen, with local stats as the fallback.
+**Why:** It implements SPEC §5's fallback with the M2 reveal design, so the game always works while server records stay authoritative and honest.
+
+### 2026-11-09: Upstash Redis in Singapore; limiter details
+**Decision:** The Upstash database "changel" is in ap-southeast-1 (Singapore), not Sydney as first planned, so it sits with the functions and Supabase (Dani's region choice). Limits are sliding windows: guess 30/min, play 30/min, me 30/min and sync 10/min per player; puzzle 60/min and reveal 30/min per IP. Anonymous sign-ups are limited by Supabase, per forwarded IP. The limiter fails **open** if Redis is unreachable, and it's disabled when the Upstash env vars are empty (local dev, E2E and route integration tests). `tests/integration/ratelimit.test.ts` tests it against the real Redis.
+**Why:** Same co-location reasoning as the database region. Failing open keeps the game up during a Redis blip. Test runs from one IP would otherwise hit the per-IP limits.
+
+### 2026-11-09: E2E test players are tagged and cleaned up; test IPs
+**Decision:** When the test clock is on (`ALLOW_TEST_CLOCK=1`, never in production) and the request carries the test-clock header, `/api/session` tags new anonymous users with `user_metadata.e2e = true`. A Playwright global teardown deletes exactly those users. E2E pages send a stable fake `x-forwarded-for` from the RFC 2544 test range, so local runs don't exhaust Supabase's per-IP sign-up limit for the developer's machine. Test games still add to the crowd-stat counters of the dev seed puzzles. That's harmless, since those puzzles are deleted before launch.
+**Why:** The tests share the one Supabase project. Tagging makes cleanup exact without risking real players. Vercel overwrites `x-forwarded-for` (no spoofing in production), so the fake IP only matters locally.

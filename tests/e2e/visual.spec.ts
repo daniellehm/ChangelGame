@@ -32,6 +32,7 @@ for (const vp of VIEWPORTS) {
 
     await snap(page, `${vp.name}-1-intro`);
     await page.locator("#startBtn").click();
+    await page.locator("#lockBtn").waitFor(); // session + play start are async
     await snap(page, `${vp.name}-2-round`);
     await setSlider(page, GUESSES[0]!);
     await snap(page, `${vp.name}-3-round-guess`);

@@ -6,6 +6,8 @@
 import { z } from "zod";
 import { apiError, invalid, ok } from "@/lib/api/http";
 import { serverNow } from "@/lib/api/clock";
+import { rateLimit } from "@/lib/api/ratelimit";
+import { clientIp } from "@/lib/supabase/request";
 import { GUESS_GRACE_MS, isDateString, puzzleWindow } from "@/lib/dates";
 import { findReadyPuzzle, roundAnswer } from "@/lib/puzzles/repo";
 import { actualLog, clampGuess, scoreRound } from "@/lib/scoring";
@@ -26,6 +28,8 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(json);
   if (!parsed.success) return invalid(parsed.error);
   const { date, position } = parsed.data;
+  const limited = await rateLimit("reveal", clientIp(req) ?? "unknown");
+  if (limited) return limited;
   const guess = clampGuess(parsed.data.guess_log);
 
   // Same window as serving, plus the grace period to finish a started game.

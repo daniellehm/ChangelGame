@@ -2,13 +2,16 @@
 
 ## Current status
 
-**M2 approved by Dani and merged to `main` (2026-11-09).** Next: M3 (anonymous play + server scoring) on branch `m3-anonymous-play`, once Dani gives the go-ahead. M3 first needs: Supabase auth settings (personal access token or dashboard checklist) and Cloudflare Turnstile keys.
+**M3 approved by Dani and merged to `main` (2026-11-09).** Next: M4 (login + merge) on branch `m4-login-merge`, once Dani gives the go-ahead. M4 needs from Dani: DNS records for changel.app (Resend), a Google OAuth client, and a short Supabase auth checklist (redirect URLs, SMTP, providers).
 
 ## Needs from Dani
 
 **Now:**
+- [x] Review M3 (approved 2026-11-09; Dani's preview game verified server-side: 423, anonymous, source=server)
+- [ ] Go-ahead for M4
 - [x] Review M2 (approved 2026-11-09)
-- [ ] Go-ahead for M3, plus a choice for Supabase auth settings: a personal access token, or a dashboard checklist
+- [x] Go-ahead for M3 (2026-11-09): dashboard checklist for Supabase, Turnstile deferred to M6
+- [x] (done 2026-11-09) **Supabase dashboard checklist:** project Changel → **Authentication → Sign In / Providers** → turn on **Allow anonymous sign-ins** → Save. Then **Authentication → Rate Limits** → **IP Address Forwarding** → turn it on → Save. Leave the anonymous sign-ins limit at its default of 30/hour.
 - [x] Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel (done by Dani 2026-11-09; Sensitive, all environments)
 - [x] Review M1 (approved 2026-11-09)
 - [x] Pick which design-playground ideas to keep (2026-11-09: all five, but keep the round label; see DECISIONS)
@@ -20,8 +23,7 @@
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
-- [ ] M3: Supabase auth settings (anonymous sign-ins, captcha, rate limits, redirect URLs, custom SMTP). The MCP has no auth-config tool. Either Dani gives a Supabase personal access token (scoped use: Management API for project "changel" only), or follows a short dashboard checklist that I'll write.
-- [ ] M3: Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
+- [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
 - [ ] M4: DNS records for changel.app at the registrar (exact table to come: Resend SPF/DKIM/MX + Vercel A/CNAME)
 - [ ] M4: Google OAuth client (Google Cloud console) for Supabase
 - [ ] M5: Anthropic API key
@@ -78,16 +80,17 @@ Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 
 Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallback, stats view, streaks.
 **Milestone accepted when:** the E2E anonymous flow passes, and a cleared-cookie browser falls back to local play.
+**Status:** both met (`tests/e2e/anonymous.spec.ts`, real anonymous sign-in). Preview serves from sin1 with rate limiting live. ✅ Approved by Dani and merged to `main` on 2026-11-09.
 
-- [ ] 3.1 Supabase auth config: anonymous sign-ins, Turnstile captcha. *Accept:* anonymous sign-in works from localhost and preview.
-- [ ] 3.2 Session creation on the first Play click, via `@supabase/ssr` HTTP-only cookies. *Accept:* no user row on a page load without Play.
-- [ ] 3.3 `POST /api/play` (start/resume). *Accept:* idempotent; returns answered rounds.
-- [ ] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. **Also cover the DB checks deferred from 2.2:** player-row trigger, account-delete cascade, one play per puzzle, insert-only guesses, guess tier/wrong-way check. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
-- [ ] 3.5 Resume mid-game + midnight crossing. *Accept:* a refresh resumes at the next unplayed round; the started puzzle persists past midnight.
-- [ ] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
-- [ ] 3.7 `player_stats` view, server streaks (date-line rule), `GET /api/me`. *Accept:* streak unit tests, including n−2 with a tz change.
-- [ ] 3.8 Upstash Redis "changel" (Sydney) + rate limits. *Accept:* limits from SPEC section 7 enforced, with tests.
-- [ ] 3.9 E2E anonymous flow (mobile viewport): full game → refresh resumes → finish → share text exact → next day (mocked clock) new puzzle, streak = 2.
+- [x] 3.1 Supabase auth config (Dani's dashboard checklist): anonymous sign-ins + IP address forwarding. Turnstile moved to M6. *Accept:* anonymous sign-in works from localhost and preview.
+- [x] 3.2 `POST /api/session` on the first Play click: server-side `signInAnonymously` with the secret key + `Sb-Forwarded-For`, `@supabase/ssr` HTTP-only cookies. *Accept:* no user row on a page load without Play; sign-ups are rate-limited per player IP.
+- [x] 3.3 `POST /api/play` (start/resume). *Accept:* idempotent; returns answered rounds.
+- [x] 3.4 `POST /api/guess` in one transaction, with round_stats incremental update. **Also cover the DB checks deferred from 2.2:** player-row trigger, account-delete cascade, one play per puzzle, insert-only guesses, guess tier/wrong-way check. *Accept:* integration tests reject out-of-order, duplicate (409 + stored result), wrong-user and out-of-window guesses.
+- [x] 3.5 Resume mid-game + midnight crossing. *Accept:* a refresh resumes at the next unplayed round; the started puzzle persists past midnight.
+- [x] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
+- [x] 3.7 `player_stats` view, server streaks (date-line rule), `GET /api/me`. *Accept:* streak unit tests, including n−2 with a tz change.
+- [x] 3.8 Upstash Redis "changel" (Singapore, see DECISIONS) + rate limits. *Accept:* limits from SPEC section 7 enforced, with tests.
+- [x] 3.9 (`tests/e2e/anonymous.spec.ts`) E2E anonymous flow (mobile viewport): full game → refresh resumes → finish → share text exact → next day (mocked clock) new puzzle, streak = 2.
 
 ## Milestone 4: Login + merge
 
@@ -138,6 +141,15 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M3 approved by Dani and merged into `main`. Dani's preview game verified in the DB (Nov 9, 423, anonymous, server-scored). With Dani's OK, deleted 16 untagged test players from the earliest real-sign-in E2E runs (cascaded 18 plays). The DB now holds just Dani's player and play.
+- 2026-11-09: M3 preview check: `/api/puzzle` 200 from sin1 (rate limiter loads with the Vercel Upstash env), `/api/me` 401 without a session (body not visible to the fetch tool). **M3 complete**, awaiting Dani's review.
+- 2026-11-09: 3.1/3.2/3.9: Dani enabled anonymous sign-ins + IP forwarding. The spec E2E passes with real anonymous players (play → refresh resumes from the server with local storage wiped → finish → exact share text → next day streak 2), and a cookie-refusing browser falls back to local play. Integration tests now use real anonymous sign-in. E2E users tagged e2e + global teardown (deleted 15); per-page fake IPs. Vercel docs confirm x-forwarded-for can't be spoofed. 170 unit + 47 integration + 25 Playwright pass.
+- 2026-11-09: 3.9 written: `tests/e2e/anonymous.spec.ts` (spec flow: play → refresh resumes from the server even with local storage cleared → finish → exact share text → next day streak 2; plus the cookie-blocked browser falls back to local play; deletes its test users). Skips until anonymous sign-ins are on. Stats page now prefers `/api/me`. 170 unit + 47 integration + 22 E2E pass, 1 skipped.
+- 2026-11-09: 3.8 Rate limits: Upstash Redis "changel" created (free, ap-southeast-1); URL + token in `.env.local` and Vercel (token Sensitive). `lib/api/ratelimit.ts` (sliding windows, fails open, off without env) on puzzle/reveal (per IP) and play/guess/sync/me (per player). Real-Redis test: 30 allowed, the 31st gets 429 + Retry-After. 170 unit, 47 integration, 23 Playwright pass.
+- 2026-11-09: 3.5/3.6 Client modes: `lib/game/session-client.ts`; `Game` starts via /api/session + /api/play (server mode) or falls back to local mode via /api/reveal; resumes from the server's answered rounds; handles out_of_order / question_changed / unauthorized mid-game; final screen uses /api/me stats. `POST /api/sync` uploads finished local plays (server re-scores, source='local', server wins, ≤7 days). 46 integration, 169 unit, 21 E2E, 2 visual pass. E2E currently runs in local mode (anonymous sign-ins off).
+- 2026-11-09: 3.3/3.4/3.7: `POST /api/play` (start needs an open window, resume allowed through grace, returns answered rounds), `POST /api/guess` (lib/scoring + `submit_guess`; 401/404/403/409 out_of_order/already_answered with stored result/question_changed), `GET /api/me` (player_stats view + TS streaks with the date-line rule). Public rounds now carry `question_id`. Integration tests on a throwaway 2099-03-01 puzzle (cleaned up): 41 pass, including a concurrent double-tap (1 stored) and the 2.2 deferred checks (player trigger, insert-only guesses, delete cascade). Test players use the email fallback until anonymous sign-ins are on.
+- 2026-11-09: M3 groundwork: `lib/supabase/request.ts` (request-scoped @supabase/ssr client, HTTP-only Lax cookies, `clientIp`), `lib/api/auth.ts` (`sessionUser` via getClaims), `POST /api/session` (reuse or server-side anonymous sign-in with Sb-Forwarded-For; 429/503 mapping). Migration `submit_guess_and_player_stats` (atomic guess function, service-role only; `player_stats` view; plays index). Advisors clean. End-to-end sign-in tests wait for Dani's checklist.
+- 2026-11-09: M3 started (branch `m3-anonymous-play`). Dani chose the Supabase dashboard checklist and deferred Turnstile to M6. Sign-up design changed to forward the player IP to Supabase (see DECISIONS).
 - 2026-11-09: M2 approved by Dani and merged into `main`.
 - 2026-11-09: M2 preview verified on Vercel (functions in sin1): `/api/puzzle` 200 without answers for an open date, 403 `puzzle_not_available` for a future date, 400 for an invalid date. **M2 complete.**
 - 2026-11-09: Dani added `SUPABASE_SERVICE_ROLE_KEY` to Vercel (Sensitive; production, preview, development). All 4 env vars are mirrored.

@@ -13,7 +13,22 @@ export const syd = (local: string) => new Date(`${local}+11:00`);
  */
 export async function setClock(page: Page, when: Date) {
   await page.clock.setFixedTime(when);
-  await page.setExtraHTTPHeaders({ [TEST_CLOCK_HEADER]: when.toISOString() });
+  await page.setExtraHTTPHeaders({ [TEST_CLOCK_HEADER]: when.toISOString(), "x-forwarded-for": fakeIp(page) });
+}
+
+/**
+ * A stable fake client IP per test page. Locally there's no proxy, so without
+ * this every test sign-up would count against one IP in Supabase's per-IP
+ * anonymous sign-in limit (30/hour). On Vercel the real player IP is used.
+ */
+const ips = new WeakMap<Page, string>();
+function fakeIp(page: Page): string {
+  let ip = ips.get(page);
+  if (!ip) {
+    ip = `198.18.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 254) + 1}`; // RFC 2544 test range
+    ips.set(page, ip);
+  }
+  return ip;
 }
 
 /** Questions the dev seed serves on a local date. */

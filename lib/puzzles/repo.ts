@@ -31,7 +31,7 @@ export async function findReadyPuzzle(date: string): Promise<StoredPuzzle | null
 export async function publicRounds(roundsDate: string): Promise<PublicRound[]> {
   const { data, error } = await adminClient()
     .from("puzzle_rounds")
-    .select("position, questions!inner(category, prompt, start_year, start_value, end_year, format)")
+    .select("position, question_id, questions!inner(category, prompt, start_year, start_value, end_year, format)")
     .eq("puzzle_date", roundsDate)
     .order("position");
   if (error) throw error;
@@ -40,6 +40,7 @@ export async function publicRounds(roundsDate: string): Promise<PublicRound[]> {
     if (!isFormat(q.format)) throw new Error(`Unknown format ${q.format}`);
     return {
       position: r.position,
+      question_id: r.question_id,
       category: q.category,
       prompt: q.prompt,
       start_year: q.start_year,
@@ -78,4 +79,26 @@ export async function roundAnswer(roundsDate: string, position: number): Promise
     source_name: q.source_name ?? "",
     source_url: q.source_url,
   };
+}
+
+/** Answer fields for specific questions (resume / already-answered paths). */
+export async function answersByQuestionId(ids: number[]): Promise<Map<number, RoundAnswer>> {
+  const out = new Map<number, RoundAnswer>();
+  if (!ids.length) return out;
+  const { data, error } = await adminClient()
+    .from("questions")
+    .select("id, start_value, end_value, fact, source_name, source_url")
+    .in("id", ids);
+  if (error) throw error;
+  for (const q of data ?? []) {
+    out.set(q.id, {
+      question_id: q.id,
+      start_value: q.start_value,
+      end_value: q.end_value,
+      fact: q.fact ?? "",
+      source_name: q.source_name ?? "",
+      source_url: q.source_url,
+    });
+  }
+  return out;
 }

@@ -20,6 +20,12 @@ export interface StoredPlay {
   started_at: string;
   completed_at: string | null;
   results: RoundResult[];
+  /** "server": scored + stored by /api/guess. "local": offline fallback via /api/reveal (SPEC §5). */
+  mode?: "server" | "local";
+  /** Server play id (mode "server", or after a local play is synced). */
+  play_id?: string;
+  /** Local play uploaded with /api/sync (or permanently rejected, so stop retrying). */
+  synced?: boolean;
 }
 
 export interface StatsEntry {
@@ -157,4 +163,21 @@ export function pruneOldPlays(today: string): void {
   } catch {
     /* ignore */
   }
+}
+
+/** Local-only plays that still need uploading (newest last). */
+export function unsyncedLocalPlays(): StoredPlay[] {
+  const out: StoredPlay[] = [];
+  try {
+    const ls = window.localStorage;
+    for (let i = 0; i < ls.length; i++) {
+      const k = ls.key(i);
+      if (!k?.startsWith(PLAY_PREFIX)) continue;
+      const p = loadPlay(k.slice(PLAY_PREFIX.length));
+      if (p && p.mode === "local" && !p.synced && p.results.length > 0) out.push(p);
+    }
+  } catch {
+    /* ignore */
+  }
+  return out.sort((a, b) => a.puzzle.date.localeCompare(b.puzzle.date));
 }

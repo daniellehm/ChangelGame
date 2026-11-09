@@ -9,6 +9,8 @@ import type { TierId } from "../scoring";
 /** A round as served before lock-in: no answer fields. */
 export interface PublicRound {
   position: number; // 1–5
+  /** Lets /api/guess detect a same-day question swap (DECISIONS item 8). Not an answer. */
+  question_id?: number;
   category: string;
   prompt: string;
   start_year: number;
