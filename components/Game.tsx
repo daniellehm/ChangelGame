@@ -399,7 +399,19 @@ export function Game({ launch }: { launch: string }) {
           />
         )}
         {s.phase === "final" && s.puzzle && stats && (
-          <Final puzzle={s.puzzle} results={s.results} stats={stats} animate={s.justFinished && motion} onToast={showToast} />
+          <Final
+            puzzle={s.puzzle}
+            results={s.results}
+            stats={stats}
+            animate={s.justFinished && motion}
+            // SPEC §5: show after the 2nd completed game; never block play behind it.
+            offerSave={stats.played >= 2 && (s.serverStats ? s.serverStats.anonymous : true)}
+            onSaved={() => {
+              showToast("Streak saved");
+              if (s.puzzle) void loadServerStats(s.puzzle.date, s.tz);
+            }}
+            onToast={showToast}
+          />
         )}
       </div>
       <Toast message={toast.message} show={toast.show} />

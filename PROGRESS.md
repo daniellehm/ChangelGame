@@ -97,11 +97,11 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 **Milestone accepted when:** an anonymous player with 3 plays logs in on a second device holding 2 other plays and ends with all 5 (earlier-started kept on clashes). Email-only; Google dropped by Dani (DECISIONS 2026-11-09).
 
 - [ ] 4.1 Resend: domain changel.app + sending-only key restricted to it; Supabase custom SMTP; branded sign-in email (link + 6-digit code) from hello@changel.app; changel.app added to Vercel; DNS table for GoDaddy.
-- [ ] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`; verify by 6-digit code or link; sessions persist (no re-entering codes).
+- [x] 4.2 "Save your streak" prompt (after the 2nd completed game + header menu); upgrade in place via `updateUser({ email })`; verify by 6-digit code or link; sessions persist (no re-entering codes).
 - [~] 4.3 Google via `linkIdentity`: **dropped by Dani** (email-only).
 - [x] 4.4 merge_tokens + `POST /api/merge` (earlier-started wins, stats recomputed, anon user deleted). *Accept:* integration test for the clash rule.
-- [ ] 4.5 Account page: change email, export JSON, delete account (hard delete).
-- [ ] 4.6 Sign out → fresh anonymous state + local cache cleared.
+- [x] 4.5 Account page: change email, export JSON, delete account (hard delete).
+- [x] 4.6 Sign out → fresh anonymous state + local cache cleared.
 - [ ] 4.7 Nightly cleanup cron (anon users with no plays > 7 days, inactive > 400 days).
 - [ ] 4.8 E2E: magic link via test inbox → stats persist in a second browser context; the 3 + 2 = 5 acceptance scenario.
 
@@ -140,6 +140,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M4 UI: `SaveStreak` (email → code), final-screen prompt from the 2nd game, `/account` (sign in / save / change email / export / sign out / two-step delete), branded email templates + `docs/setup/supabase-email.md`. Fixed a duplicate-anonymous-user race (single-flight `ensureSession`; unit + E2E regression). Idle toast now hidden. 173 unit, 54 integration, 27 Playwright pass.
 - 2026-11-09: 4.2/4.4/4.5/4.6 server side: `POST /api/auth/email` (always `{sent:true}`; flow kept in an HTTP-only cookie; upgrade in place via updateUser, or a merge token + sign-in code for an existing email), `POST /api/auth/verify` (6-digit code → session + merge), `GET /auth/confirm` (email link), `POST /api/merge`, `POST /api/auth/signout`, `GET /api/account/export`, `POST /api/account/delete`. Rate limits: 5 emails / 10 codes per 10 min per IP. Integration test of the M4 acceptance passes (5 plays end up on the account, earlier-started kept on the clash, anonymous user deleted, token single-use). UI + Supabase email config still to do.
 - 2026-11-09: DNS: Dani moved changel.app nameservers to Vercel; Claude added the 5 Resend records via the Vercel API (after Vercel created the zone) and started Resend verification. https://changel.app returns 200 over HTTPS (public, serves `main`); the www certificate is pending. Migrations `merge_players` (earlier-started wins on clashes) and `email_registered` (server-only) applied.
 - 2026-11-09: 4.1 (part): Resend domain `changel.app` created (sending only, ap-northeast-1, no tracking; the other Resend domain untouched); sending-only key restricted to changel.app in `.env.local` + Vercel (Sensitive). `changel.app` + `www` (308 → apex) added to the Vercel project. DNS instructions for Dani: `docs/setup/godaddy-dns.md`.

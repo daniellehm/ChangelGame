@@ -181,3 +181,16 @@ export function unsyncedLocalPlays(): StoredPlay[] {
   }
   return out.sort((a, b) => a.puzzle.date.localeCompare(b.puzzle.date));
 }
+
+/** Sign-out / account deletion: forget every Changel key on this device (SPEC §5). */
+export function clearLocalGameData(): void {
+  try {
+    const ls = window.localStorage;
+    for (let i = ls.length - 1; i >= 0; i--) {
+      const k = ls.key(i);
+      if (k?.startsWith("changel:")) ls.removeItem(k);
+    }
+  } catch {
+    /* ignore */
+  }
+}

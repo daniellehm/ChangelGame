@@ -96,6 +96,8 @@ input[type=range]:focus-visible::-moz-range-thumb{outline:3px solid var(--up);ou
 .next{font-family:var(--font-mono-stack);font-size:13px;color:var(--muted);text-align:center;margin-top:14px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:800;transition:transform .25s;z-index:9}
 .toast.show{transform:translateX(-50%) translateY(0)}
+/* Hidden when idle so it's never captured or read out; the delay lets the slide-out finish. */
+.toast:not(.show){visibility:hidden;transition:transform .25s,visibility 0s .25s}
 .sharebox{display:none;width:100%;font-family:var(--font-mono-stack);font-size:13px;border:2px solid var(--line);border-radius:10px;padding:10px;margin-top:10px;background:var(--bg);color:var(--ink)}
 .sharebox.show{display:block}
 .hidden{display:none !important}
@@ -192,6 +194,28 @@ html[data-returning] #intro{visibility:hidden}
 .grid.animate span{animation:tile-flip .5s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--i) * .14s + .2s)}
 @keyframes tile-flip{from{transform:rotateX(90deg) scale(.6);opacity:0}}
 .confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
+
+/* Save your streak / account forms (M4) */
+.save-streak{display:grid;gap:10px;border:2px solid var(--ink);border-radius:16px;padding:16px;background:var(--bg);margin:0 0 18px}
+.save-title{font-weight:800;font-size:18px;letter-spacing:-.2px}
+.save-form{display:grid;gap:10px}
+.save-blurb{margin:0;font-size:14px;line-height:1.45;color:var(--ink-2)}
+.field{font:inherit;font-size:17px;width:100%;padding:12px 14px;border:2px solid var(--ink);border-radius:12px;background:var(--card);color:var(--ink)}
+.field:focus{outline:none}
+.field:focus-visible{outline:3px solid var(--up);outline-offset:2px}
+.field.code{font-family:var(--font-mono-stack);font-size:24px;letter-spacing:6px;text-align:center}
+.save-links{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center}
+.linkish{font:inherit;font-size:13px;background:none;border:0;padding:4px 0;color:var(--ink-2);text-decoration:underline;cursor:pointer}
+.linkish:focus-visible{outline:2px solid var(--up);outline-offset:2px}
+.save-error{margin:0;font-size:14px;color:var(--r);font-weight:600}
+.save-note{margin:0;font-size:14px;color:var(--ink);font-weight:600}
+.account-rows{display:grid;gap:10px;margin:6px 0 4px}
+.danger{font:inherit;font-weight:800;border:2px solid var(--r);background:transparent;color:var(--r);border-radius:14px;padding:12px 16px;cursor:pointer;width:100%}
+.danger.solid{background:var(--r);color:var(--on-accent)}
+.danger:focus-visible{outline:3px solid var(--up);outline-offset:2px}
+.final-save{margin-top:18px}
+.final-save .save-streak{margin:0}
+.banner{border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:0 0 14px;font-size:14px;background:var(--y)}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}

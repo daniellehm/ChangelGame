@@ -9,6 +9,7 @@ import type { StatsSummary } from "@/lib/game/storage";
 import type { Puzzle, RoundResult } from "@/lib/game/types";
 import { finalTitle, TIERS, totalOf } from "@/lib/scoring";
 import { useCountUp } from "./motion";
+import { SaveStreak } from "./SaveStreak";
 import { ShareButton } from "./ShareButton";
 
 interface Props {
@@ -17,6 +18,9 @@ interface Props {
   stats: StatsSummary;
   /** Count up the score and flip in the grid (only when arriving from the last reveal). */
   animate: boolean;
+  /** Show "Save your streak" (no account yet, 2+ games played). */
+  offerSave: boolean;
+  onSaved: () => void;
   onToast: (message: string) => void;
 }
 
@@ -39,7 +43,7 @@ function useCountdown(): string {
   return text;
 }
 
-export function Final({ puzzle, results, stats, animate, onToast }: Props) {
+export function Final({ puzzle, results, stats, animate, offerSave, onSaved, onToast }: Props) {
   const total = totalOf(results.map((r) => r.points));
   const shown = useCountUp(total, animate, 900);
   const countdown = useCountdown();
@@ -76,6 +80,11 @@ export function Final({ puzzle, results, stats, animate, onToast }: Props) {
         <div><b id="stBest">{stats.best}</b><small>best</small></div>
       </div>
       <ShareButton text={shareText(puzzle.number, total, tiers)} onToast={onToast} />
+      {offerSave && (
+        <div className="final-save">
+          <SaveStreak mode="save" title={`Save your ${stats.streak}-day streak`} blurb="Add your email so your streak follows you to any device. No password." onDone={onSaved} />
+        </div>
+      )}
       <div className="next" id="countdown">{countdown}</div>
     </section>
   );

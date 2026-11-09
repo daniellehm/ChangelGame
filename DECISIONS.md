@@ -159,3 +159,11 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: changel.app DNS is hosted on Vercel (nameservers moved from GoDaddy)
 **Decision:** There's no GoDaddy MCP, and GoDaddy's DNS API is limited to large accounts, so Dani pointed changel.app's nameservers at `ns1/ns2.vercel-dns.com`. The domain stays registered and billed at GoDaddy. Vercel serves the apex and `www` automatically (`www` → 308 → apex). Claude added the Resend records via the Vercel API: DKIM `resend._domainkey`, `send` MX + SPF TXT, `rsend` CNAME, and `_dmarc` (`p=none`). Vercel only accepted records once it had created the zone, about 12 minutes after nameserver verification. `docs/setup/godaddy-dns.md` (manual GoDaddy records) is superseded.
 **Why:** Claude can then manage DNS directly. It's one edit at GoDaddy instead of eleven, and it can be reversed by restoring GoDaddy's nameservers.
+
+### 2026-11-09: Sign-in UX and single-flight sessions
+**Decision:**
+- One reusable `SaveStreak` card (email → 6-digit code) in three modes: save (anonymous), sign in (no session) and change email. It appears on the final screen from the 2nd completed game for players without an account (never blocking), and on `/account`.
+- `/account` shows "Sign in" when there's no session (visiting creates no user), "Save your streak" for anonymous players, and email + change email / export / sign out / delete (two-step) for accounts. Sign-out and delete clear every `changel:*` localStorage key (SPEC §5).
+- Sign-in emails (Supabase templates in `supabase/templates/`) put the code first, with a link as the alternative. The link goes to `/auth/confirm` via `{{ .RedirectTo }}`, so it works on previews and in production once each origin is allow-listed.
+- **Bug fixed:** concurrent `ensureSession()` calls could create two anonymous users (React dev double-effects on the returning-player auto-start; also two tabs at once). It's now single-flight per page, with a unit test and an E2E regression test.
+**Why:** Matches SPEC §5 with Dani's email-only choice. The duplicate-user race broke guesses ("play not found").
