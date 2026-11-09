@@ -157,3 +157,44 @@ test("no console errors or hydration warnings through a game", async ({ page }) 
   await expect(page.locator("#final")).toBeVisible();
   expect(problems).toEqual([]);
 });
+
+/** Remove `range` from every stored round, as saved by the app before per-question ranges (2026-11-09). */
+async function stripStoredRanges(page: import("@playwright/test").Page) {
+  await page.evaluate((key) => {
+    const p = JSON.parse(localStorage.getItem(key)!);
+    for (const r of p.puzzle.rounds) delete r.range;
+    localStorage.setItem(key, JSON.stringify(p));
+  }, `changel:v1:play:${DAY1}`);
+}
+
+test("a finished game saved before per-question ranges still loads (regression: blank page)", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await page.locator("#startBtn").click();
+  for (let i = 0; i < 5; i++) {
+    await playRound(page, DAY1, i, 0.1);
+    await next(page);
+  }
+  await expect(page.locator("#final")).toBeVisible();
+  await stripStoredRanges(page);
+  await page.reload();
+  await expect(page.locator("#final")).toBeVisible();
+  expect(errors).toEqual([]);
+  // The ranges were fetched again and saved.
+  const ranges = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).puzzle.rounds.map((r: { range?: unknown }) => !!r.range), `changel:v1:play:${DAY1}`);
+  expect(ranges).toEqual([true, true, true, true, true]);
+});
+
+test("a half-played game saved before per-question ranges resumes with the right slider", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/");
+  await page.locator("#startBtn").click();
+  await playRound(page, DAY1, 0, 0.3);
+  await stripStoredRanges(page);
+  await page.reload();
+  await expect(page.locator("#cat")).toHaveText(/round 2 of 5/i);
+  await playRound(page, DAY1, 1, -0.2); // checks the score with round 2's real range
+  expect(errors).toEqual([]);
+});

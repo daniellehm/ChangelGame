@@ -148,6 +148,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: **Hotfix (branch `hotfix-stored-ranges`, waiting for Dani's OK to merge to production):** changel.app showed a blank page for anyone with a game saved in their browser from before the ranges change (old saved rounds had no `range`, so the page crashed). `loadPlay` now falls back to the full range, and boot re-fetches the real ranges, keeping the results. Two E2E regression tests (finished and half-played old saves) crash without the fix; all 28 E2E pass with it.
+
 - 2026-11-09: Per-question ranges approved by Dani and merged into `main`.
 - 2026-11-09: Per-question ranges made symmetric at Dani's request: one `max_change` per question (slider ÷k … ×k, "same" always centred). Migration `question_max_change`; all 20 seed questions re-set and imported; tests updated (unit 205, integration 60, E2E 26 + visual, baselines reviewed).
 - 2026-11-09: Per-question guess ranges (branch `per-question-range`):

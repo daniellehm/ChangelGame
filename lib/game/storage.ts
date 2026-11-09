@@ -10,6 +10,7 @@
 import { ROUNDS, STORAGE_KEYS } from "../config";
 import { daysBetween } from "../dates";
 import { currentStreak, maxStreak, type PlayRef } from "../streaks";
+import { FULL_RANGE, type GuessRange } from "../range";
 import type { TierId } from "../scoring";
 import type { Puzzle, RoundResult } from "./types";
 
@@ -85,9 +86,25 @@ export function isComplete(play: StoredPlay): boolean {
   return play.results.length >= ROUNDS;
 }
 
+const isRange = (r: unknown): r is GuessRange =>
+  !!r && typeof r === "object" && Number.isFinite((r as GuessRange).lo) && Number.isFinite((r as GuessRange).hi) && (r as GuessRange).hi > (r as GuessRange).lo;
+
+/** Plays loaded from storage whose rounds had no slider range (saved before per-question ranges). */
+const missingRanges = new WeakSet<StoredPlay>();
+
+/** True if this stored play was saved before rounds had ranges; the caller should refresh them (see Game boot). */
+export function rangesWereMissing(p: StoredPlay): boolean {
+  return missingRanges.has(p);
+}
+
 export function loadPlay(date: string): StoredPlay | null {
   const p = read<StoredPlay>(STORAGE_KEYS.play(date));
-  return p && p.v === 1 && Array.isArray(p.results) && p.puzzle?.date === date ? p : null;
+  if (!(p && p.v === 1 && Array.isArray(p.results) && p.puzzle?.date === date && Array.isArray(p.puzzle.rounds))) return null;
+  // Plays saved before per-question ranges (2026-11-09) have no range: never let that crash the UI.
+  if (p.puzzle.rounds.every((r) => isRange(r.range))) return p;
+  const fixed: StoredPlay = { ...p, puzzle: { ...p.puzzle, rounds: p.puzzle.rounds.map((r) => (isRange(r.range) ? r : { ...r, range: FULL_RANGE })) } };
+  missingRanges.add(fixed);
+  return fixed;
 }
 
 export function savePlay(play: StoredPlay): void {
