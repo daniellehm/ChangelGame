@@ -11,7 +11,7 @@
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
 - [x] Approve the Vercel MCP connection for the `releasedani` scope, and confirm it's the right account (done 2026-11-09)
 - [x] Connect GitHub to the Vercel account (done 2026-11-09)
-- [ ] **Blocks 1.11:** add `ChangelGame` to the Vercel GitHub app's repository access (github.com/settings/installations → Vercel → Configure → Repository access)
+- [x] Add `ChangelGame` to the Vercel GitHub app's repository access (done 2026-11-09)
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
@@ -130,6 +130,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.11: Vercel project `changel` created and linked to `daniellehm/ChangelGame` (prj_4qiuH4a01M4Il52WrKi8zd75EjCS), with Node 22.x, Next.js preset and functions in syd1. Previews are behind Vercel Authentication.
 - 2026-11-09: 1.11: GitHub login connected. Retry failed with "install the GitHub integration first". The app is restricted to selected repos and `search_repo` can't see ChangelGame.
 - 2026-11-09: 1.11: Dani approved MCP access and confirmed the Vercel account. The retry failed: "add a Login Connection to your GitHub account first".
 - 2026-11-09: 1.11 started: no existing "changel" project on Vercel. `create_git_project` was refused with 403, because the MCP connection isn't granted to the account scope. Blocked on Dani's consent.

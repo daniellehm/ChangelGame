@@ -42,4 +42,4 @@ _Filled in as they come to exist._
 | Visual parity vs prototype | `npm run test:parity` (side-by-side PNGs in `test-results/parity/`) |
 | Typecheck + lint + unit | `npm run check` (run before every commit) |
 | Migrations | _TBD (M2)_ |
-| Deploy | _TBD (M1: preview via Vercel git integration)_ |
+| Deploy | Push a branch → Vercel preview (project `changel`, id `prj_4qiuH4a01M4Il52WrKi8zd75EjCS`, team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Node 22, functions syd1). Merge to `main` → production. Previews are behind Vercel Authentication. |
