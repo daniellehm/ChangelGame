@@ -2,13 +2,14 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** Current: **per-question guess ranges** (branch `per-question-range`, DECISIONS 2026-11-09 "Per-question guess ranges"). They're built, tested and on a Vercel preview, waiting for Dani to test and approve, then merge. The DB migration `question_guess_range` and the bounds import are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
+**M4 approved by Dani and merged to `main` (2026-11-09).** Current: **per-question guess ranges** (branch `per-question-range`, DECISIONS 2026-11-09 "Per-question guess ranges"). They're built, tested and on a Vercel preview, waiting for Dani to test and approve, then merge. Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
 
 ## Needs from Dani
 
 **Now:**
 - [x] M4 reviewed and approved (2026-11-09)
 - [ ] Test the per-question ranges on the preview and approve the merge
+- [ ] OK to drop the unused `min_end_value`/`max_end_value` columns (first version of the ranges)?
 - [ ] Go-ahead for M5
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
@@ -117,7 +118,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 - [ ] 5.1 Pipeline tables: content_runs, check results, reports, events (+ `flagged` question status).
 - [ ] 5.2 Data-backed generators: OWID, World Bank.
-- [ ] 5.3 Researched generator (Claude + web search). Every generator also proposes `min_end_value`/`max_end_value` **without seeing the answer** (a separate step given only the prompt, start value and years). `rangeProblems()` must pass, widening the bounds if the answer sits too close to an edge.
+- [ ] 5.3 Researched generator (Claude + web search). Every generator also proposes `max_change` **without seeing the answer** (a separate step given only the prompt, start value and years). `rangeProblems()` must pass, raising max_change if the answer sits too close to the end.
 - [ ] 5.4 Automatic checks (source support, cross-check, like-for-like, sanity, duplicate, topic safety, fact quality). *Accept:* a planted wrong number is flagged.
 - [ ] 5.5 Scheduler with balance rules, the 7-day rule and the reserve of 10. *Accept:* cold-start fill.
 - [ ] 5.6 Nightly cron orchestration (fits Vercel limits), cost logging.
@@ -146,6 +147,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Per-question ranges made symmetric at Dani's request: one `max_change` per question (slider ÷k … ×k, "same" always centred). Migration `question_max_change`; all 20 seed questions re-set and imported; tests updated (unit 205, integration 60, E2E 26 + visual, baselines reviewed).
 - 2026-11-09: Per-question guess ranges (branch `per-question-range`):
   - Code: `lib/range.ts` (range maths, rules, tolerance, ε, steps, ticks); `scoreRound`, `clampGuess` and `lib/slider` take the range. Rounds and answers carry `range`. Slider, Round ticks and Reveal pins are positioned on it.
   - Data: migration `question_guess_range` (columns + 2 constraints); bounds for all 20 seed questions, imported.

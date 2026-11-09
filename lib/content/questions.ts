@@ -34,9 +34,8 @@ export const QuestionRowSchema = z
     end_year: z.coerce.number().int().min(-10000).max(2200),
     end_value: z.coerce.number().positive(),
     format: z.enum(FORMATS),
-    /** Plausible bounds for the end value (real units): the slider's ends. See lib/range.ts for the rules. */
-    min_end_value: z.coerce.number().positive(),
-    max_end_value: z.coerce.number().positive(),
+    /** Biggest plausible change either way: the slider runs ÷max_change … ×max_change. Rules in lib/range.ts. */
+    max_change: z.preprocess(blankToUndefined, z.coerce.number().positive().optional()),
     fact: optionalText,
     source_name: optionalText,
     source_url: optionalUrl,
@@ -53,16 +52,14 @@ export const QuestionRowSchema = z
     ...q,
     start_value: roundForStorage(q.start_value, q.format),
     end_value: roundForStorage(q.end_value, q.format),
-    min_end_value: roundForStorage(q.min_end_value, q.format),
-    max_end_value: roundForStorage(q.max_end_value, q.format),
   }))
   .superRefine((q, ctx) => {
     if (q.end_year <= q.start_year) ctx.addIssue({ code: "custom", path: ["end_year"], message: "must be after start_year" });
     if (Math.abs(Math.log10(q.end_value / q.start_value)) > 3) {
       ctx.addIssue({ code: "custom", path: ["end_value"], message: "change must be within ÷1000 to ×1000" });
     }
-    for (const problem of rangeProblems(q.start_value, q.end_value, q.min_end_value, q.max_end_value)) {
-      ctx.addIssue({ code: "custom", path: ["min_end_value"], message: problem });
+    for (const problem of rangeProblems(q.start_value, q.end_value, q.max_change)) {
+      ctx.addIssue({ code: "custom", path: ["max_change"], message: problem });
     }
   });
 
@@ -97,6 +94,6 @@ export function parseQuestionsCsv(text: string): ParseResult {
 
 /** Fields the importer may overwrite on an existing question (never status/verification). */
 export const CONTENT_FIELDS = [
-  "category", "prompt", "start_year", "start_value", "end_year", "end_value", "format", "min_end_value", "max_end_value",
+  "category", "prompt", "start_year", "start_value", "end_year", "end_value", "format", "max_change",
   "fact", "source_name", "source_url", "source_url_2", "region", "tags", "notes",
 ] as const;

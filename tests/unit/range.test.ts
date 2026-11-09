@@ -4,7 +4,7 @@ import {
   epsilon,
   FULL_RANGE,
   multiplierLabel,
-  rangeFromBounds,
+  rangeFromFactor,
   rangeProblems,
   sliderSteps,
   ticks,
@@ -24,22 +24,22 @@ function rng(seed: number) {
   };
 }
 
-/** A random VALID question: width in [MIN, MAX], 0 inside, answer ≥ 10% in from both ends. */
+/** A random VALID question: max_change in [1.05, 1000], answer at most 85% of the way out, either direction. */
 function randomQuestion(rand: () => number): { r: GuessRange; a: number } {
-  const w = RANGE.MIN_WIDTH + rand() * (RANGE.MAX_WIDTH - RANGE.MIN_WIDTH);
-  const zeroAt = 0.01 + rand() * 0.98; // where "no change" sits
-  const r = { lo: -zeroAt * w, hi: (1 - zeroAt) * w };
-  const a = r.lo + (RANGE.EDGE_MARGIN + rand() * (1 - 2 * RANGE.EDGE_MARGIN)) * w;
+  const K = Math.log10(RANGE.MIN_FACTOR) + rand() * (Math.log10(RANGE.MAX_FACTOR) - Math.log10(RANGE.MIN_FACTOR));
+  const r = rangeFromFactor(10 ** K);
+  const a = (rand() * 2 - 1) * RANGE.MAX_ANSWER_FRACTION * r.hi;
   return { r, a };
 }
 
 const N = 3000;
 
 describe("range basics", () => {
-  it("builds a range from real-unit bounds", () => {
-    const r = rangeFromBounds(51, 40, 300);
-    expect(r.lo).toBeCloseTo(Math.log10(40 / 51), 12);
-    expect(r.hi).toBeCloseTo(Math.log10(300 / 51), 12);
+  it("max_change k gives ÷k … ×k, always centred on no change", () => {
+    const r = rangeFromFactor(8);
+    expect(r.hi).toBeCloseTo(Math.log10(8), 12);
+    expect(r.lo).toBe(-r.hi);
+    expect(rangeFromFactor(1000)).toEqual(FULL_RANGE);
   });
 
   it("the full range is the prototype: tolerance 0.75, ε 0.004, steps 0.005 / 0.05 / 0.1 / 0.01", () => {
@@ -53,7 +53,7 @@ describe("range basics", () => {
   it("tolerance grows with width, but slower than the slider (never over a third of it)", () => {
     let prev = 0;
     let prevFrac = Infinity;
-    for (let w = RANGE.MIN_WIDTH; w <= RANGE.MAX_WIDTH; w += 0.01) {
+    for (let w = 2 * Math.log10(RANGE.MIN_FACTOR); w <= 6; w += 0.01) {
       const t = tolerance({ lo: -w / 2, hi: w / 2 });
       expect(t).toBeGreaterThan(prev);
       expect(t / w).toBeLessThanOrEqual(1 / 3 + 1e-12);
@@ -65,15 +65,15 @@ describe("range basics", () => {
 });
 
 describe("scoring holds for any valid question (property tests)", () => {
-  it("exact answer scores 100; the far end of the slider always scores 0; an end never scores over 70", () => {
+  it("exact answer scores 100; the far end of the slider always scores 0; an end never scores over 78", () => {
     const rand = rng(1);
     for (let i = 0; i < N; i++) {
       const { r, a } = randomQuestion(rand);
       expect(scoreRound(a, a, r).points).toBe(100);
       const far = a - r.lo > r.hi - a ? r.lo : r.hi;
       expect(scoreRound(far, a, r).points, JSON.stringify({ r, a })).toBe(0);
-      expect(scoreRound(r.lo, a, r).points).toBeLessThanOrEqual(70);
-      expect(scoreRound(r.hi, a, r).points).toBeLessThanOrEqual(70);
+      expect(scoreRound(r.lo, a, r).points).toBeLessThanOrEqual(78);
+      expect(scoreRound(r.hi, a, r).points).toBeLessThanOrEqual(78);
     }
   });
 
@@ -116,24 +116,25 @@ describe("scoring holds for any valid question (property tests)", () => {
     }
   });
 
-  it("the slider can reach exactly 0 and both ends on every range", () => {
+  it("the slider can reach exactly 0 and both ends on every range, and 'same' is always the middle", () => {
     const rand = rng(5);
     for (let i = 0; i < 200; i++) {
       const { r } = randomQuestion(rand);
       expect(keyboardMove(r, keyboardMove(r, 0, "ArrowRight")!, "ArrowLeft")).toBe(0);
       expect(keyboardMove(r, 0, "Home")).toBe(r.lo);
       expect(keyboardMove(r, 0, "End")).toBe(r.hi);
+      expect(ticks(r).find((t) => t.label === "same")?.at).toBe(50);
     }
   });
 });
 
-describe("the UN example (51 members in 1945 → 193 in 2011, bounds 40…300)", () => {
-  const r = rangeFromBounds(51, 40, 300);
+describe("the UN example (51 members in 1945 → 193 in 2011, max_change 8)", () => {
+  const r = rangeFromFactor(8);
   const a = Math.log10(193 / 51);
-  it("×10 isn't on the slider; the top (×5.9) only scores Meh", () => {
+  it("×10 isn't on the slider; the top (×8) scores little", () => {
     expect(r.hi).toBeLessThan(1);
     expect(scoreRound(1, a, r)).toEqual(scoreRound(r.hi, a, r));
-    expect(scoreRound(r.hi, a, r).points).toBeLessThan(40);
+    expect(scoreRound(r.hi, a, r).points).toBeLessThan(30);
   });
   it("is stricter than the old full range for a sensible miss (×3 instead of ×3.8)", () => {
     const g = Math.log10(3);
@@ -144,20 +145,21 @@ describe("the UN example (51 members in 1945 → 193 in 2011, bounds 40…300)",
 
 describe("rangeProblems (importer + DB rules)", () => {
   it("accepts every seed question", () => {
-    for (const q of seedRows) expect(rangeProblems(q.start_value, q.end_value, q.min_end_value, q.max_end_value), q.slug).toEqual([]);
+    for (const q of seedRows) expect(rangeProblems(q.start_value, q.end_value, q.max_change), q.slug).toEqual([]);
+  });
+  it("accepts the limits exactly", () => {
+    expect(rangeProblems(100, 100, 1.05)).toEqual([]);
+    expect(rangeProblems(100, 100 * 1000 ** 0.85, 1000)).toEqual([]);
   });
   it.each([
-    ["missing bounds", 100, 250, null, 1000, /needs/],
-    ["no change outside the range", 100, 250, 120, 1000, /no change/],
-    ["max below min", 100, 250, 1000, 50, /above/],
-    ["non-positive bound", 100, 250, 0, 1000, /> 0/],
-    ["answer hard against the top", 100, 250, 50, 260, /10% in/],
-    ["answer hard against the bottom", 100, 52, 50, 1000, /10% in/],
-    ["answer outside the range", 100, 2000, 50, 1000, /10% in/],
-    ["narrower than ×1.0965", 100, 100.5, 99, 101, /too narrow/],
-    ["wider than ÷1000…×1000", 100, 250, 0.01, 1e6, /too wide/],
-  ] as const)("rejects %s", (_label, start, end, min, max, msg) => {
-    const p = rangeProblems(start, end, min, max);
+    ["missing max_change", 100, 250, null, /needs/],
+    ["max_change below 1.05", 100, 100.5, 1.01, /too small/],
+    ["max_change above 1000", 100, 250, 5000, /too big/],
+    ["answer too close to the top", 100, 250, 2.6, /85% of the way.*at least 2.94/],
+    ["answer too close to the bottom", 100, 40, 2.6, /85% of the way/],
+    ["answer off the slider", 100, 2000, 10, /85% of the way/],
+  ] as const)("rejects %s", (_label, start, end, k, msg) => {
+    const p = rangeProblems(start, end, k);
     expect(p.length).toBeGreaterThan(0);
     expect(p.join(" ")).toMatch(msg);
   });

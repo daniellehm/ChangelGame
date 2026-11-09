@@ -36,8 +36,7 @@ describe("players", () => {
 describe("guess ranges", () => {
   it("each round carries its question's range; a question without bounds gets the full ÷1000…×1000", async () => {
     const body = await (await puzzleGET(get(`/api/puzzle?date=${TEST_DATE}`, TEST_NOW))).json();
-    expect(body.rounds[0].range.lo).toBeCloseTo(Math.log10(50 / 100), 12);
-    expect(body.rounds[0].range.hi).toBeCloseTo(Math.log10(1000 / 100), 12);
+    expect(body.rounds[0].range).toEqual({ lo: -1, hi: 1 }); // max_change 10 → ÷10 … ×10
     for (const i of [0, 1, 2, 4]) expect(body.rounds[i].range).toEqual(testRange(i));
     expect(body.rounds[3].range).toEqual(FULL_RANGE);
   });
@@ -46,17 +45,17 @@ describe("guess ranges", () => {
     const db = adminClient();
     const base = { ...TEST_QUESTIONS[0]!, slug: "itest-bad-range" };
     const bad = [
-      { min_end_value: 120, max_end_value: 1000 }, // excludes "no change"
-      { min_end_value: 50, max_end_value: 260 }, // answer (250) hard against the top
-      { min_end_value: 99, max_end_value: 101 }, // narrower than ×1.0965
-      { min_end_value: 50, max_end_value: null }, // half a range
-      { min_end_value: 1e-4, max_end_value: 1e4 }, // wider than ÷1000…×1000 overall (×1e8)
+      { max_change: 2.6 }, // answer (×2.5) 96% of the way to the end
+      { max_change: 1.01 }, // narrower than ÷1.05 … ×1.05
+      { max_change: 5000 }, // wider than ÷1000 … ×1000
+      { max_change: 0 },
+      { max_change: -3 },
     ];
     for (const b of bad) {
       const { error } = await db.from("questions").insert({ ...base, ...b });
       expect(error?.code, JSON.stringify(b)).toBe("23514");
     }
-    const { error } = await db.from("questions").insert({ ...base, min_end_value: null, max_end_value: null, status: "verified" });
+    const { error } = await db.from("questions").insert({ ...base, max_change: null, status: "verified" });
     expect(error?.code, "verified without a range").toBe("23514");
   });
 });

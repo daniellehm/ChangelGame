@@ -5,11 +5,11 @@ import { devSeedPlan, prototypeOrder } from "@/lib/content/dev-seed";
 import { loadPrototype } from "../helpers/prototype";
 
 const csv = readFileSync("content/questions.csv", "utf8");
-const header = "slug,category,prompt,start_year,start_value,end_year,end_value,format,min_end_value,max_end_value,fact,source_name,source_url,source_url_2,region,tags,status,notes";
+const header = "slug,category,prompt,start_year,start_value,end_year,end_value,format,max_change,fact,source_name,source_url,source_url_2,region,tags,status,notes";
 const row = (over: Record<string, string> = {}) => {
   const base: Record<string, string> = {
     slug: "test-q", category: "Test", prompt: "A test question", start_year: "2000", start_value: "100",
-    end_year: "2020", end_value: "250", format: "int", min_end_value: "50", max_end_value: "1000", fact: "", source_name: "", source_url: "",
+    end_year: "2020", end_value: "250", format: "int", max_change: "10", fact: "", source_name: "", source_url: "",
     source_url_2: "", region: "", tags: "", status: "", notes: "",
   };
   const r = { ...base, ...over };
@@ -53,9 +53,10 @@ describe("question row validation", () => {
     [{ slug: "Bad Slug" }, "slug"],
     [{ region: "NZ" }, "region"],
     [{ source_url: "ftp://x" }, "source_url"],
-    [{ min_end_value: "" }, "min_end_value"], // every question needs a range
-    [{ min_end_value: "120" }, "no change"], // range must include "no change"
-    [{ max_end_value: "260" }, "10% in"], // answer hard against the top of the slider
+    [{ max_change: "" }, "needs max_change"], // every question needs a range
+    [{ max_change: "2.6" }, "85% of the way"], // answer (×2.5) hard against the end of the slider
+    [{ max_change: "1.01" }, "too small"],
+    [{ max_change: "2000" }, "too big"],
   ])("rejects %o", (over, field) => {
     const { rows, errors } = parseQuestionsCsv(row(over));
     expect(rows).toHaveLength(0);

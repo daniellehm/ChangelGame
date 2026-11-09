@@ -15,13 +15,13 @@ export const TEST_DATE = "2099-03-01";
 /** Inside TEST_DATE's window (Sydney morning). */
 export const TEST_NOW = "2099-03-01T09:00:00+11:00";
 
-/** q4 has no bounds on purpose: it exercises the full-range fallback for legacy questions. */
+/** q4 has no max_change on purpose: it exercises the full-range fallback for legacy questions. */
 export const TEST_QUESTIONS = [
-  { slug: "itest-q1", category: "Test", prompt: "Integration test question one", start_year: 2000, start_value: 100, end_year: 2020, end_value: 250, format: "int", min_end_value: 50, max_end_value: 1000 },
-  { slug: "itest-q2", category: "Test", prompt: "Integration test question two", start_year: 2000, start_value: 50, end_year: 2020, end_value: 20, format: "int", min_end_value: 5, max_end_value: 200 },
-  { slug: "itest-q3", category: "Test", prompt: "Integration test question three", start_year: 1990, start_value: 3, end_year: 2020, end_value: 3, format: "usd", min_end_value: 1, max_end_value: 10 },
-  { slug: "itest-q4", category: "Test", prompt: "Integration test question four", start_year: 1980, start_value: 1000, end_year: 2020, end_value: 90000, format: "big", min_end_value: null, max_end_value: null },
-  { slug: "itest-q5", category: "Test", prompt: "Integration test question five", start_year: 2010, start_value: 8, end_year: 2020, end_value: 6, format: "int", min_end_value: 5, max_end_value: 12 },
+  { slug: "itest-q1", category: "Test", prompt: "Integration test question one", start_year: 2000, start_value: 100, end_year: 2020, end_value: 250, format: "int", max_change: 10 },
+  { slug: "itest-q2", category: "Test", prompt: "Integration test question two", start_year: 2000, start_value: 50, end_year: 2020, end_value: 20, format: "int", max_change: 5 },
+  { slug: "itest-q3", category: "Test", prompt: "Integration test question three", start_year: 1990, start_value: 3, end_year: 2020, end_value: 3, format: "usd", max_change: 3 },
+  { slug: "itest-q4", category: "Test", prompt: "Integration test question four", start_year: 1980, start_value: 1000, end_year: 2020, end_value: 90000, format: "big", max_change: null },
+  { slug: "itest-q5", category: "Test", prompt: "Integration test question five", start_year: 2010, start_value: 8, end_year: 2020, end_value: 6, format: "int", max_change: 2 },
 ].map((q) => ({ ...q, fact: `${q.prompt} fact.`, source_name: "Test source", status: "draft", tags: ["itest"] }));
 
 /** Question i's guess range, as the server computes it. */

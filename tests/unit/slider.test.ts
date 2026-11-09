@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FULL_RANGE as F, rangeFromBounds } from "@/lib/range";
+import { FULL_RANGE as F, rangeFromFactor } from "@/lib/range";
 import { keyboardMove, nudge, snapPointer, toStep } from "@/lib/slider";
 
 describe("slider maths", () => {
@@ -39,10 +39,10 @@ describe("slider maths", () => {
 
 });
 
-describe("slider maths on a narrow range (UN members 51 → 34…408)", () => {
-  const r = rangeFromBounds(51, 34, 408);
+describe("slider maths on a narrow range (UN members, max_change 8)", () => {
+  const r = rangeFromFactor(8);
   it("ends are the range bounds, not ÷1000/×1000", () => {
-    expect(keyboardMove(r, 0, "Home")).toBeCloseTo(Math.log10(34 / 51), 12);
+    expect(keyboardMove(r, 0, "Home")).toBeCloseTo(-Math.log10(8), 12);
     expect(keyboardMove(r, 0, "End")).toBeCloseTo(Math.log10(8), 12);
     expect(toStep(r, 5)).toBe(r.hi);
     expect(toStep(r, -5)).toBe(r.lo);
