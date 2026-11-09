@@ -5,7 +5,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { pullRound } from "@/lib/admin/data";
+import { pullRound, saveQuestion } from "@/lib/admin/data";
 import { answersByQuestionId, publicRounds } from "@/lib/puzzles/repo";
 import { adminClient } from "@/lib/supabase/admin";
 
@@ -54,5 +54,15 @@ describe("same-day pull", () => {
     const { data: old } = await db.from("questions").select("status, flag_reason").eq("id", ids[0]).single();
     expect(old!.status).toBe("flagged");
     expect(old!.flag_reason).toContain("wrong figure");
+  });
+
+  it("editing a live question: new sources aren't a correction, a new number is", async () => {
+    const id = ids[1]!; // still on DATE (a past day, so live)
+    const sources = await saveQuestion(id, { source_url: "https://a.example/x", source_url_2: "https://b.example/x", category: "Pl1b" }, "itest@example.com", { runChecks: false });
+    expect(sources).toMatchObject({ status: "ok", corrected: false });
+    expect((await answersByQuestionId([id])).get(id)!.corrected).toBe(false);
+    const fixed = await saveQuestion(id, { end_value: 155 }, "itest@example.com", { runChecks: false });
+    expect(fixed).toMatchObject({ status: "ok", corrected: true });
+    expect((await answersByQuestionId([id])).get(id)!.corrected).toBe(true);
   });
 });

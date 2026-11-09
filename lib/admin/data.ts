@@ -208,6 +208,7 @@ export const QuestionEdit = z
   })
   .partial();
 
+const NOT_A_CORRECTION = new Set(["category", "source_name", "source_url", "source_url_2"]);
 const EDITABLE = ["category", "prompt", "start_year", "start_value", "end_year", "end_value", "format", "max_change", "fact", "source_name", "source_url", "source_url_2"] as const;
 
 function toCandidate(q: Record<string, unknown>): Candidate {
@@ -264,7 +265,9 @@ export async function saveQuestion(id: number, patch: z.infer<typeof QuestionEdi
   if (!range.pass) return { status: "invalid" as const, detail: range.detail };
   if (!sanity.pass && /values must be|end year must be after|÷1000/.test(sanity.detail)) return { status: "invalid" as const, detail: sanity.detail };
 
-  const live = Object.keys(changes).length > 0 && (await isLiveOrPast(id, now));
+  // "Corrected" is for changes to what players saw or were scored on; new sources or a category aren't corrections.
+  const corrects = Object.keys(changes).some((k) => !NOT_A_CORRECTION.has(k));
+  const live = corrects && (await isLiveOrPast(id, now));
   if (Object.keys(changes).length) {
     must(await db().from("questions").update({ ...changes, ...(live ? { corrected_at: now.toISOString() } : {}) }).eq("id", id).select("id"));
     const beforeDiff = Object.fromEntries(Object.keys(changes).map((k) => [k, before[k]]));
@@ -277,12 +280,18 @@ export async function saveQuestion(id: number, patch: z.infer<typeof QuestionEdi
     const llm = deps.llm ?? new ClaudeLlm(sdkParse(), dbLedger());
     report = (await checkBatch([{ id, candidate: cand }], { llm, now, fetchFn: deps.fetchFn, similarPrompts: store.similarPrompts, seriesUsed: store.seriesUsed }))[0] ?? null;
     const statusNow = before.status as string;
+    const passed = { verified_by: editor, verified_at: now.toISOString(), flag_reason: null };
     const patchStatus =
       statusNow === "draft" || statusNow === "flagged"
         ? report!.passed
-          ? { status: await passedStatus(id), verified_by: editor, verified_at: now.toISOString(), flag_reason: null }
+          ? { status: await passedStatus(id), ...passed }
           : { status: "flagged", flag_reason: flagReason(report!) }
-        : {};
+        : statusNow === "scheduled"
+          ? // Already on a day: stays scheduled either way (pull it to take it off); the card shows why it failed.
+            report!.passed
+            ? passed
+            : { flag_reason: flagReason(report!) }
+          : {};
     must(await db().from("questions").update({ checks: report, ...patchStatus }).eq("id", id).select("id"));
   }
   return { status: "ok" as const, changed: Object.keys(changes), corrected: live, report };

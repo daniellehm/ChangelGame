@@ -103,6 +103,20 @@ describe("approve / retire / delete", () => {
     const page = async () => new Response("<p>Widgets: 100 in 2000 and 160 in 2020.</p>", { headers: { "content-type": "text/html" } });
     expect((await saveQuestion(ids[3]!, { category: "CatD2" }, ED, { llm: passing, fetchFn: page })).status).toBe("ok");
     expect((await db.from("questions").select("status").eq("id", ids[3]).single()).data!.status).toBe("scheduled");
+    // A scheduled question that fails a re-check stays on its day, with the reason shown.
+    const failing: Llm = {
+      async json<T>(req: LlmRequest<T>) {
+        if (req.purpose === "review") return req.schema.parse({ like_for_like: { pass: false, reason: "different measures" }, safety: { pass: true, reason: "ok" }, fact: { pass: true, reason: "ok" } });
+        return passing.json(req);
+      },
+    };
+    expect((await saveQuestion(ids[3]!, { category: "CatD3" }, ED, { llm: failing, fetchFn: page })).status).toBe("ok");
+    const failed = (await db.from("questions").select("status, flag_reason").eq("id", ids[3]).single()).data!;
+    expect(failed.status).toBe("scheduled");
+    expect(failed.flag_reason).toContain("different measures");
+    // …and passing again clears it.
+    expect((await saveQuestion(ids[3]!, { category: "CatD" }, ED, { llm: passing, fetchFn: page })).status).toBe("ok");
+    expect((await db.from("questions").select("status, flag_reason, verified_by").eq("id", ids[3]).single()).data).toEqual({ status: "scheduled", flag_reason: null, verified_by: ED });
   });
 
   it("retiring a question on an upcoming day swaps it out first", async () => {
