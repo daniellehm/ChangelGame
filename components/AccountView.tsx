@@ -94,12 +94,10 @@ export function AccountView() {
           ) : (
             <div className="account-rows">
               <button className="btn ghost" type="button" onClick={() => setChanging(true)}>Change email</button>
-              <a className="btn ghost back" href="/api/account/export" download>Export my data</a>
               <button className="btn ghost" type="button" onClick={doSignOut} disabled={busy}>Sign out</button>
             </div>
           )}
 
-          <h2>Delete account</h2>
           {confirmDelete ? (
             <div className="account-rows">
               <p>This deletes your account and every game you&apos;ve played. It can&apos;t be undone.</p>

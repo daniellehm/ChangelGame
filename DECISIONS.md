@@ -404,3 +404,14 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - **Scripts** (`content:apply-edits`) still run the full checks.
 
 **Why:** Dani's edits should be trusted, and the nightly job's assignment was invisible: nothing showed how a question gets onto a day.
+
+## 2026-11-10: Stats and account page tweaks (Dani's request)
+
+**Decision:**
+- **Stats:** the "Your stats are saved to your account…" note is gone. The "Stats are kept on this device. Add your email…" prompt for signed-out players stays.
+- **Stats, last 30 days:** each played day is a button that opens a pop-up with that day's total and each round's result (emoji, label, points), plus the question when this device still has that game saved. It closes with ×, Escape or a tap outside, and focus returns to the square.
+- **Account:**
+  - the "Export my data" button is removed. The `/api/account/export` endpoint stays, so a data request (e.g. under the Privacy Act or GDPR) can still be answered by hand;
+  - the "Delete account" heading above "Delete my account" is removed.
+
+**Why:** Dani's call on look and feel (a visual departure from the M4 screens, approved by her).

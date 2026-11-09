@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { next, playRound, syd, setClock } from "./helpers";
+import { next, playRound, roundsFor, syd, setClock } from "./helpers";
 
 const PAGES = [
   { label: "How to play", path: "/how-to-play", h1: "Guess the change." },
@@ -74,8 +74,19 @@ test("stats page reflects a completed game", async ({ page }) => {
   await expect(page.locator("#sBest")).toHaveText(String(total));
   await expect(page.locator("#sAvg")).toHaveText(String(total));
   await expect(page.locator("#sStreak")).toHaveText("1");
-  await expect(page.locator(".strip i.played")).toHaveCount(1);
+  await expect(page.locator(".strip button.played")).toHaveCount(1);
   await expect(page.locator(".strip")).toHaveAttribute("aria-label", "Played 1 of the last 30 days");
+  // Tapping the played day shows that day's score and each round.
+  await page.locator(".strip button.played").click();
+  const pop = page.getByRole("dialog");
+  await expect(pop.locator("#dayPopTitle")).toHaveText(`${total}/500`);
+  await expect(pop.getByText("Changel #2")).toBeVisible();
+  await expect(pop.locator(".day-pop-rounds li")).toHaveCount(5);
+  await expect(pop.getByText(roundsFor("2026-11-10")[0]!.prompt)).toBeVisible();
+  await expect(pop.getByRole("button", { name: "Close" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(pop).toHaveCount(0);
+  await expect(page.locator(".strip button.played")).toBeFocused();
   await expect(page.getByText("Stats are kept on this device.")).toBeVisible();
   await expect(page.getByRole("link", { name: "Add your email" })).toHaveAttribute("href", "/account");
   await expect(page.getByText("coming soon")).toHaveCount(0);
