@@ -138,6 +138,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M3 groundwork: `lib/supabase/request.ts` (request-scoped @supabase/ssr client, HTTP-only Lax cookies, `clientIp`), `lib/api/auth.ts` (`sessionUser` via getClaims), `POST /api/session` (reuse or server-side anonymous sign-in with Sb-Forwarded-For; 429/503 mapping). Migration `submit_guess_and_player_stats` (atomic guess function, service-role only; `player_stats` view; plays index). Advisors clean. End-to-end sign-in tests wait for Dani's checklist.
 - 2026-11-09: M3 started (branch `m3-anonymous-play`). Dani chose the Supabase dashboard checklist and deferred Turnstile to M6. Sign-up design changed to forward the player IP to Supabase (see DECISIONS).
 - 2026-11-09: M2 approved by Dani and merged into `main`.
 - 2026-11-09: M2 preview verified on Vercel (functions in sin1): `/api/puzzle` 200 without answers for an open date, 403 `puzzle_not_available` for a future date, 400 for an invalid date. **M2 complete.**
