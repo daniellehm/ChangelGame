@@ -251,3 +251,33 @@ Each item is applied in the milestone where it comes up.
 - The PNGs were rendered from the SVG.
 
 **Why:** Dani's request.
+
+### 2026-11-09: M5 pipeline: models, spend cap, global mix
+**Decision (Dani):**
+- **Models:**
+  - Claude Opus 5.5 writes researched questions and does the independent cross-check (the steps that catch wrong numbers).
+  - Claude Sonnet 5.5 does everything else: source-quote check, like-for-like, topic safety, fact quality, wording for data-backed questions, and the blind `max_change` proposal.
+  - Both use the server-side refusal fallback (`fallbacks: "default"`).
+- **Hard cap of $50 a month on Claude spend.** Every call is metered: tokens × price, plus web searches at $10 per 1,000. No new call starts once the month's spend reaches the cap, and the admin page warns. The game keeps serving what's already scheduled.
+- **Global questions only, with no Australian bias.** This drops SPEC §8's "at least one AU question a week" balance rule. Country versions may come later.
+
+**To fit the cap** (my estimate for this model mix was about $65 a month at the spec's settings):
+- aim for about 70% data-backed questions (numbers from World Bank / Our World in Data, about half the cost of researched ones);
+- cap web searches per call;
+- run checks at low effort and the Opus steps at medium effort;
+- generate only 20% more candidates than needed.
+
+That targets about $35–45 a month. The one-time cold-start fill (about $55) spreads over two months.
+**Why:** Dani's choices (models, cap, region). The cost levers are mine.
+
+### 2026-11-09: M5 pipeline: how the nightly job runs
+**Decision:**
+- **State lives in the database.** A candidate's status (draft → verified / flagged → scheduled → used) and its `checks` record what's done, so any run can stop and the next one resumes.
+- **Hops.** Vercel Hobby runs a cron once a day, and one function call can't do a cold start's ~200 candidates. `/api/cron/content` (02:00 UTC) therefore works in **time-boxed hops** of about 4 minutes.
+  - Each hop takes a lease on the night's `content_runs` row (an atomic update, so two hops never run at once).
+  - At the end of a hop, if work remains and the run is under its hop limit and the spend cap, it triggers the next hop: a request to its own production URL with `CRON_SECRET`, sent via `after()`.
+  - Admin "Run now" uses the same entry point.
+- **QStash** would be more robust, but needs the Upstash account's QStash token. That's an account-wide secret, not a "changel" resource, so we don't use it.
+- **Tests** inject fake Claude and data-source clients, so the pipeline logic is tested for free. Real-model behaviour gets one small, paid smoke run (the planted wrong number) only once the key is in.
+
+**Why:** It works within the Hobby plan, survives timeouts and crashes mid-run, and touches no non-changel secrets.

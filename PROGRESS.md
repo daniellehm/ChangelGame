@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. Next: M5 (content pipeline + admin) on branch `m5-content-admin`, once Dani gives the go-ahead. M5 needs from Dani: the Anthropic API key, and which emails get admin access (ADMIN_EMAILS).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Waiting on Dani: `ANTHROPIC_API_KEY` in `.env.local` and Vercel.
 
 ## Needs from Dani
 
@@ -11,7 +11,8 @@
 - [x] Test the per-question ranges on the preview and approve the merge (2026-11-09)
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [x] Relative scoring approved and merged (2026-11-09)
-- [ ] Go-ahead for M5
+- [x] Go-ahead for M5 (2026-11-09)
+- [ ] Add `ANTHROPIC_API_KEY` to `.env.local` and to Vercel (Sensitive, Production + Preview)
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
 - [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
@@ -32,7 +33,6 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M5: Anthropic API key
 - [ ] M6: Sentry account/DSN; PostHog or Plausible account
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
@@ -116,17 +116,33 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Milestone 5: Content pipeline + admin
 
 **Milestone accepted when:** a cold start with an empty database fills 30 days with no human action; a planted wrong number is flagged; simulated reports from 11% of players add the question once to the Reports queue, send no email and leave it live, while 3 reports out of 5,000 players do nothing; and deleting a day triggers the rerun plus an alert.
+**Status:** started 2026-11-09 on branch `m5-content-admin`. Decisions: DECISIONS 2026-11-09 "M5 pipeline: models, spend cap, global mix" and "M5 pipeline: how the nightly job runs".
 
-- [ ] 5.1 Pipeline tables: content_runs, check results, reports, events (+ `flagged` question status).
-- [ ] 5.2 Data-backed generators: OWID, World Bank.
-- [ ] 5.3 Researched generator (Claude + web search). Every generator also proposes `max_change` **without seeing the answer** (a separate step given only the prompt, start value and years). `rangeProblems()` must pass, raising max_change if the answer sits too close to the end.
-- [ ] 5.4 Automatic checks (source support, cross-check, like-for-like, sanity, duplicate, topic safety, fact quality). *Accept:* a planted wrong number is flagged.
-- [ ] 5.5 Scheduler with balance rules, the 7-day rule and the reserve of 10. *Accept:* cold-start fill.
-- [ ] 5.6 Nightly cron orchestration (fits Vercel limits), cost logging.
-- [ ] 5.7 Admin auth (ADMIN_EMAILS) + portal shell with queue badges and alert banner.
-- [ ] 5.8 Admin pages: Reports, Upcoming, Question editor (+ question_edits, "Corrected" note), Flagged, Question bank, Health.
-- [ ] 5.9 Report button + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
-- [ ] 5.10 Same-day pull / reserve swap; rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
+**How it works (summary):** a candidate question is inserted as `draft`. The checks run, and it becomes `verified` (all pass, `verified_by='auto'`) or `flagged` (any fail, `flag_reason`). The scheduler fills days 7–30 ahead with verified questions (status `scheduled`, puzzle `ready`) and keeps ≥10 verified spares. Once a puzzle date has passed, its questions become `used`. All of this state lives in the database, so the nightly job can stop at any point and resume in the next run.
+
+- [ ] 5.1 **Pipeline tables:**
+  - `content_runs` (runs, leases, hops, tokens, searches, cost)
+  - `question_edits`, `reports`, `events`, `alerts_sent`
+  - question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`
+  - `pg_trgm` for duplicate checks
+- [ ] 5.2 **Claude client wrapper** (`lib/content/llm.ts`): Opus 5.5 / Sonnet 5.5, spend metering against the $50/month cap, server-side fallbacks, typed results. Data sources: World Bank + OWID fetchers with fixtures.
+- [ ] 5.3 **Generators:**
+  - data-backed (curated indicator list, global series; Claude writes only the wording and the fact)
+  - researched (Opus + web search, two sources from different publishers)
+  - blind `max_change` proposal (sees prompt, start value and years only)
+- [ ] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
+- [ ] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
+- [ ] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
+- [ ] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
+- [ ] 5.8 **Admin pages:**
+  - Reports
+  - Upcoming
+  - Question editor (+ question_edits, "Corrected" note)
+  - Flagged
+  - Question bank
+  - Health (+ "Run now")
+- [ ] 5.9 **Report button** + validity rules + report-rate queueing. *Accept:* 11% vs 3/5,000 simulations.
+- [ ] 5.10 **Same-day pull / reserve swap;** rerun fallback; alert emails (game-at-risk only). *Accept:* deleting a day → rerun + alert.
 
 ## Milestone 6: Virality + launch hardening
 
@@ -147,6 +163,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: M5 started (branch `m5-content-admin`). Dani's decisions: Opus 5.5 + Sonnet 5.5 mix, $50/month hard cap, global questions with no Australian bias. Admin email danielle.moussa@mseq.vc.
 
 - 2026-11-09: Tab icon (logo mark: SVG + favicon.ico + apple-icon), and the Buy Me a Coffee popup fixed on phones (it ran off the left edge; pinned inside the screen below 480 px). Checked with a local production build at iPhone 13, iPhone SE, desktop→400 px and desktop sizes. E2E 28 and visual pass.
 
