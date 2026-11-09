@@ -2,15 +2,15 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). **1.11 blocked**: the Vercel MCP connection lacks access to the account scope (403). Waiting for Dani to approve a consent link (see Needs from Dani). Then: run `create_git_project` (repo `daniellehm/ChangelGame`, name `changel`, teamId `team_aHOu0Tqfx6VbGGGipjmx66jE`, deploy false), set Node 22.x, push to trigger the branch preview, verify, then stop for M1 review. Branch `m1-scaffold-visuals` is pushed to GitHub.
+**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.10 done (parity: 0 px difference on all 14 screenshots). **1.11 blocked**: MCP access granted, but the Vercel account has no GitHub login connection, so Vercel can't link the repo (400). Waiting for Dani to connect GitHub (see Needs from Dani). Then: run `create_git_project` (repo `daniellehm/ChangelGame`, name `changel`, teamId `team_aHOu0Tqfx6VbGGGipjmx66jE`, deploy false), set Node 22.x, push to trigger the branch preview, verify, then stop for M1 review. Branch `m1-scaffold-visuals` is pushed to GitHub.
 
 ## Needs from Dani
 
 **Now (blocks M1 or its plan):**
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
-- [ ] **Blocks 1.11:** approve the Vercel MCP connection for the account scope `releasedani` (team `team_aHOu0Tqfx6VbGGGipjmx66jE`, Hobby plan, login `releasedani@gmail.com`). Consent links expire after 10 minutes and work once, so ask Claude for a fresh one when you're ready. Also confirm this is the right Vercel account for Changel.
-- [ ] Possibly, after that: grant Vercel's GitHub app access to `daniellehm/ChangelGame` if linking the repo fails
+- [x] Approve the Vercel MCP connection for the `releasedani` scope, and confirm it's the right account (done 2026-11-09)
+- [ ] **Blocks 1.11:** connect GitHub to the Vercel account (Account Settings → Authentication → Login Connections → GitHub), and let the Vercel GitHub app access `daniellehm/ChangelGame`
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [ ] M2: the Supabase **secret / service-role key** pasted into `.env.local`. The Supabase MCP can read publishable keys only.
@@ -129,6 +129,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.11: Dani approved MCP access and confirmed the Vercel account. The retry failed: "add a Login Connection to your GitHub account first".
 - 2026-11-09: 1.11 started: no existing "changel" project on Vercel. `create_git_project` was refused with 403, because the MCP connection isn't granted to the account scope. Blocked on Dani's consent.
 - 2026-11-09: 1.10 Visual parity: `tests/e2e/parity.spec.ts` (`npm run test:parity`) diffs the app against `reference/prototype.html` at 390 and 1280 px across 7 steps (intro → final). It found and fixed two real differences: next/font's Arial fallback (→, ≈ glyphs) and the prototype rendering bold at 800. Result: **0 differing pixels on all 14 screenshots**, threshold tightened to 0.1%. Side-by-sides in `test-results/parity/`. Also started pushing the branch to GitHub after each commit (Dani's request).
 - 2026-11-09: 1.9 Extra screens: header menu (keyboard + outside-click + Escape), `/how-to-play`, `/stats` (local stats: played/avg/best, current + max streak, tier distribution with labels, 30-day strip), `/account` and `/about` placeholders via `PageShell`. E2E: menu by mouse/keyboard, no horizontal scroll at 320 px, stats after a game (18 E2E total).
