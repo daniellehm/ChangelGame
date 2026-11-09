@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SLIDER } from "@/lib/config";
-import { multLabel, multSpoken } from "@/lib/format";
+import { multLabel } from "@/lib/format";
 import type { RoundResult } from "@/lib/game/types";
 import { TIERS } from "@/lib/scoring";
 
@@ -36,7 +36,6 @@ export function Reveal({ result, isLast, onNext }: Props) {
   }, []);
 
   const real = multLabel(result.actual_log).big;
-  const announcement = `${tier.label} ${result.points} points. You guessed ${multSpoken(result.guess_log)}; the real change was ${multSpoken(result.actual_log)}.`;
 
   return (
     <div className="reveal show" id="reveal">
@@ -44,7 +43,6 @@ export function Reveal({ result, isLast, onNext }: Props) {
         <span id="vText">{tier.label}</span>
         <span className="pts" id="vPts">{`+${result.points}`}</span>
       </div>
-      <p className="sr-only" id="revealAnnounce" role="status">{announcement}</p>
       <div className="bar" aria-hidden="true">
         <div className="track" />
         <div className="mid" />

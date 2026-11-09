@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { ROUNDS, SLIDER } from "@/lib/config";
-import { formatValue, multLabel } from "@/lib/format";
+import { formatValue, multLabel, multSpoken } from "@/lib/format";
 import type { PublicRound, RoundResult } from "@/lib/game/types";
 import { Reveal } from "./Reveal";
-import { Slider, toStep } from "./Slider";
+import { nudge } from "@/lib/slider";
+import { TIERS } from "@/lib/scoring";
+import { Slider } from "./Slider";
 
 interface Props {
   round: PublicRound;
@@ -16,6 +18,10 @@ interface Props {
   onGuess: (v: number) => void;
   onLock: () => void;
   onNext: () => void;
+}
+
+function announce(r: RoundResult): string {
+  return `${TIERS[r.tier].label} ${r.points} points. You guessed ${multSpoken(r.guess_log)}; the real change was ${multSpoken(r.actual_log)}.`;
 }
 
 export function Round({ round, index, guess, result, pending, onGuess, onLock, onNext }: Props) {
@@ -62,10 +68,10 @@ export function Round({ round, index, guess, result, pending, onGuess, onLock, o
             <span>÷1000</span><span>÷10</span><span>same</span><span>×10</span><span>×1000</span>
           </div>
           <div className="nudge">
-            <button type="button" data-n={-SLIDER.NUDGE} aria-label="Decrease a bit" onClick={() => onGuess(toStep(guess - SLIDER.NUDGE))} disabled={pending}>
+            <button type="button" data-n={-SLIDER.NUDGE} onClick={() => onGuess(nudge(guess, -1))} disabled={pending}>
               − a bit
             </button>
-            <button type="button" data-n={SLIDER.NUDGE} aria-label="Increase a bit" onClick={() => onGuess(toStep(guess + SLIDER.NUDGE))} disabled={pending}>
+            <button type="button" data-n={SLIDER.NUDGE} onClick={() => onGuess(nudge(guess, 1))} disabled={pending}>
               + a bit
             </button>
           </div>
@@ -74,6 +80,11 @@ export function Round({ round, index, guess, result, pending, onGuess, onLock, o
           </button>
         </div>
       )}
+
+      {/* Persistent live region: announcements in freshly mounted regions are often dropped. */}
+      <p className="sr-only" id="revealAnnounce" role="status" aria-live="polite">
+        {result ? announce(result) : ""}
+      </p>
 
       {result && <Reveal key={round.position} result={result} isLast={index === ROUNDS - 1} onNext={onNext} />}
     </section>
