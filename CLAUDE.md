@@ -38,6 +38,7 @@ _Filled in as they come to exist._
 | Install | `npm install` |
 | Dev server | `npm run dev` (http://localhost:3000) |
 | Unit tests | `npm test` (Vitest, `tests/unit/**/*.test.ts`) |
+| Integration tests | `npm run test:integration` (route handlers against the real Supabase DB + dev seed; needs `.env.local`) |
 | E2E tests | `npm run test:e2e` (Playwright, `tests/e2e`) |
 | Visual regression | `npm run test:visual` (after an intended visual change: `npm run test:visual -- --update-snapshots`, then review the PNGs) |
 | Typecheck + lint + unit | `npm run check` (run before every commit) |

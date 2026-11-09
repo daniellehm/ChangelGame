@@ -18,7 +18,8 @@
     "check": "npm run typecheck && npm run lint && npm test",
     "test:visual": "playwright test --project=visual",
     "content:import": "tsx --env-file=.env.local scripts/import-questions.ts",
-    "content:seed-dev": "tsx --env-file=.env.local scripts/seed-dev-puzzles.ts"
+    "content:seed-dev": "tsx --env-file=.env.local scripts/seed-dev-puzzles.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
