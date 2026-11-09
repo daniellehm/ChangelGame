@@ -283,6 +283,16 @@ export function Game({ launch }: { launch: string }) {
   // New local day: load the new puzzle unless mid-game (SPEC §4).
   const phase = s.phase;
   const puzzleDate = s.puzzle?.date;
+
+  // Mid-round, floating extras (the Buy Me a Coffee button) hide so they never cover game controls.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (phase === "round") root.dataset.playing = "1";
+    else delete root.dataset.playing;
+    return () => {
+      delete root.dataset.playing;
+    };
+  }, [phase]);
   useEffect(() => {
     if (phase !== "intro" && phase !== "final") return;
     const check = () => {

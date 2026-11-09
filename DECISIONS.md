@@ -234,3 +234,12 @@ Each item is applied in the milestone where it comes up.
 - 1/3 was chosen as closest to the prototype's average feel while keeping the far end at 0. It must stay at most ½ to keep that guarantee.
 
 **Why:** Dani: the √-width version felt harsh, and "it should be based on the slider width and how close you are relative to that."
+
+### 2026-11-09: Buy Me a Coffee floating button
+**Decision:** Dani's Buy Me a Coffee widget (`data-id` releasedani, colour #40DCA5, bottom right, 18 px margins, exactly the embed code's attributes) is on every page via `components/BuyMeACoffee.tsx` in the root layout.
+- **How it loads:** the official script only initialises on window `DOMContentLoaded`, which has already fired when a client component mounts. The component inserts the same script tag and replays that event once the script has loaded.
+- **Production builds only.** Dev, E2E and the visual baselines never load the third-party script.
+- **Hidden mid-round** (`html[data-playing]`, set by Game). At phone size the fixed 64 px button covered the right end of "Next" on the reveal. It shows on the intro, final, How to play, Stats and Account screens, and `html.has-bmc` adds 110 px of bottom padding so the last button can scroll clear of it.
+- **Security:** checked the widget script. It reads `document.cookie` only to set its own one-day `visited` cookie. Changel's session cookies are HTTP-only, so it can't read them. There's no CSP to update.
+
+**Why:** Dani's request. Hiding it mid-round is a small visual departure, made so it never blocks play.
