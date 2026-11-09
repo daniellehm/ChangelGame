@@ -351,3 +351,40 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
   Each kind is sent at most once per 20 hours, and everything else stays on the admin banner. Tests set `CHANGEL_NO_ALERT_EMAIL=1`, so they record alerts without sending.
 
 **Why:** SPEC §8, plus the simplest safe choices where it's silent (the first year of reruns; never letting tests touch real dates or email Dani).
+
+## 2026-11-09: Content checks tuned after the first real runs (M5 review)
+
+**Context:** Dani's first "Run now" flagged 6 of 8 questions, and re-checking the 20 prototype questions showed the review failing true, neutral facts. Typical cases:
+- CO₂ levels and the minimum wage were called "political";
+- facts failed because a small detail "can't be confirmed";
+- a verdict was given before the reasoning ("on reflection the fact holds, so this fail is a mistake").
+
+The numbers themselves are already guarded by the source quote and the blind cross-check.
+
+**Decision:**
+- **Review schema puts the reason before the verdict** (and the source check puts quotes before "supported"), so the model reasons first.
+- **Review prompt:**
+  - like-for-like stays strict (when unsure, fail), and an ambiguous scope now fails;
+  - safety is strict on taking sides in live political disputes, but neutral measurements (CO₂, temperatures, wages, prices, populations, tax rates) are fine;
+  - the fact fails if it's false, misleading, an implied cause or an unsupported superlative, but not merely because a small detail can't be confirmed.
+- **Source check:**
+  - reads .csv/.txt data files served as `application/octet-stream`;
+  - finds the page's exact figure when the stored value is rounded to 3 s.f. (1,864 stored as 1,860).
+- **Duplicate detection ignores retired questions**, so a rejected near-copy can't block a good question forever (migration `similar_questions_skip_retired`).
+- **Re-checking:** pipeline questions that failed only on the old review (fact, like-for-like, safety) were requeued once for a re-check.
+- **Editing a live question:** changing only its sources or category doesn't mark it "Corrected"; changes to the question, numbers, slider range or fact still do.
+- **Re-checked scheduled questions:** a scheduled question that passes a re-check stays scheduled and is stamped verified. One that fails stays on its day with the reason shown (pull it to take it off).
+- **Approved questions on a day:** an approved or passing question already on a day becomes 'scheduled', never 'verified', so the scheduler can't put it on a second day.
+
+**Why:** these are false rejections. Each one costs a replacement question (about $0.30) and starves the schedule. Everything that guards correctness stays strict.
+
+## 2026-11-09: Filling days inside the 7-day lead (one-off, at Dani's request)
+
+**Context:** the nightly job only fills days 7–30 ahead, so 13–16 Nov (after the 4 dev days) would get reruns.
+
+**Decision:**
+- `npm run content:fill-days -- FIRST LAST` runs the real pipeline (same generator, checks, scheduling rules and cap) with only those dates open.
+- The nightly job's 7-day rule is unchanged.
+- The 20 prototype questions were fact-checked, with two sources each and corrections where the numbers were off, via `npm run content:apply-edits` (the editor's save, logged as "fact-check (Claude, for Dani)").
+
+**Why:** Dani asked for the first days to be filled with strong, checked questions now.
