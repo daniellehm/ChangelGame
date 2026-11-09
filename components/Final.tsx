@@ -92,7 +92,6 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
             <SaveStreak
               mode="save"
               title={stats.streak > 1 ? `Save your ${stats.streak}-day streak` : "Save your streak"}
-              blurb="Enter your email to keep your games on any device, or to sign in if you already have an account. No password."
               onDone={(_email, n) => onSaved(n)}
             />
           ) : (

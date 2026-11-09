@@ -29,9 +29,18 @@ export function mergeNote(m: { merged: number; kept: number; replaced: number } 
   return parts.length ? `Signed in. ${parts.join(" ")}` : "Done. You're signed in on this browser.";
 }
 
-const COPY = {
-  save: { title: "Save your streak", blurb: "Add your email to keep your streak and play on any device. No password." },
-  signin: { title: "Sign in", blurb: "We'll email you a 6-digit code. No password." },
+/** One message per mode, all inside the card. `alt` is the "or" line. */
+const COPY: Record<Props["mode"], { title: string; blurb: string; alt?: string }> = {
+  save: {
+    title: "Save your streak",
+    blurb: "Add your email to keep your streak and play on any device. No password.",
+    alt: "Sign in if you already have an account.",
+  },
+  signin: {
+    title: "Sign in",
+    blurb: "Enter your email and we'll send you a 6-digit code. No password.",
+    alt: "New here? The same email starts your account.",
+  },
   change: { title: "Change email", blurb: "We'll send a code to the new address." },
 };
 
@@ -102,6 +111,12 @@ export function SaveStreak({ mode, title, blurb, onDone }: Props) {
       {step === "email" && (
         <form onSubmit={send} className="save-form">
           <p className="save-blurb">{blurb ?? c.blurb}</p>
+          {c.alt && (
+            <>
+              <div className="save-or" aria-hidden="true">or</div>
+              <p className="save-blurb">{c.alt}</p>
+            </>
+          )}
           <label className="sr-only" htmlFor={`${id}-email`}>Email</label>
           <input id={`${id}-email`} className="field" type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
           <button className="btn" type="submit" disabled={busy || wait > 0} aria-busy={busy}>

@@ -145,6 +145,11 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: `account-copy` polish (one message in the sign-in form, no nested box, no duplicate Account label, Stats sign-in link) approved by Dani and merged into `main`.
+- 2026-11-09: Copy polish 4 (Dani): the empty Stats page offers "or · Sign in to restore your stats" (link to /account) when not signed in.
+- 2026-11-09: Copy polish 3 (Dani): removed the duplicate "Account" label above "Your account".
+- 2026-11-09: Copy polish 2 (Dani): no box inside a box. The save/sign-in form now sits directly in the page card (a dashed divider on the final screen).
+- 2026-11-09: Copy polish (Dani): the save/sign-in card holds one message (main line, "or", sign-in line); removed the extra paragraphs around it on /account and the final screen. Branch `account-copy`.
 - 2026-11-09: M4 approved by Dani and merged into `main` (production at changel.app now has email sign-in).
 - 2026-11-09: Dani's replay case: the server already kept the account's first score (checked: 323 intact), but the device kept showing the replay. Added `lib/game/sync.ts` (`refreshFromAccount` after sign-in reloads this device's plays from the account) + a banner explaining the outcome. New E2E `replay-merge.spec.ts` (account plays first → replay elsewhere → sign in → first score shown, replay discarded, 1 play in DB). 177 unit + 58 integration + 28 Playwright pass.
 - 2026-11-09: Dani hit our per-IP sign-in email limit ("Slow down a little"; old preview still had 5/10 min). Rate-limit messages now say what tripped + seconds left (feeds the form's countdown). Vercel hadn't built the previous push; re-pushed.

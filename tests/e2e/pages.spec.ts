@@ -61,6 +61,7 @@ test("no horizontal scroll at 320 px on any screen", async ({ page }) => {
 test("stats page reflects a completed game", async ({ page }) => {
   await page.goto("/stats");
   await expect(page.getByText("No games yet.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sign in to restore your stats" })).toHaveAttribute("href", "/account");
   await page.goto("/");
   await page.locator("#startBtn").click();
   let total = 0;
