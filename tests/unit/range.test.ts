@@ -42,24 +42,18 @@ describe("range basics", () => {
     expect(rangeFromFactor(1000)).toEqual(FULL_RANGE);
   });
 
-  it("the full range is the prototype: tolerance 0.75, ε 0.004, steps 0.005 / 0.05 / 0.1 / 0.01", () => {
+  it("the full range keeps the prototype's ε 0.004 and steps 0.005 / 0.05 / 0.1 / 0.01", () => {
     expect(width(FULL_RANGE)).toBe(6);
-    expect(tolerance(FULL_RANGE)).toBeCloseTo(0.75, 12);
+    expect(tolerance(FULL_RANGE)).toBeCloseTo(2, 12); // a third of the slider
     expect(epsilon(FULL_RANGE)).toBeCloseTo(0.004, 12);
     const s = sliderSteps(FULL_RANGE);
     expect([s.step, s.nudge, s.page, s.snap].map((v) => Number(v.toFixed(9)))).toEqual([0.005, 0.05, 0.1, 0.01]);
   });
 
-  it("tolerance grows with width, but slower than the slider (never over a third of it)", () => {
-    let prev = 0;
-    let prevFrac = Infinity;
-    for (let w = 2 * Math.log10(RANGE.MIN_FACTOR); w <= 6; w += 0.01) {
-      const t = tolerance({ lo: -w / 2, hi: w / 2 });
-      expect(t).toBeGreaterThan(prev);
-      expect(t / w).toBeLessThanOrEqual(1 / 3 + 1e-12);
-      expect(t / w).toBeLessThanOrEqual(prevFrac + 1e-12);
-      prev = t;
-      prevFrac = t / w;
+  it("tolerance is always a third of the slider", () => {
+    for (const k of [1.05, 1.1, 2, 8, 30, 1000]) {
+      const r = rangeFromFactor(k);
+      expect(tolerance(r) / width(r)).toBeCloseTo(1 / 3, 12);
     }
   });
 });
@@ -131,15 +125,14 @@ describe("scoring holds for any valid question (property tests)", () => {
 describe("the UN example (51 members in 1945 → 193 in 2011, max_change 8)", () => {
   const r = rangeFromFactor(8);
   const a = Math.log10(193 / 51);
-  it("×10 isn't on the slider; the top (×8) scores little", () => {
+  it("×10 isn't on the slider; the top (×8) scores under half", () => {
     expect(r.hi).toBeLessThan(1);
     expect(scoreRound(1, a, r)).toEqual(scoreRound(r.hi, a, r));
-    expect(scoreRound(r.hi, a, r).points).toBeLessThan(30);
+    expect(scoreRound(r.hi, a, r).points).toBeLessThan(50);
   });
-  it("is stricter than the old full range for a sensible miss (×3 instead of ×3.8)", () => {
-    const g = Math.log10(3);
-    expect(scoreRound(g, a, r).points).toBeLessThan(scoreRound(g, a, FULL_RANGE).points);
-    expect(scoreRound(g, a, r).points).toBeGreaterThan(60);
+  it("a sensible miss (×3 instead of ×3.8) still scores well; ×2 about half", () => {
+    expect(scoreRound(Math.log10(3), a, r).points).toBe(83);
+    expect(scoreRound(Math.log10(2), a, r).points).toBe(54);
   });
 });
 

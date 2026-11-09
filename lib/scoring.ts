@@ -1,8 +1,8 @@
 /**
  * Pure scoring module (SPEC §2). Shared by the server (authoritative) and the
- * client (previews + local-only fallback). Each question has its own guess range
- * (lib/range.ts, DECISIONS 2026-11-09); on the full ÷1000…×1000 range this is
- * identical to the prototype's score()/tier() in reference/prototype.html.
+ * client (previews + local-only fallback). Each question has its own guess range,
+ * and points depend on the distance as a share of that range (lib/range.ts,
+ * DECISIONS 2026-11-09). Tiers and the wrong-way rule are the prototype's.
  */
 import { FINAL_TITLES, MAX_POINTS_PER_ROUND, TIER_CUTOFFS } from "./config";
 import { clampTo, epsilon, tolerance, type GuessRange } from "./range";

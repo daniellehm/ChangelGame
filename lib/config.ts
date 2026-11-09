@@ -9,9 +9,7 @@ export const MAX_POINTS_PER_ROUND = 100;
 export const MAX_TOTAL = ROUNDS * MAX_POINTS_PER_ROUND;
 
 export const SCORING = {
-  /** log10 error at which a round scores 0 (≈ 5.6× off). */
-  SPAN: 0.75,
-  /** |log10 change| below this counts as "no change" for the wrong-way rule. */
+  /** |log10 change| below this counts as "no change" for the wrong-way rule (at full width; scales with the range). */
   EPSILON: 0.004,
 } as const;
 
@@ -37,8 +35,12 @@ export const RANGE = {
   MAX_FACTOR: 1000,
   /** The real answer may be at most this fraction of the way from "same" to an end. */
   MAX_ANSWER_FRACTION: 0.85,
-  /** Tolerance never exceeds this fraction of the width, so the far end always scores 0. */
-  MAX_TOLERANCE_FRACTION: 1 / 3,
+  /**
+   * Scoring is relative to the slider: a guess this fraction of the slider's
+   * length away from the answer scores 0 (DECISIONS 2026-11-09, relative scoring).
+   * Must stay ≤ ½ so the far end always scores 0.
+   */
+  TOLERANCE_FRACTION: 1 / 3,
   /** Slider resolution, as fractions of the width (full range: 0.005 / 0.05 / 0.1 / 0.01, as the prototype). */
   STEP_FRACTION: 1 / 1200,
   NUDGE_FRACTION: 1 / 120,

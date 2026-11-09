@@ -1,17 +1,17 @@
 /**
- * Per-question guess ranges (DECISIONS 2026-11-09).
+ * Per-question guess ranges and relative scoring (DECISIONS 2026-11-09).
  *
  * Every question has a `max_change` k (e.g. UN members: 8). The slider runs
  * ÷k … ×k, i.e. log10 −K … +K with K = log10 k: always symmetric around
- * "no change", so the slider's shape never reveals the direction. Scoring
- * tolerance scales with the width W = 2K:
+ * "no change", so the slider's shape never reveals the direction.
  *
- *   tolerance = min( SPAN · √(W / 6),  W / 3 )
+ * Scoring depends only on how far the guess is from the answer AS A SHARE OF
+ * THE SLIDER (width W = 2K):
  *
- *  - k = 1000 (W = 6) gives SPAN = 0.75: identical to the prototype.
- *  - Wider plausible ranges forgive more, but less than proportionally.
- *  - Never more than a third of the slider; the far end is always ≥ K = ½W
- *    from the answer, so it ALWAYS scores 0, on any valid question.
+ *   points = 100 × (1 − distance / (W / 3))
+ *
+ * so a guess a third of the slider away scores 0, on every question alike.
+ *  - The far end is always ≥ ½W from the answer, so it ALWAYS scores 0.
  *  - The answer is at most 85% of the way out, so slamming the slider to an
  *    end never scores more than 78.
  */
@@ -43,10 +43,9 @@ export function epsilon(r: GuessRange): number {
   return SCORING.EPSILON * (width(r) / (RANGE.FULL.hi - RANGE.FULL.lo));
 }
 
-/** Scoring tolerance: the log error at which a round scores 0. */
+/** Scoring tolerance: the log error at which a round scores 0 (a fixed share of the slider). */
 export function tolerance(r: GuessRange): number {
-  const w = width(r);
-  return Math.min(SCORING.SPAN * Math.sqrt(w / (RANGE.FULL.hi - RANGE.FULL.lo)), w * RANGE.MAX_TOLERANCE_FRACTION);
+  return width(r) * RANGE.TOLERANCE_FRACTION;
 }
 
 /**
