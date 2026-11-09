@@ -20,7 +20,8 @@
     "content:import": "tsx --env-file=.env.local scripts/import-questions.ts",
     "content:seed-dev": "tsx --env-file=.env.local scripts/seed-dev-puzzles.ts",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "content:smoke": "tsx --env-file=.env.local scripts/content-smoke.ts"
+    "content:smoke": "tsx --env-file=.env.local scripts/content-smoke.ts",
+    "content:check-smoke": "tsx --env-file=.env.local scripts/content-check-smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

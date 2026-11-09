@@ -293,3 +293,17 @@ That targets about $35–45 a month. The one-time cold-start fill (about $55) sp
 - **Range menu** for `max_change`: 1.05, 1.1, 1.2, 1.3, 1.5, 2, 3, 4, 5, 8, 10, 20, 30, 50, 100, 200, 500, 1000. Round numbers keep the slider's end labels readable.
 
 **Why:** It fits Dani's cap and "global only" choice, and the duplicate check stops rejecting genuinely different questions.
+
+### 2026-11-09: M5 checks: one combined review, order, fail-safe
+**Decision:**
+- **One Sonnet "review" call** returns three verdicts: like-for-like, topic safety and fact quality. That's cheaper than three calls, and SPEC §8 doesn't require separate calls.
+  - The code parts of those checks still run first for free: blocklist, money label, fact length.
+  - Researched facts may add other true, documented information. Data-backed facts may only use the two dataset values.
+- **Order** is cheapest first, and any failure skips the remaining paid checks. A flagged question records every result so far in `questions.checks` and a summary in `flag_reason`.
+- **Fail safe.** These all flag the question rather than letting it through:
+  - a source page that can't be fetched (or is a PDF, not read in v1);
+  - an estimate the cross-check can't find;
+  - an unusable model answer.
+- **The cross-check is Opus with web search, in batches of 5, and is never shown the values,** matching SPEC §8's "without seeing the draft's numbers"; a unit test enforces it. It also runs on data-backed questions.
+
+**Why:** Accuracy over volume: a wrong number going live is worse than a held-back good one, which Dani can approve from the Flagged queue.

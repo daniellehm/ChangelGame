@@ -19,9 +19,9 @@ export type Purpose =
   | "max_change"
   | "source_support"
   | "cross_check"
-  | "like_for_like"
-  | "safety"
-  | "fact_quality";
+  /** One call covering like-for-like, topic safety and fact quality. */
+  | "review"
+  | "duplicate";
 
 export interface LlmRequest<T> {
   purpose: Purpose;

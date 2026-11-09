@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.4 (automatic checks).
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.5 (scheduler).
 
 ## Needs from Dani
 
@@ -130,7 +130,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
   - data-backed (curated indicator list, global series; Claude writes only the wording and the fact)
   - researched (Opus + web search, two sources from different publishers)
   - blind `max_change` proposal (sees prompt, start value and years only)
-- [ ] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
+- [x] 5.4 **Automatic checks:** source support, independent cross-check (15%), like-for-like, sanity, duplicate (trigram > 0.6), topic safety, fact quality, range rules. *Accept:* a planted wrong number is flagged.
 - [ ] 5.5 **Scheduler:** balance rules (no repeated category per day; ≥1 trap |log| < 0.1; ≥1 big mover beyond ×10/÷10; no AU rule, see DECISIONS), the 7-day rule, the reserve of 10. *Accept:* cold-start fill.
 - [ ] 5.6 **Nightly cron orchestration:** `/api/cron/content` 02:00 UTC; leased, time-boxed hops chained until done; cost logging; `used` marking.
 - [ ] 5.7 **Admin auth + portal shell:** auth via ADMIN_EMAILS (server check + RLS); portal with queue badges and alert banner.
@@ -163,6 +163,21 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.4 Automatic checks (`lib/content/checks.ts`, `checkBatch`):
+  - **Order:**
+    1. free code checks: sanity, range rules, topic blocklist, fact length;
+    2. duplicate: same dataset series, or trigram over 0.6 then a Sonnet "same measure?" call;
+    3. one Sonnet review covering like-for-like, safety and fact quality;
+    4. source support (researched only): our server fetches each page, keeps the passages mentioning the years or values, and Sonnet must quote the value;
+    5. independent cross-check: Opus with web search, batches of 5, never shown the values, held back if more than 15% off or not found.
+  - Any failure skips the later paid checks and fails safe (flagged, kept for a human).
+  - **Acceptance met on real models** (`npm run content:check-smoke`, $0.06):
+    - the correct UN question was verified through all 8 checks (both values quoted from un.org + Wikipedia; cross-check 0% off);
+    - the planted 293 was flagged, even with a fact written to agree with it;
+    - the US Open question with its mismatched fact was flagged.
+  - One prompt fix along the way: the reviewer had applied the data-backed fact rule to researched questions.
+  - 24 new unit tests (254 total).
 
 - 2026-11-09: 5.3 Generators (`lib/content/generate.ts`, `lib/content/catalog.ts`):
   - **Catalog:** 52 world-level World Bank/OWID series, each checked live.
