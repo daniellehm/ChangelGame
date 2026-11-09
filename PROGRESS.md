@@ -148,6 +148,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: **Hotfix (branch `hotfix-stored-ranges`, shipped to production with Dani's OK):** changel.app showed a blank page for anyone with a game saved in their browser from before the ranges change (old saved rounds had no `range`, so the page crashed). `loadPlay` now falls back to the full range, and boot re-fetches the real ranges, keeping the results. Two E2E regression tests (finished and half-played old saves) crash without the fix; all 28 E2E pass with it.
 - 2026-11-09: Unused range columns dropped by Dani in the SQL editor; recorded as `supabase/migrations/*_drop_unused_end_value_bounds.sql` (`if exists`, safe to re-run).
 
 - 2026-11-09: Relative scoring (branch `relative-scoring`): tolerance = ⅓ of the slider on every question. The prototype-parity sweep is replaced by scale-invariance tests. Unit 205, integration 60, E2E 26 pass. Every visual baseline was regenerated: the 0.1% diff threshold had hidden small number changes.
