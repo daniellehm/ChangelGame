@@ -116,6 +116,29 @@ describe("page text", () => {
     expect(t).toContain("There are 193 members.");
     expect(relevantPassages(t, researched())).toContain("193 members");
   });
+
+  it("finds the page's exact figure when the stored value is rounded to 3 s.f. (1,864 stored as 1,860)", () => {
+    const text = "Background on the surveys.\nThe latest survey found 1,864 wild pandas.\nOther news.";
+    const c = researched({ prompt: "Wild giant pandas", start_year: 1003, start_value: 1600, end_year: 1014, end_value: 1860 });
+    expect(relevantPassages(text, c)).toContain("1,864 wild pandas");
+  });
+});
+
+describe("source pages", () => {
+  it("reads .csv data files served as application/octet-stream", async () => {
+    const csv: FetchLike = async () => new Response(" year, mo, extent\n 1945,  9, 51\n 2011,  9, 193\n", { headers: { "content-type": "application/octet-stream" } });
+    const seen: string[] = [];
+    const { llm } = fake({
+      review: goodReview,
+      source_support: (req) => {
+        seen.push(req.prompt);
+        return supported();
+      },
+      cross_check: crossFinds([[51, 193]]),
+    });
+    await checkBatch([{ id: 5, candidate: researched({ source_url: "https://data.example.org/N_09_extent.csv" }) }], { ...deps(llm), fetchFn: csv });
+    expect(seen.some((p) => p.includes("2011,  9, 193"))).toBe(true);
+  });
 });
 
 describe("checkBatch", () => {

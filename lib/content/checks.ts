@@ -129,7 +129,10 @@ function digitHints(v: number): string[] {
     if (x >= 1 && x < 100000) {
       out.add(String(Number(x.toPrecision(3))));
       out.add(String(Number(x.toPrecision(2))));
-      out.add(Math.round(x).toLocaleString("en-US"));
+      const whole = Math.round(x).toLocaleString("en-US");
+      out.add(whole);
+      // Stored values are rounded to 3 s.f., so 1,864 on the page is stored as 1,860: match "1,86".
+      if (/^\d{1,3},\d{3}$/.test(whole) && whole.endsWith("0")) out.add(whole.replace(/0+$/, ""));
     }
   }
   return [...out].filter((h) => h.replace(/\D/g, "").length >= 2);
@@ -160,7 +163,9 @@ async function fetchPage(url: string, fetchFn: FetchLike): Promise<string | null
     });
     if (!res.ok) return null;
     const type = res.headers.get("content-type") ?? "";
-    if (!/text|html|json|xml/.test(type) && type) return null; // PDFs etc. aren't read in v1
+    // PDFs etc. aren't read in v1. Data files (.csv/.txt) are often served as octet-stream.
+    const dataFile = /\.(csv|txt|tsv)(\?|$)/i.test(new URL(res.url || url).pathname) && /octet-stream/.test(type);
+    if (!/text|html|json|xml/.test(type) && type && !dataFile) return null;
     const body = (await res.text()).slice(0, 3_000_000);
     return type.includes("html") || /<html|<body/i.test(body) ? pageText(body) : body;
   } catch {
@@ -170,21 +175,23 @@ async function fetchPage(url: string, fetchFn: FetchLike): Promise<string | null
 
 // ---------------------------------------------------------------------------------- model checks
 
-const Verdict = z.object({ pass: z.boolean(), reason: z.string() });
+/** Reason first, so the model reasons before it commits to a verdict. */
+const Verdict = z.object({ reason: z.string(), pass: z.boolean() });
 const Review = z.object({ like_for_like: Verdict, safety: Verdict, fact: Verdict });
 
-const REVIEW_SYSTEM = `You review a trivia question for Changel before it goes live. Players see a number from a past year and guess how many times bigger or smaller it is in a later year. Judge three things strictly; when unsure, fail.
-1. like_for_like: both values measure exactly the same thing, in the same units and scope, so the change is meaningful. Money must state nominal or inflation-adjusted, consistently.
-2. safety: no death tolls, disasters, wars, crimes, tragedies, living private individuals, active political fights, or anything demeaning to a group.
-3. fact: the fun fact is under ${FACT_MAX_CHARS} characters, true, and consistent with the question's values and years (it must not contradict them or swap in a different measure).
+const REVIEW_SYSTEM = `You review a trivia question for Changel before it goes live. Players see a number from a past year and guess how many times bigger or smaller it is in a later year. The two numbers are verified separately against the sources and by an independent lookup, so don't re-judge whether they are exact. Judge three things:
+1. like_for_like (strict; when unsure, fail): both values measure the same thing, in the same units and scope, so the change is meaningful. Money must state nominal or inflation-adjusted, consistently. Fail if the prompt is ambiguous about scope (e.g. which stores, which kind of count).
+2. safety (strict): no death tolls, disasters, wars, crimes, tragedies, living private individuals, or anything demeaning to a group, and no question or fact that takes a side in a live political dispute (elections, parties, culture-war topics). Neutral, widely published measurements are fine even when the topic is debated: CO₂ levels, temperatures, wages, prices, populations, tax rates.
+3. fact: under ${FACT_MAX_CHARS} characters, consistent with the question's values and years (it must not contradict them or swap in a different measure), not misleading (no implied cause or claim the record doesn't support), and true to the best of your knowledge. Fail it if you believe it is false or misleading, or it's an unsupported superlative ("fastest ever"). Don't fail a plausible, widely reported fact only because you can't confirm a small detail. Statements true as of today ("still the record") are fine.
    - Origin "researched": the fact may add other true, well-documented information (e.g. "Nobody has joined since").
    - Origin "data-backed": the fact may only use the two values and years given, plus simple arithmetic on them.`;
 
+/** Quotes first, so the verdict follows from what the page actually says. */
 const SourceVerdict = z.object({
-  start_supported: z.boolean(),
   start_quote: z.string().describe("Exact sentence or table cell from the page stating the start value, or empty."),
-  end_supported: z.boolean(),
+  start_supported: z.boolean(),
   end_quote: z.string().describe("Exact sentence or table cell from the page stating the end value, or empty."),
+  end_supported: z.boolean(),
 });
 
 const SOURCE_SYSTEM = `You check whether a web page supports a number. You get extracted text from the page. A value is supported only if the page itself states it (allowing rounding to 3 significant figures and different notation like "85 million" for 85,000,000) for the same measure and the same year. Quote the exact sentence or table cell. If the page doesn't state it, say false with an empty quote. Never use outside knowledge.`;
