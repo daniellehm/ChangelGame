@@ -110,13 +110,15 @@ export async function fetchAccount(): Promise<ServerStats | null | undefined> {
   return undefined;
 }
 
-export type EmailStep = { ok: true } | { ok: false; message: string };
+export type EmailStep = { ok: true } | { ok: false; message: string; retryAfter?: number };
 
 export async function sendSignInEmail(email: string): Promise<EmailStep> {
   const r = await call("/api/auth/email", { method: "POST", body: JSON.stringify({ email }) });
   if (r.status === 200) return { ok: true };
   if (r.status === 400) return { ok: false, message: "That doesn't look like an email address." };
-  return { ok: false, message: ((r.body?.error as Json | undefined)?.message as string) ?? "Couldn't send the email. Try again." };
+  const message = ((r.body?.error as Json | undefined)?.message as string) ?? "Couldn't send the email. Try again.";
+  const retryAfter = r.status === 429 ? Number(/(\d+) seconds/.exec(message)?.[1]) || 60 : undefined;
+  return { ok: false, message, retryAfter };
 }
 
 export interface MergeSummary {

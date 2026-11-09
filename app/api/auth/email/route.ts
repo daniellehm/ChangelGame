@@ -41,7 +41,13 @@ export async function POST(req: Request) {
     let flow: AuthFlow;
     let mergeToken: string | null = null;
 
-    if (user && !(await emailRegistered(email))) {
+    const registered = await emailRegistered(email);
+    if (user && !user.isAnonymous && registered) {
+      // A signed-in account can't take another account's email (it would silently switch accounts).
+      return apiError("email_taken", "That email already belongs to another Changel account.", 409);
+    }
+
+    if (user && !registered) {
       // Upgrade in place (anonymous) or change email (permanent): same user id, nothing moves.
       flow = { email, type: "email_change" };
       if (!skipSend) {
@@ -65,7 +71,11 @@ export async function POST(req: Request) {
   } catch (e) {
     const err = e as { status?: number; code?: string };
     if (err.status === 429 || err.code === "over_email_send_rate_limit") {
-      return apiError("rate_limited", "Too many emails. Wait a minute and try again.", 429);
+      // Supabase allows one email per address per 60 s and says how long is left.
+      const secs = Number(/after (\d+) seconds?/.exec((e as Error).message ?? "")?.[1]) || 60;
+      const res = apiError("rate_limited", `We just sent you a code. You can ask for another in ${secs} seconds.`, 429);
+      res.headers.set("Retry-After", String(secs));
+      return res;
     }
     console.error("POST /api/auth/email failed", e);
     return apiError("email_failed", "Couldn't send the email. Try again in a moment.", 502);

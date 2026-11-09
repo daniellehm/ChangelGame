@@ -404,8 +404,9 @@ export function Game({ launch }: { launch: string }) {
             results={s.results}
             stats={stats}
             animate={s.justFinished && motion}
-            // SPEC §5: show after the 2nd completed game; never block play behind it.
-            offerSave={stats.played >= 2 && (s.serverStats ? s.serverStats.anonymous : true)}
+            // Button for anyone without an account; the form opens itself from the 2nd game (SPEC §5). Never blocks play.
+            offerSave={s.serverStats ? s.serverStats.anonymous : true}
+            saveOpen={stats.played >= 2}
             onSaved={() => {
               showToast("Streak saved");
               if (s.puzzle) void loadServerStats(s.puzzle.date, s.tz);

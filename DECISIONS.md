@@ -167,3 +167,11 @@ Each item is applied in the milestone where it comes up.
 - Sign-in emails (Supabase templates in `supabase/templates/`) put the code first, with a link as the alternative. The link goes to `/auth/confirm` via `{{ .RedirectTo }}`, so it works on previews and in production once each origin is allow-listed.
 - **Bug fixed:** concurrent `ensureSession()` calls could create two anonymous users (React dev double-effects on the returning-player auto-start; also two tabs at once). It's now single-flight per page, with a unit test and an E2E regression test.
 **Why:** Matches SPEC §5 with Dani's email-only choice. The duplicate-user race broke guesses ("play not found").
+
+### 2026-11-09: Save button from the 1st game; email cooldowns; one account per email
+**Decision:**
+- Players without an account get a **"Save your streak"** button under Share on **every** final screen (Dani's request). It opens one email form that covers both creating an account and signing in (the email decides). From the 2nd completed game the form opens by itself (SPEC §5). It never blocks play.
+- Supabase allows **one email per address per 60 s**, which Dani kept hitting while testing. The API now returns "You can ask for another in N seconds", and the form shows a live countdown on "Email me a code" / "Send a new code" (60 s after each send). Our own per-IP limit is relaxed from 5 to 10 emails per 10 minutes.
+- A **signed-in account can't change to an email another account uses** (409 `email_taken`). Before, it would silently have signed into that other account. This tells a signed-in player that the email is registered, which is acceptable; anonymous and signed-out flows still never reveal it.
+- Games are never copied between accounts. Each play belongs to exactly one player. Signing into an existing account from an anonymous browser *moves* that browser's games into it (earlier-started wins on clashes). Signing out starts a fresh, empty anonymous player.
+**Why:** Dani's feedback from testing M4 on the preview.

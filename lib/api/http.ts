@@ -14,6 +14,7 @@ export type ErrorCode =
   | "already_answered"
   | "question_changed"
   | "invalid_code"
+  | "email_taken"
   | "email_failed"
   | "internal_error";
 

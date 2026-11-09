@@ -18,8 +18,10 @@ interface Props {
   stats: StatsSummary;
   /** Count up the score and flip in the grid (only when arriving from the last reveal). */
   animate: boolean;
-  /** Show "Save your streak" (no account yet, 2+ games played). */
+  /** Player has no account: show a "Save your streak" button. */
   offerSave: boolean;
+  /** Open the save form straight away (from the 2nd completed game, SPEC §5). */
+  saveOpen: boolean;
   onSaved: () => void;
   onToast: (message: string) => void;
 }
@@ -43,7 +45,8 @@ function useCountdown(): string {
   return text;
 }
 
-export function Final({ puzzle, results, stats, animate, offerSave, onSaved, onToast }: Props) {
+export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, onToast }: Props) {
+  const [saveExpanded, setSaveExpanded] = useState(saveOpen);
   const total = totalOf(results.map((r) => r.points));
   const shown = useCountUp(total, animate, 900);
   const countdown = useCountdown();
@@ -82,7 +85,18 @@ export function Final({ puzzle, results, stats, animate, offerSave, onSaved, onT
       <ShareButton text={shareText(puzzle.number, total, tiers)} onToast={onToast} />
       {offerSave && (
         <div className="final-save">
-          <SaveStreak mode="save" title={`Save your ${stats.streak}-day streak`} blurb="Add your email so your streak follows you to any device. No password." onDone={onSaved} />
+          {saveExpanded ? (
+            <SaveStreak
+              mode="save"
+              title={stats.streak > 1 ? `Save your ${stats.streak}-day streak` : "Save your streak"}
+              blurb="Enter your email to keep your games on any device, or to sign in if you already have an account. No password."
+              onDone={onSaved}
+            />
+          ) : (
+            <button className="btn ghost" id="saveBtn" type="button" onClick={() => setSaveExpanded(true)}>
+              Save your streak
+            </button>
+          )}
         </div>
       )}
       <div className="next" id="countdown">{countdown}</div>

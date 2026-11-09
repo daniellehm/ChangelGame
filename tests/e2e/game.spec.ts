@@ -119,7 +119,11 @@ test("returning player next day skips the intro and builds a streak of 2", async
     await next(page);
   }
   await expect(page.locator("#stStreak")).toHaveText("1");
-  await expect(page.locator(".final-save")).toHaveCount(0); // not after the 1st game (SPEC §5)
+  // 1st game: a "Save your streak" button, form not opened yet.
+  await expect(page.locator("#saveBtn")).toHaveText("Save your streak");
+  await expect(page.locator(".final-save .save-title")).toHaveCount(0);
+  await page.locator("#saveBtn").click();
+  await expect(page.locator(".final-save .save-title")).toHaveText("Save your streak");
 
   await setClock(page, syd("2026-11-11T08:00:00"));
   await page.reload();

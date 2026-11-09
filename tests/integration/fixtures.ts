@@ -90,3 +90,20 @@ export function req(path: string, opts: { method?: string; body?: unknown; cooki
   if (opts.cookie) headers.cookie = opts.cookie;
   return new Request(`http://localhost${path}`, { method: opts.method ?? "GET", headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
 }
+
+/** A signed-in PERMANENT account (email + password test user), with its session cookie. */
+export async function newAccount(): Promise<{ id: string; email: string; cookie: string }> {
+  const email = `itest-${randomUUID()}@example.com`;
+  const password = randomUUID();
+  const { data, error } = await adminClient().auth.admin.createUser({ email, password, email_confirm: true });
+  if (error) throw error;
+  createdUsers.push(data.user.id);
+  const jar: string[] = [];
+  const client = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookieOptions: sessionCookieOptions(),
+    cookies: { getAll: () => parseCookieHeader(jar.join("; ")).map((c) => ({ name: c.name, value: c.value ?? "" })), setAll: (cs) => cs.forEach((c) => jar.push(`${c.name}=${c.value}`)) },
+  });
+  const { error: e2 } = await client.auth.signInWithPassword({ email, password });
+  if (e2) throw e2;
+  return { id: data.user.id, email, cookie: jar.join("; ") };
+}

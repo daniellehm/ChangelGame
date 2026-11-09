@@ -17,7 +17,7 @@ import { TEST_NO_EMAIL_HEADER } from "@/lib/api/clock";
 import { AUTH_FLOW_COOKIE, MERGE_COOKIE } from "@/lib/auth/cookies";
 import { adminClient } from "@/lib/supabase/admin";
 import { Jar } from "./cookie-jar";
-import { cleanup, newPlayer, req } from "./fixtures";
+import { cleanup, newAccount, newPlayer, req } from "./fixtures";
 
 const DATES = ["2099-04-01", "2099-04-02", "2099-04-03", "2099-04-04", "2099-04-05"];
 const email = `itest-${randomUUID()}@example.com`;
@@ -96,6 +96,14 @@ describe("sign-in emails", () => {
     expect(set).toContain(AUTH_FLOW_COOKIE);
     expect(decodeURIComponent(set)).toContain('"type":"email_change"');
     expect(set).not.toContain(MERGE_COOKIE);
+  });
+
+  it("a signed-in account can't change to an email another account already uses", async () => {
+    const other = await newAccount();
+    const me = await newAccount();
+    const res = await emailPOST(post("/api/auth/email", new Jar(me.cookie), { email: other.email }, { [TEST_NO_EMAIL_HEADER]: "1" }));
+    expect(res.status).toBe(409);
+    expect((await res.json()).error.code).toBe("email_taken");
   });
 
   it("rejects a bad email", async () => {

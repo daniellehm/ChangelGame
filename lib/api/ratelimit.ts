@@ -20,7 +20,7 @@ export const LIMITS = {
   sync: { tokens: 10, window: "1 m" },
   me: { tokens: 30, window: "1 m" },
   /** Sign-in emails per IP (Supabase also limits emails project-wide). */
-  authEmail: { tokens: 5, window: "10 m" },
+  authEmail: { tokens: 10, window: "10 m" },
   /** Code attempts per IP: blunts guessing a 6-digit code. */
   authVerify: { tokens: 10, window: "10 m" },
 } as const;

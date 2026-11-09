@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { sendSignInEmail, verifyCode } from "@/lib/game/session-client";
 
 interface Props {
@@ -27,15 +27,37 @@ export function SaveStreak({ mode, title, blurb, onDone }: Props) {
   const [note, setNote] = useState<string | null>(null);
   const codeRef = useRef<HTMLInputElement>(null);
   const id = useId();
+  // Supabase allows one email per address per 60 s; show the wait instead of failing.
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [now, setNow] = useState(0);
+  const wait = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+  useEffect(() => {
+    if (cooldownUntil <= Date.now()) return;
+    const tick = () => setNow(Date.now());
+    const first = requestAnimationFrame(tick);
+    const t = setInterval(tick, 1000);
+    return () => {
+      cancelAnimationFrame(first);
+      clearInterval(t);
+    };
+  }, [cooldownUntil]);
+  const startCooldown = (secs: number) => {
+    setNow(Date.now());
+    setCooldownUntil(Date.now() + secs * 1000);
+  };
 
   const send = async (e?: FormEvent) => {
     e?.preventDefault();
-    if (busy) return;
+    if (busy || wait > 0) return;
     setBusy(true);
     setError(null);
     const r = await sendSignInEmail(email.trim());
     setBusy(false);
-    if (!r.ok) return setError(r.message);
+    if (!r.ok) {
+      if (r.retryAfter) startCooldown(r.retryAfter);
+      return setError(r.message);
+    }
+    startCooldown(60);
     setStep("code");
     setNote(null);
     requestAnimationFrame(() => codeRef.current?.focus());
@@ -64,7 +86,9 @@ export function SaveStreak({ mode, title, blurb, onDone }: Props) {
           <p className="save-blurb">{blurb ?? c.blurb}</p>
           <label className="sr-only" htmlFor={`${id}-email`}>Email</label>
           <input id={`${id}-email`} className="field" type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-          <button className="btn" type="submit" disabled={busy} aria-busy={busy}>{busy ? "Sending…" : "Email me a code"}</button>
+          <button className="btn" type="submit" disabled={busy || wait > 0} aria-busy={busy}>
+            {busy ? "Sending…" : wait > 0 ? `Try again in ${wait}s` : "Email me a code"}
+          </button>
         </form>
       )}
       {step === "code" && (
@@ -74,7 +98,9 @@ export function SaveStreak({ mode, title, blurb, onDone }: Props) {
           <input ref={codeRef} id={`${id}-code`} className="field code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={10} placeholder="123456" required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
           <button className="btn" type="submit" disabled={busy || code.length < 6} aria-busy={busy}>{busy ? "Checking…" : "Confirm"}</button>
           <div className="save-links">
-            <button type="button" className="linkish" onClick={() => send()} disabled={busy}>Send a new code</button>
+            <button type="button" className="linkish" onClick={() => send()} disabled={busy || wait > 0}>
+              {wait > 0 ? `Send a new code (${wait}s)` : "Send a new code"}
+            </button>
             <button type="button" className="linkish" onClick={() => { setStep("email"); setCode(""); setError(null); }}>Use a different email</button>
           </div>
         </form>
