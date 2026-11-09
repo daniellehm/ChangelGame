@@ -2,12 +2,13 @@
 
 ## Current status
 
-**Milestone 1 complete (2026-11-09). Waiting for Dani's review and go-ahead.** Preview: https://changel-git-m1-scaffold-visuals-releasedani.vercel.app (Vercel login required). On approval: merge `m1-scaffold-visuals` into `main`, then start M2 on a new branch `m2-database-api`.
+**M1 approved by Dani and merged to `main` (2026-11-09).** Next: a design pass (sleeker, lighter text, more fun) that Dani asked for before M2. Direction is being agreed in chat; then it's built on branch `design-pass`. After that: M2 on branch `m2-database-api`.
 
 ## Needs from Dani
 
 **Now:**
-- [ ] Review M1 (preview URL above + side-by-sides via `npm run test:parity` → `test-results/parity/`) and give the go-ahead for M2
+- [x] Review M1 (approved 2026-11-09)
+- [ ] Agree the design-pass direction (asked in chat 2026-11-09)
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
 - [x] Vercel plan: build for scale; Dani will upgrade to Pro when a milestone needs it (we flag it here)
 - [x] Approve the Vercel MCP connection for the `releasedani` scope, and confirm it's the right account (done 2026-11-09)
@@ -30,7 +31,7 @@
 
 Next.js app, tokens, fonts, all game screens ported from the prototype, running on hard-coded data.
 **Milestone accepted when:** side-by-side screenshots match the prototype at 390 px and 1280 px.
-**Status:** all tasks done; parity = 0 px difference on all 14 screenshots. Awaiting Dani's review.
+**Status:** ✅ approved by Dani and merged to `main` on 2026-11-09. Parity = 0 px difference on all 14 screenshots.
 
 - [x] **1.1 Scaffold.** Next.js (App Router, TypeScript strict, ESLint), Vitest, Playwright, npm scripts, `.nvmrc`, `.env.example`, repo layout from SPEC section 3.
   *Accept:* `npm run dev` serves a page; `npm run typecheck`, `npm run lint` and `npm test` pass; `.env.example` lists every variable from SPEC section 11 with no values.
@@ -132,6 +133,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M1 approved by Dani and merged into `main`. Dani asked for UX improvements beyond the prototype (lighter text, sleeker, fun/funky).
 - 2026-11-09: 1.11 Preview deploy: first build green on Vercel (26 s, 6 static routes, syd1). Preview verified live (200, intro HTML, fonts preloaded, noindex). **M1 complete.**
 - 2026-11-09: 1.11: Vercel project `changel` created and linked to `daniellehm/ChangelGame` (prj_4qiuH4a01M4Il52WrKi8zd75EjCS), with Node 22.x, Next.js preset and functions in syd1. Previews are behind Vercel Authentication.
 - 2026-11-09: 1.11: GitHub login connected. Retry failed with "install the GitHub integration first". The app is restricted to selected repos and `search_repo` can't see ChangelGame.
