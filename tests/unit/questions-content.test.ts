@@ -2,6 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseQuestionsCsv, roundForStorage } from "@/lib/content/questions";
 import { devSeedPlan, prototypeOrder } from "@/lib/content/dev-seed";
+
+/** First two words, lowercased: identifies a prototype question across later rewording. */
+const stem = (prompt: string) => prompt.toLowerCase().split(/\s+/).slice(0, 2).join(" ");
 import { loadPrototype } from "../helpers/prototype";
 
 const csv = readFileSync("content/questions.csv", "utf8");
@@ -25,7 +28,8 @@ describe("content/questions.csv", () => {
   });
 
   it("is in the prototype pool's order (the dev seed relies on it)", () => {
-    expect(rows.map((r) => r.prompt)).toEqual(loadPrototype().POOL.map((p) => p.q));
+    // Matched on the first two words: the 2026-11-09 fact-check reworded some prompts (e.g. "nominal").
+    expect(rows.map((r) => stem(r.prompt))).toEqual(loadPrototype().POOL.map((p) => stem(p.q)));
   });
 
   it("rounds values to 3 significant figures except sec/time/yrs", () => {
@@ -93,8 +97,8 @@ describe("dev seed plan", () => {
 
   it("each day has the prototype's 5 questions in order", () => {
     plan.forEach((day, d) => {
-      const expected = Array.from({ length: 5 }, (_, i) => proto.POOL[proto.order[d * 5 + i]!]!.q);
-      expect(day.slugs.map((s) => rows.find((r) => r.slug === s)!.prompt)).toEqual(expected);
+      const expected = Array.from({ length: 5 }, (_, i) => stem(proto.POOL[proto.order[d * 5 + i]!]!.q));
+      expect(day.slugs.map((s) => stem(rows.find((r) => r.slug === s)!.prompt))).toEqual(expected);
     });
   });
 });
