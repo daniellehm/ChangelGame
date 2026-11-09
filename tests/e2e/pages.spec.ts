@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { next, playRound, syd } from "./helpers";
 
 const PAGES = [
-  { label: "How to play", path: "/how-to-play", h1: "How much did it change?" },
+  { label: "How to play", path: "/how-to-play", h1: "How to play" },
   { label: "Stats", path: "/stats", h1: "Your Changel" },
   { label: "Account", path: "/account", h1: "Save your streak" },
   { label: "About", path: "/about", h1: "About Changel" },

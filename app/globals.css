@@ -128,9 +128,10 @@ html[data-returning] #intro{visibility:hidden}
 .page h2{font-size:20px;letter-spacing:-.3px;margin:22px 0 8px}
 .page p{font-size:16px;line-height:1.5;color:var(--ink-2);margin:0 0 12px}
 .back{display:block;margin-top:18px;text-align:center;text-decoration:none}
-.tiers{list-style:none;padding:0;margin:0 0 6px;display:grid;gap:8px}
-.tiers li{display:flex;align-items:center;gap:10px;font-size:15px}
-.tiers .sw{flex:0 0 auto;font-family:var(--font-mono-stack);font-size:12px;font-weight:700;color:var(--on-accent);border-radius:8px;padding:4px 8px;min-width:64px;text-align:center}
+.tiers{list-style:none;padding:0;margin:4px 0 8px;display:grid;gap:12px}
+.tiers li{display:flex;align-items:center;gap:12px}
+.tiers .sticker{min-width:128px;text-align:center}
+.tier-rule{font-family:var(--font-mono-stack);font-size:13px;color:var(--ink-2)}
 .dist{display:flex;height:14px;border-radius:7px;overflow:hidden;border:2px solid var(--ink);margin:8px 0 6px}
 .dist i{display:block;height:100%}
 .dist-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono-stack);font-size:11px;color:var(--muted);margin-bottom:6px}

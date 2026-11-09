@@ -133,6 +133,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Design pass: How to play page cleaned up (Dani's request). Trimmed rules, score tiers shown as stickers, titles list dropped (players discover them), new visual baseline `7-how-to-play`.
 - 2026-11-09: Design pass built: trimmed copy, round label + category sticker, − / + beside the multiplier (SVG icons, 44 px), tier-coloured live progress, sticker look (orange-shadow press buttons, tilted verdict/title, ink-bordered cards), motion (bouncy pins, count-ups, flip-in grid, confetti on Nailed it, pop + buzz at ×10), all off under reduced motion. New `lib/sticker.ts`, `components/motion.ts`, `MultLabel.short`. Parity test replaced by `npm run test:visual` (12 baselines). 141 unit + 18 E2E + 2 visual tests pass.
 - 2026-11-09: Design pass: Dani chose "less text" (keep weights) and to do it before M2, and was unsure about the fun ideas. Published an interactive playground with each idea switchable.
 - 2026-11-09: M1 approved by Dani and merged into `main`. Dani asked for UX improvements beyond the prototype (lighter text, sleeker, fun/funky).

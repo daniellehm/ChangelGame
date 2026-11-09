@@ -45,6 +45,9 @@ for (const vp of VIEWPORTS) {
     await snap(page, `${vp.name}-5-reveal-last`);
     await page.locator("#nextBtn").click();
     await snap(page, `${vp.name}-6-final`);
+    await page.goto(new URL("/how-to-play", baseURL!).toString());
+    await page.locator("h1").waitFor();
+    await snap(page, `${vp.name}-7-how-to-play`);
     await ctx.close();
   });
 }
