@@ -74,3 +74,7 @@ Each item is applied in the milestone where it comes up.
 - `next/font` runs with `adjustFontFallback: false`, and its fallbacks are the prototype's stacks (`system-ui, sans-serif` / `monospace`).
 - Bricolage text that is "bold" (700) is set to 800: `h1`–`h3`, `b`, `strong`, `.btn`, `.nudge button`, `.toast`. JetBrains Mono keeps 700, because it has a real 700 face.
 **Why:** Found by the parity test. (1) → and ≈ aren't in either font's subsets. The prototype falls back to `system-ui` for them, but `next/font`'s auto fallback is a metric-adjusted Arial, which drew a thin arrow and shifted the year cards. (2) The prototype's Google Fonts request declares only 400/600/800 faces, so the browser renders every 700 at 800. With both fixed, all 14 parity screenshots differ by 0 pixels. Cost: no metric-matched fallback during font swap. The fonts are preloaded, so any layout shift is rare. We'll re-check it in the M6 Lighthouse pass.
+
+### 2026-11-09: Design pass before M2. The prototype becomes a baseline, not a constraint
+**Decision:** With M1 approved, Dani asked for UX improvements beyond the prototype: less text, keep the chunky weights, and more fun/funky. The ideas are trialled in an interactive playground first. Whatever Dani picks becomes the new visual reference: the parity test then guards the new look instead of the prototype, and each departure is listed here.
+**Why:** Dani's instruction overrides "match the prototype exactly". The playground lets Dani judge ideas by playing them rather than from descriptions.
