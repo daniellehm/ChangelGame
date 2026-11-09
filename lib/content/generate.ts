@@ -177,7 +177,11 @@ const RESEARCH_SYSTEM = `You research questions for Changel, a daily game played
 Rules for every question:
 - Globally interesting: a worldwide total, a famous company, product, record, place or phenomenon. No country-specific politics, no local trivia.
 - Both values must be real, published figures for the SAME measure in the same units, found with web search. Use the most recent year with a reliable figure as end_year (within the last 4 years); start_year at least 10 years earlier.
-- Two sources from different publishers (different websites), each stating the figure(s). Prefer primary sources (company reports, statistics offices, international agencies, record bodies).
+- Two sources from different publishers (different websites). An automated checker will download each URL as plain HTML and look for the numbers in the page text, so:
+  - Use specific article or report pages whose visible text states the figure next to its year (e.g. "In 2014 there were 1,864 wild pandas"). Wikipedia articles, news reports and press releases on the organisation's own site work well.
+  - Never a homepage, search page, data portal, interactive chart, dashboard, PDF, or a paywalled or bot-blocking site (e.g. Statista, SEC EDGAR, investor-relations portals, IMDb).
+  - Between the two pages, the start value with its year and the end value with its year must each be stated. Best: one page states both.
+  - Open each page with web_fetch before citing it and confirm the numbers are in its text. If a page won't load or doesn't state them, find another or drop the question.
 - prompt: a short noun phrase naming exactly what is measured, units and scope, under 80 characters, no years or values. Money must say "nominal" or "inflation-adjusted".
 - fact: one surprising, accurate sentence, max 140 characters, supported by your sources.
 - format: big (large counts or decimals), int (whole counts), usd, sec (seconds), m (metres), yrs (years of age or life), time (durations in seconds shown h:mm:ss), pct (percentages).
@@ -201,6 +205,7 @@ export async function generateResearchedBatch(ctx: GenContext & { count: number;
     tier: "strong",
     runId: ctx.runId,
     webSearches: 8,
+    webFetches: 10,
     system: RESEARCH_SYSTEM,
     prompt: [
       `Research ${ctx.count} new questions.`,

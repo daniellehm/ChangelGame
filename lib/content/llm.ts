@@ -31,6 +31,8 @@ export interface LlmRequest<T> {
   schema: z.ZodType<T>;
   /** Let Claude search the web (server tool), at most this many searches. */
   webSearches?: number;
+  /** Let Claude open web pages (server tool), at most this many. No per-use fee; page text counts as input tokens. */
+  webFetches?: number;
   runId?: number | null;
   questionId?: number | null;
 }
@@ -110,9 +112,11 @@ export class ClaudeLlm implements Llm {
     if (spent >= CONTENT.MONTHLY_CAP_USD) throw new SpendCapReached(spent);
 
     const model = CONTENT.MODELS[req.tier];
-    const tools: Anthropic.Beta.Messages.BetaToolUnion[] | undefined = req.webSearches
-      ? [{ type: "web_search_20260209", name: "web_search", max_uses: req.webSearches }]
-      : undefined;
+    const toolList: Anthropic.Beta.Messages.BetaToolUnion[] = [
+      ...(req.webSearches ? [{ type: "web_search_20260209" as const, name: "web_search" as const, max_uses: req.webSearches }] : []),
+      ...(req.webFetches ? [{ type: "web_fetch_20260209" as const, name: "web_fetch" as const, max_uses: req.webFetches, max_content_tokens: 12_000 }] : []),
+    ];
+    const tools = toolList.length ? toolList : undefined;
     const question: Anthropic.Beta.Messages.BetaMessageParam = { role: "user", content: req.prompt };
     let messages: Anthropic.Beta.Messages.BetaMessageParam[] = [question];
     const total: Counts = { input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_write_tokens: 0, web_searches: 0 };

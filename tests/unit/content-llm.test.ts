@@ -70,6 +70,17 @@ describe("ClaudeLlm", () => {
     expect(sent.tools).toBeUndefined();
   });
 
+  it("adds web fetch, capped and size-limited, when asked", async () => {
+    const { ledger } = memoryLedger();
+    let sent: Record<string, unknown> = {};
+    const parse: ParseFn = async (p) => ((sent = p as never), reply({ parsed_output: { value: 1 } }));
+    await new ClaudeLlm(parse, ledger).json({ ...req, webFetches: 4 });
+    expect(sent.tools).toEqual([
+      { type: "web_search_20260209", name: "web_search", max_uses: 3 },
+      { type: "web_fetch_20260209", name: "web_fetch", max_uses: 4, max_content_tokens: 12_000 },
+    ]);
+  });
+
   it("refuses to call Claude once the month's spend reaches the cap", async () => {
     const { ledger, rows } = memoryLedger(CONTENT.MONTHLY_CAP_USD);
     let called = false;
