@@ -18,8 +18,8 @@ interface Loaded {
 
 export function StatsView({ launch }: { launch: string }) {
   const [data, setData] = useState<Loaded | null>(null);
-  // Signed into a real account? (null = unknown/no session → offer sign-in.)
-  const [signedIn, setSignedIn] = useState(false);
+  // Signed into a real account? (null = not known yet.)
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -46,7 +46,7 @@ export function StatsView({ launch }: { launch: string }) {
     return (
       <>
         <p>No games yet. Play today&apos;s Changel and your stats will show up here.</p>
-        {!signedIn && (
+        {signedIn !== true && (
           <>
             <div className="save-or" aria-hidden="true">or</div>
             <p>
@@ -94,7 +94,12 @@ export function StatsView({ launch }: { launch: string }) {
           return <i key={d} className={p ? "played" : ""} title={p ? `${d}: ${p.total}/500` : `${d}: not played`} />;
         })}
       </div>
-      <p className="note">Stats are kept on this device for now. Accounts that sync across devices are coming soon.</p>
+      {signedIn === true && <p className="note">Your stats are saved to your account, so they follow you to any device you sign in on.</p>}
+      {signedIn === false && (
+        <p className="note">
+          Stats are kept on this device. <Link href="/account" className="text-link">Add your email</Link> to keep your streak on any device.
+        </p>
+      )}
     </>
   );
 }
