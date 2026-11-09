@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { addDays, localDate, puzzleNumber } from "@/lib/dates";
+import { fetchMe } from "@/lib/game/session-client";
 import { loadStats, summarize, type StatsSummary, type StoredStats } from "@/lib/game/storage";
 import { TIERS, type TierId } from "@/lib/scoring";
 
@@ -22,7 +23,14 @@ export function StatsView({ launch }: { launch: string }) {
       const today = localDate(new Date());
       const stats = loadStats();
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      setData({ stats, today, summary: summarize(stats, { number: puzzleNumber(today, launch), tz }) });
+      const summary = summarize(stats, { number: puzzleNumber(today, launch), tz });
+      setData({ stats, today, summary });
+      // Server stats win when there's a session (SPEC §4); local stays as the fallback.
+      void fetchMe(today, tz).then((me) => {
+        if (me && me.games_played >= summary.played) {
+          setData({ stats, today, summary: { ...summary, played: me.games_played, streak: me.current_streak, maxStreak: me.max_streak, best: me.best_total ?? 0, average: me.avg_total ?? 0 } });
+        }
+      });
     });
     return () => cancelAnimationFrame(id);
   }, [launch]);

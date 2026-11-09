@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M3 in progress on branch `m3-anonymous-play` (go-ahead 2026-11-09).** 3.2–3.8 done. Only 3.9 (E2E anonymous flow) + 3.1 verification remain, and both need Dani's Supabase checklist (anonymous sign-ins are still off).
+**M3 in progress on branch `m3-anonymous-play` (go-ahead 2026-11-09).** Everything is built and tested except what needs anonymous sign-ins switched on. **Waiting for Dani's Supabase checklist** (Needs from Dani). Then: run `tests/e2e/anonymous.spec.ts` (currently skips itself), check real sign-in on the preview, and stop for the M3 review.
 
 ## Needs from Dani
 
@@ -87,7 +87,7 @@ Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallb
 - [x] 3.6 Local-only fallback + later sync. *Accept:* a cleared-cookie / blocked-storage browser can play the full game; it syncs when a session exists.
 - [x] 3.7 `player_stats` view, server streaks (date-line rule), `GET /api/me`. *Accept:* streak unit tests, including n−2 with a tz change.
 - [x] 3.8 Upstash Redis "changel" (Singapore, see DECISIONS) + rate limits. *Accept:* limits from SPEC section 7 enforced, with tests.
-- [ ] 3.9 E2E anonymous flow (mobile viewport): full game → refresh resumes → finish → share text exact → next day (mocked clock) new puzzle, streak = 2.
+- [ ] 3.9 (written in `tests/e2e/anonymous.spec.ts`, waiting on sign-ins) E2E anonymous flow (mobile viewport): full game → refresh resumes → finish → share text exact → next day (mocked clock) new puzzle, streak = 2.
 
 ## Milestone 4: Login + merge
 
@@ -138,6 +138,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 3.9 written: `tests/e2e/anonymous.spec.ts` (spec flow: play → refresh resumes from the server even with local storage cleared → finish → exact share text → next day streak 2; plus the cookie-blocked browser falls back to local play; deletes its test users). Skips until anonymous sign-ins are on. Stats page now prefers `/api/me`. 170 unit + 47 integration + 22 E2E pass, 1 skipped.
 - 2026-11-09: 3.8 Rate limits: Upstash Redis "changel" created (free, ap-southeast-1); URL + token in `.env.local` and Vercel (token Sensitive). `lib/api/ratelimit.ts` (sliding windows, fails open, off without env) on puzzle/reveal (per IP) and play/guess/sync/me (per player). Real-Redis test: 30 allowed, the 31st gets 429 + Retry-After. 170 unit, 47 integration, 23 Playwright pass.
 - 2026-11-09: 3.5/3.6 Client modes: `lib/game/session-client.ts`; `Game` starts via /api/session + /api/play (server mode) or falls back to local mode via /api/reveal; resumes from the server's answered rounds; handles out_of_order / question_changed / unauthorized mid-game; final screen uses /api/me stats. `POST /api/sync` uploads finished local plays (server re-scores, source='local', server wins, ≤7 days). 46 integration, 169 unit, 21 E2E, 2 visual pass. E2E currently runs in local mode (anonymous sign-ins off).
 - 2026-11-09: 3.3/3.4/3.7: `POST /api/play` (start needs an open window, resume allowed through grace, returns answered rounds), `POST /api/guess` (lib/scoring + `submit_guess`; 401/404/403/409 out_of_order/already_answered with stored result/question_changed), `GET /api/me` (player_stats view + TS streaks with the date-line rule). Public rounds now carry `question_id`. Integration tests on a throwaway 2099-03-01 puzzle (cleaned up): 41 pass, including a concurrent double-tap (1 stored) and the 2.2 deferred checks (player trigger, insert-only guesses, delete cascade). Test players use the email fallback until anonymous sign-ins are on.
