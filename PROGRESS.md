@@ -2,11 +2,12 @@
 
 ## Current status
 
-**M3 in progress on branch `m3-anonymous-play`.** Dani's checklist done; all tests pass with real anonymous sign-in. Next: verify the preview, then stop for the M3 review.
+**Milestone 3 complete (2026-11-09). Waiting for Dani's review and go-ahead.** Preview: https://changel-git-m3-anonymous-play-releasedani.vercel.app (Vercel login required). Dani's play-through on the preview is the real-browser sign-in check. On approval: merge `m3-anonymous-play` into `main`, then M4 (login + merge) on branch `m4-login-merge`.
 
 ## Needs from Dani
 
 **Now:**
+- [ ] Review M3 on the preview (play a game, refresh mid-game, check stats) and give the go-ahead for M4
 - [x] Review M2 (approved 2026-11-09)
 - [x] Go-ahead for M3 (2026-11-09): dashboard checklist for Supabase, Turnstile deferred to M6
 - [x] (done 2026-11-09) **Supabase dashboard checklist:** project Changel → **Authentication → Sign In / Providers** → turn on **Allow anonymous sign-ins** → Save. Then **Authentication → Rate Limits** → **IP Address Forwarding** → turn it on → Save. Leave the anonymous sign-ins limit at its default of 30/hour.
@@ -78,6 +79,7 @@ Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 
 Anonymous sign-in, `play`/`guess` routes, resume, local mirror and offline fallback, stats view, streaks.
 **Milestone accepted when:** the E2E anonymous flow passes, and a cleared-cookie browser falls back to local play.
+**Status:** both met (`tests/e2e/anonymous.spec.ts`, real anonymous sign-in). Preview serves from sin1 with rate limiting live. Awaiting Dani's review.
 
 - [x] 3.1 Supabase auth config (Dani's dashboard checklist): anonymous sign-ins + IP address forwarding. Turnstile moved to M6. *Accept:* anonymous sign-in works from localhost and preview.
 - [x] 3.2 `POST /api/session` on the first Play click: server-side `signInAnonymously` with the secret key + `Sb-Forwarded-For`, `@supabase/ssr` HTTP-only cookies. *Accept:* no user row on a page load without Play; sign-ups are rate-limited per player IP.
@@ -138,6 +140,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M3 preview check: `/api/puzzle` 200 from sin1 (rate limiter loads with the Vercel Upstash env), `/api/me` 401 without a session (body not visible to the fetch tool). **M3 complete**, awaiting Dani's review.
 - 2026-11-09: 3.1/3.2/3.9: Dani enabled anonymous sign-ins + IP forwarding. The spec E2E passes with real anonymous players (play → refresh resumes from the server with local storage wiped → finish → exact share text → next day streak 2), and a cookie-refusing browser falls back to local play. Integration tests now use real anonymous sign-in. E2E users tagged e2e + global teardown (deleted 15); per-page fake IPs. Vercel docs confirm x-forwarded-for can't be spoofed. 170 unit + 47 integration + 25 Playwright pass.
 - 2026-11-09: 3.9 written: `tests/e2e/anonymous.spec.ts` (spec flow: play → refresh resumes from the server even with local storage cleared → finish → exact share text → next day streak 2; plus the cookie-blocked browser falls back to local play; deletes its test users). Skips until anonymous sign-ins are on. Stats page now prefers `/api/me`. 170 unit + 47 integration + 22 E2E pass, 1 skipped.
 - 2026-11-09: 3.8 Rate limits: Upstash Redis "changel" created (free, ap-southeast-1); URL + token in `.env.local` and Vercel (token Sensitive). `lib/api/ratelimit.ts` (sliding windows, fails open, off without env) on puzzle/reveal (per IP) and play/guess/sync/me (per player). Real-Redis test: 30 allowed, the 31st gets 429 + Retry-After. 170 unit, 47 integration, 23 Playwright pass.
