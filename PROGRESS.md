@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Waiting on Dani: `ANTHROPIC_API_KEY` in `.env.local` and Vercel.
+**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. Next: 5.2 (Claude client wrapper + data sources).
 
 ## Needs from Dani
 
@@ -12,7 +12,7 @@
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [x] Relative scoring approved and merged (2026-11-09)
 - [x] Go-ahead for M5 (2026-11-09)
-- [ ] Add `ANTHROPIC_API_KEY` to `.env.local` and to Vercel (Sensitive, Production + Preview)
+- [x] `ANTHROPIC_API_KEY` in `.env.local` and Vercel (done by Dani 2026-11-09; verified with a free models call). `ADMIN_EMAILS` set in Vercel by Claude.
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
 - [x] Supabase email checklist (done by Dani 2026-11-09: custom SMTP via Resend, templates, redirect URLs, secure email change off, 6-digit OTP)
 - [x] GoDaddy: nameservers pointed to Vercel (done by Dani 2026-11-09); Claude manages DNS records in Vercel
@@ -120,7 +120,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 **How it works (summary):** a candidate question is inserted as `draft`. The checks run, and it becomes `verified` (all pass, `verified_by='auto'`) or `flagged` (any fail, `flag_reason`). The scheduler fills days 7–30 ahead with verified questions (status `scheduled`, puzzle `ready`) and keeps ≥10 verified spares. Once a puzzle date has passed, its questions become `used`. All of this state lives in the database, so the nightly job can stop at any point and resume in the next run.
 
-- [ ] 5.1 **Pipeline tables:**
+- [x] 5.1 **Pipeline tables:**
   - `content_runs` (runs, leases, hops, tokens, searches, cost)
   - `question_edits`, `reports`, `events`, `alerts_sent`
   - question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`
@@ -163,6 +163,13 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: 5.1 Pipeline tables: migration `content_pipeline_tables`.
+  - New tables: `content_runs` (+ atomic `lease_content_run`), `llm_calls` spend ledger (+ `llm_spend_since`), `alerts_sent`.
+  - Question columns: `origin`, `flag_reason`, `corrected_at`, `reports_dismissed_rate`, `source_data`; `reports.invalid_reason`.
+  - `pg_trgm` + `similar_questions`; `question_edits` and `reports` already existed from M2.
+  - Security advisors show only the expected items. 5 new integration tests (65 total).
+  - `@anthropic-ai/sdk` 1.6.0 installed; key verified.
 
 - 2026-11-09: M5 started (branch `m5-content-admin`). Dani's decisions: Opus 5.5 + Sonnet 5.5 mix, $50/month hard cap, global questions with no Australian bias. Admin email danielle.moussa@mseq.vc.
 
