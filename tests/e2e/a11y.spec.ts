@@ -59,6 +59,10 @@ test("keyboard-only: a full game can be played without a pointer", async ({ page
     // Focus moves to the verdict; the result is announced.
     await expect(page.locator("#verdict")).toBeFocused();
     await expect(page.locator("#revealAnnounce")).toContainText("points");
+    if (roundsFor(DAY)[i]!.source_url) {
+      await page.keyboard.press("Tab"); // the source link
+      await expect(page.locator("#reveal a[href]").first()).toBeFocused();
+    }
     await page.keyboard.press("Tab"); // "Something wrong with this?" (report) comes before Next
     await expect(page.getByRole("button", { name: "Something wrong with this?" })).toBeFocused();
     await page.keyboard.press("Tab");

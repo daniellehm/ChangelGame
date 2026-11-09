@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M4 approved by Dani and merged to `main` (2026-11-09).** **Per-question guess ranges** (DECISIONS 2026-11-09 "Per-question guess ranges") approved by Dani and merged to `main` (2026-11-09). **Relative scoring** (points = share of the slider away; ⅓ of the slider = 0) approved by Dani and merged to `main` (2026-11-09). Ranges are symmetric, ÷max_change … ×max_change (Dani's revision: a lopsided slider gave away the direction). The DB migrations `question_guess_range` and `question_max_change`, and the max_change import, are already applied to the shared Supabase project; `main`'s code ignores the new columns. **M5 (content pipeline + admin) in progress** on branch `m5-content-admin`; see the M5 section below. **All M5 tasks are built; waiting for Dani to review the preview and approve the merge.** The nightly cron only runs on production (after the merge). Claude spend so far: $0.26 (smoke tests). The nightly cron is in `vercel.json` but only runs on production, i.e. once M5 is merged; until then it can be run by hand.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). Next: a few UI tweaks Dani asked for on `main` (branch `ui-tweaks`), then **M6**. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -12,7 +12,10 @@
 - [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [x] Relative scoring approved and merged (2026-11-09)
 - [x] Go-ahead for M5 (2026-11-09)
-- [ ] **Review M5** on the preview (admin portal, report button) and approve the merge
+- [x] Review M5 and approve the merge (2026-11-10)
+- [ ] **Top up Anthropic credit** (console.anthropic.com → Plans & Billing). The 9–10 Nov fill run stopped with "credit balance is too low"; until then every nightly run fails.
+- [ ] Days 15–16 Nov are empty (Dani: "forget about the fill for now"). Fill by hand on Upcoming, or they get reruns.
+- [ ] Three prototype questions still fail the automatic checks (solar, pandas on days 1–2; Wikipedia was edited by Dani). Dani can approve them by saving in the editor.
 - [ ] **Approve one database fix** (Upcoming → reorder a day's rounds).
   - Why: the MCP permission check declined it because it deletes and re-inserts the day's 5 rounds; it's only allowed on days nobody has played.
   - How: approve the prompt when Claude retries, or run in the Supabase SQL editor, then Claude saves it as a migration:

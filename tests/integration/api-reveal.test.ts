@@ -5,6 +5,8 @@ import { actualLog, scoreRound } from "@/lib/scoring";
 import { post, seededRounds } from "./helpers";
 
 const NOW = "2026-11-10T09:00:00+11:00";
+/** A date that never gets a puzzle (real days fill up as the game runs). */
+const EMPTY_DAY = "2097-03-03";
 
 describe("POST /api/reveal", () => {
   it("returns that round's answer and the same score as lib/scoring", async () => {
@@ -19,7 +21,7 @@ describe("POST /api/reveal", () => {
     expect(s.points).toBeGreaterThan(0);
     expect(body).toMatchObject({
       position: 3, guess_log: g, points: s.points, tier: s.tier, wrong_way: s.wrongWay,
-      end_value: q.end_value, fact: q.fact, source_name: q.source_name, source_url: null,
+      end_value: q.end_value, fact: q.fact, source_name: q.source_name, source_url: q.source_url,
     });
     expect(body.actual_log).toBeCloseTo(a, 10);
     expect(typeof body.question_id).toBe("number");
@@ -53,7 +55,7 @@ describe("POST /api/reveal", () => {
   });
 
   it("404s for an open date with no puzzle", async () => {
-    const res = await POST(post("/api/reveal", { date: "2026-11-13", position: 1, guess_log: 0 }, "2026-11-13T09:00:00+11:00"));
+    const res = await POST(post("/api/reveal", { date: EMPTY_DAY, position: 1, guess_log: 0 }, `${EMPTY_DAY}T09:00:00+11:00`));
     expect(res.status).toBe(404);
   });
 });
