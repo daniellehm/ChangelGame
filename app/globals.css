@@ -95,6 +95,7 @@ input[type=range]:focus-visible::-moz-range-thumb{outline:3px solid var(--up);ou
 .sharebox.show{display:block}
 .hidden{display:none !important}
 .gap{height:10px}
+html[data-returning] #intro{visibility:hidden}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ---------- Additions beyond the prototype (built from the same tokens) ---------- */
@@ -102,12 +103,20 @@ input[type=range]:focus-visible::-moz-range-thumb{outline:3px solid var(--up);ou
 /* Header menu */
 .head-right{display:flex;align-items:center;gap:12px}
 .menu{position:relative}
-.menu-btn{font:inherit;display:grid;place-items:center;width:44px;height:44px;border:2px solid var(--ink);background:var(--card);border-radius:12px;cursor:pointer;color:var(--ink);box-shadow:2px 2px 0 var(--ink);padding:0}
+/* 34px matches the logo mark so the header keeps the prototype's height; the
+   ::after extends the hit area to 44px. */
+.menu-btn{position:relative;font:inherit;display:grid;place-items:center;width:34px;height:34px;border:2px solid var(--ink);background:var(--card);border-radius:10px;cursor:pointer;color:var(--ink);box-shadow:2px 2px 0 var(--ink);padding:0}
+.menu-btn::after{content:"";position:absolute;inset:-5px}
+.menu-btn:focus{outline:none}
+.menu-btn:focus-visible{outline:2px solid var(--up);outline-offset:2px}
 .menu-btn:active{transform:translateY(2px);box-shadow:none}
 .menu-btn svg{display:block}
-.menu-list{position:absolute;right:0;top:52px;min-width:190px;margin:0;padding:6px;list-style:none;background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:5px 5px 0 var(--ink);z-index:10}
+.menu-list{position:absolute;right:0;top:44px;min-width:190px;margin:0;padding:6px;list-style:none;background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:5px 5px 0 var(--ink);z-index:10}
 .menu-list a{display:block;padding:12px 12px;border-radius:9px;color:var(--ink);text-decoration:none;font-weight:600;font-size:16px}
 .menu-list a:hover,.menu-list a:focus-visible{background:var(--bg);outline:none}
+
+/* Theme chip on the intro (SPEC §8 theme days) */
+.chip{display:inline-block;font-family:var(--font-mono-stack);font-size:12px;font-weight:700;border:2px solid var(--ink);border-radius:999px;padding:3px 10px;margin:8px 0 2px}
 
 /* Content pages (How to play, Stats, Account, About) */
 .page h1{font-size:34px;line-height:1.05;letter-spacing:-1.2px;margin:6px 0 14px}

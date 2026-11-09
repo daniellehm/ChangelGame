@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.6 done. Next: task 1.7, game screens.
+**M1 in progress (go-ahead given 2026-11-09).** 1.1–1.7 done. Next: task 1.8, slider accessibility (most of it is already built in 1.7; 1.8 adds keyboard-only E2E + axe).
 
 ## Needs from Dani
 
@@ -40,7 +40,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
   *Accept:* unit tests with fixed clocks for Sydney, London and LA; countdown is correct across a Sydney DST night.
 - [x] **1.6 Hard-coded data.** `lib/fixtures/prototype-pool.ts`: the 20 prototype questions with the prototype's seeded shuffle and epoch (dev-only, removed in M2).
   *Accept:* for a fixed date, the app picks the same 5 questions in the same order as the prototype.
-- [ ] **1.7 Game screens.** Components `Header`, `Intro`, `Round`, `Slider`, `Reveal`, `Final`, `ShareButton`, `Toast`, plus a client `Game` state machine (intro → round → reveal → … → final), local mirror under `changel:v1:play:<date>` / `changel:v1:stats`, and the already-played → final behaviour.
+- [x] **1.7 Game screens.** Components `Header`, `Intro`, `Round`, `Slider`, `Reveal`, `Final`, `ShareButton`, `Toast`, plus a client `Game` state machine (intro → round → reveal → … → final), local mirror under `changel:v1:play:<date>` / `changel:v1:stats`, and the already-played → final behaviour.
   *Accept:* the full 5-round game plays end to end on hard-coded data; copy is identical to the prototype; share text is exact; the clipboard → selectable-box fallback works; refreshing after finishing shows the final screen.
 - [ ] **1.8 Slider accessibility.** Arrows ±0.005, Page Up/Down ±0.1, `aria-valuetext` ("2.4 times bigger"), snap to 0 within ±0.01, 44 px target, focus to the verdict on reveal and to the question on a new round.
   *Accept:* a Playwright keyboard-only run completes a game; axe shows no violations other than the documented prototype colour-contrast items.
@@ -128,6 +128,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: 1.7 Game screens: Header/Menu/Intro/Round/Slider/Reveal/Final/ShareButton/Toast + `Game` state machine; `lib/streaks.ts` (date-line rule, 9 tests), `lib/game/storage.ts` (local mirror), `lib/game/share.ts`. Playwright (mobile 390 px, Sydney tz, frozen clock): 7 E2E tests pass, covering full game, exact share text, clipboard fallback, resume mid-game, midnight crossing, returning player streak = 2, and no console errors.
 - 2026-11-09: 1.6 Hard-coded data: `lib/fixtures/prototype-pool.ts` (verbatim pool + seeded shuffle), `lib/game/types.ts` (API-shaped Puzzle/RoundResult + `GameSource` interface), `lib/game/fixture-source.ts`; tests prove identical pool, order and daily picks vs the prototype.
 - 2026-11-09: 1.5 Basic dates: `lib/dates.ts` (Intl local date, puzzle number via pure date arithmetic, next-local-midnight by binary search so DST/skipped-midnight zones are exact, countdown format); 22 tests incl. Sydney 23 h / 25 h DST days and Chile.
 - 2026-11-09: 1.4 Formatting: `lib/format.ts` (9 formats, multLabel, pctChange, multSpoken for aria); tests compare against functions loaded live from `reference/prototype.html` (`tests/helpers/prototype.ts`) across the full slider range.

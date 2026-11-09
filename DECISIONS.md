@@ -54,3 +54,17 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: Formats `aud` and `pct`, and no "trillion"
 **Decision:** `aud` follows the prototype's `usd` rules with an `A$` prefix (cents still show as `¢`). `pct` shows the value to 3 significant figures plus `%` (e.g. `3.46%`). `big` keeps the prototype's behaviour above 1e12, so the slider can read "1290 billion". All formatting is pinned to the `en-US` locale.
 **Why:** The spec names `aud` and `pct` but doesn't define them. A "trillion" step would have changed the prototype's slider readout, and the prototype is the reference for copy. Pinning the locale makes server and client render the same, matching how the prototype looks in an en-US/en-AU browser.
+
+### 2026-11-09: Local mirror details (M1 game screens)
+**Decision:**
+- There is one extra localStorage key, `changel:v1:active`. It holds the date of an in-progress play, so a game started before midnight resumes on that same puzzle after midnight. It is only honoured within ±1 day.
+- `changel:v1:play:<date>` stores the puzzle (no answers) plus each locked `RoundResult`, so the final screen renders offline. Records older than 45 days are pruned.
+- `changel:v1:stats` stores a compact entry per completed play (`date`, `number`, `tz`, `total`, `tiers`). Played/streak/best/average are derived from it. Streaks use `lib/streaks.ts`, the same pure function the server will use in M3, including the date-line n−2 rule.
+- A play counts as complete as soon as round 5 is locked, not when "See my score" is tapped (the prototype waits for the tap). A refresh in between can no longer lose the game.
+- Returning players skip the intro on page load (SPEC §9). If the date rolls over while someone is on the intro or the final screen, the new puzzle is shown on the intro (an "offer"), not dropped straight into round 1.
+- A tiny inline script hides the server-rendered intro before first paint for returning players, so they don't see it flash.
+**Why:** The spec defines these behaviours but not their storage. These are the simplest shapes that satisfy SPEC §2/§4/§5. The streak function is shared, so client and server can't disagree.
+
+### 2026-11-09: Header menu button is 34 px (hit area 44 px)
+**Decision:** The menu button is drawn at 34 × 34 px, the same as the logo mark, and an invisible `::after` extends its touch area to 44 px.
+**Why:** A visible 44 px button would make the header taller than the prototype's and push every screen down, which breaks the screenshot match. The spec's 44 px minimum is for the slider. The larger hit area still meets it here.
