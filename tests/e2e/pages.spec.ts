@@ -2,10 +2,9 @@ import { expect, test } from "@playwright/test";
 import { next, playRound, syd } from "./helpers";
 
 const PAGES = [
-  { label: "How to play", path: "/how-to-play", h1: "How to play" },
+  { label: "How to play", path: "/how-to-play", h1: "Guess the change." },
   { label: "Stats", path: "/stats", h1: "Your Changel" },
   { label: "Account", path: "/account", h1: "Save your streak" },
-  { label: "About", path: "/about", h1: "About Changel" },
 ];
 
 test.beforeEach(async ({ page }) => {
@@ -21,6 +20,13 @@ for (const p of PAGES) {
     await expect(page.locator("h1")).toHaveText(p.h1);
   });
 }
+
+test("/about redirects to How to play, and the menu has no About", async ({ page }) => {
+  await page.goto("/about");
+  await expect(page).toHaveURL("/how-to-play");
+  await page.getByRole("button", { name: "Menu" }).click();
+  await expect(page.getByRole("link", { name: "About" })).toHaveCount(0);
+});
 
 test("menu by keyboard: opens, focuses the first item, Escape closes and returns focus", async ({ page }) => {
   await page.goto("/");

@@ -91,3 +91,7 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: Prototype parity test replaced by visual regression baselines
 **Decision:** `tests/e2e/parity.spec.ts`, which diffed against `reference/prototype.html`, is removed together with pixelmatch/pngjs. `tests/e2e/visual.spec.ts` uses Playwright's `toHaveScreenshot` to check 6 key screens at 390 and 1280 px against committed baselines, with reduced motion so animations settle. The baselines are macOS (`-darwin`) for now; CI will need Linux baselines when it is set up.
 **Why:** After the design pass the app deliberately differs from the prototype, so parity is no longer the goal. The check that matters now is that the approved look doesn't drift.
+
+### 2026-11-09: About merged into How to play
+**Decision:** The About page is removed, and its content is now "The deal" on How to play: same five for everyone, new puzzle at midnight, free with no account, every number sourced. `/about` permanently redirects to `/how-to-play`, and the menu now has How to play, Stats and Account. How to play is rebuilt as a worked example round (scored with the real `lib/scoring`), three step tiles, tier stickers and the deal list.
+**Why:** Dani asked to drop About, fold it into How to play, and make that page more fun and less wordy.
