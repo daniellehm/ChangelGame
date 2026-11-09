@@ -16,12 +16,16 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=e2e",
     "check": "npm run typecheck && npm run lint && npm test",
-    "test:visual": "playwright test --project=visual"
+    "test:visual": "playwright test --project=visual",
+    "content:import": "tsx --env-file=.env.local scripts/import-questions.ts",
+    "content:seed-dev": "tsx --env-file=.env.local scripts/seed-dev-puzzles.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "next": "^16.4.5",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
@@ -31,6 +35,7 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.5",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "vitest": "^5.1.0"
   }

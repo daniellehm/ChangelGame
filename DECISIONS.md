@@ -107,3 +107,14 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: Supabase key format
 **Decision:** `NEXT_PUBLIC_SUPABASE_ANON_KEY` holds the new-style publishable key (`sb_publishable_…`), and `SUPABASE_SERVICE_ROLE_KEY` holds the secret key (`sb_secret_…`). The env var names stay as written in the spec.
 **Why:** Supabase recommends the new key formats (they can be rotated independently). Keeping the spec's names avoids churn.
+
+### 2026-11-09: Question slugs, derived puzzle numbers, dev seed
+**Decision:**
+- `questions.slug` (unique, kebab-case) is the stable key between `content/questions.csv` and the DB. `npm run content:import` inserts new slugs and updates only the content fields of existing ones. It never changes status or verification, and it rounds values to 3 significant figures (except sec/time/yrs) per decision item 3.
+- The puzzle number is computed from `LAUNCH_DATE` in the API. `puzzles.number` is kept nullable and unused: dropping it was blocked by Claude Code's permission check on destructive DDL, and the empty column does no harm.
+- `npm run content:seed-dev` schedules the 20 prototype questions as 4 ready puzzles (2026-11-09…12) in the prototype's order, using `lib/content/dev-seed.ts`. Seed questions stay `draft` until the M5 checks run on them. **Launch checklist: delete the dev puzzles first.**
+**Why:** Re-runnable imports are needed for an editable CSV source of truth. A stored puzzle number goes stale if the launch date moves. 20 questions can only fill 4 days because a question appears in at most one puzzle. Real scheduling is M5.
+
+### 2026-11-09: `POST /api/reveal` for M2 (and the M3 offline fallback)
+**Decision:** M2 adds a stateless `POST /api/reveal { date, position, guess_log }`. It checks the date window, then returns that one round's answer and score, and stores nothing. The M2 client uses it on "Lock in" until M3's session-based `/api/guess` replaces it. M3's local-only fallback then reuses it, instead of putting every answer in the puzzle response (this refines decision item 7).
+**Why:** It's needed to switch the client to the API in M2 (task 2.7) before sessions exist. It keeps answers out of the page bundle and the puzzle response. Peeking costs one deliberate request per round, which was already accepted for the offline mode. Rate limits arrive in M3.
