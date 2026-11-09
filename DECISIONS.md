@@ -179,3 +179,39 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: One attempt per day per account, shown honestly after sign-in
 **Decision:** Signing in can never let a replay count. The server already kept the **first** attempt on a same-day clash and discarded the other (`merge_players`). The bug was on the device: after signing in, the browser kept showing the replay's score. Now, after any sign-in (final screen or account page), `refreshFromAccount()` uploads offline games, then reloads this device's recent plays from the account (`/api/play` per stored date). The screen therefore shows the account's result. A banner then explains what happened, e.g. "You'd already played that day on your account, so your first score stands. This device's replay was discarded."
 **Why:** Dani found that signing in after replaying today on another browser looked as if the replay counted. A browser can't know who someone is before they sign in, so it can't block the replay itself. Instead the replay is never kept and never shown as counting.
+
+### 2026-11-09: Per-question guess ranges replace the fixed ÷1000 … ×1000 slider
+**Decision:** Every question has a `max_change` k, its biggest plausible change in either direction. The slider runs ÷k … ×k (UN members: ÷8 … ×8), always centred on "no change", and scoring tolerance scales with the width. With k = 1000, everything is identical to the prototype. This departs from the prototype's scoring, at Dani's request.
+- **Why symmetric:** the first version used separate low/high bounds (UN: 40 … 300). Dani pointed out that a lopsided slider shows players which way to go. With ÷k … ×k, "same" is always the middle, so the slider's shape gives away only the rough size of the change, never its direction.
+- **Rules every question must pass** (`rangeProblems()` in `lib/range.ts`, run by the importer and mirrored by the DB constraint `questions_max_change_sane`):
+  - k is between 1.05 (a sprint record) and 1000;
+  - the real answer is at most 85% of the way from "same" to the end (so changes beyond about ×355 can't be used; none of the seed questions come close).
+- **A range is required** once a question is past draft (`questions_max_change_required`). Questions without one fall back to the full range (only a test fixture uses this).
+- **Scoring:** with K = log10 k and W = 2K, tolerance = min(0.75 × √(W ÷ 6), W ÷ 3), and points = 100 × (1 − |guess − answer| ÷ tolerance), floored at 0.
+  - The wrong-way rule is unchanged.
+  - Its "no change" threshold scales too: ε = 0.004 × W ÷ 6, so a narrow range isn't mostly dead zone.
+  - Wider ranges forgive more, but less than in proportion.
+  - On every valid question:
+    - the exact answer is always 100;
+    - the end of the slider furthest from the answer always scores 0;
+    - slamming the slider to either end never scores more than 78.
+
+  Property tests check all of these over 3,000 random valid questions.
+- **Slider:** 1,200 steps end to end. Nudge = 1/120 of W, Page Up/Down = 1/60, pointer snap to 0 = 1/600 (the prototype's 0.005 / 0.05 / 0.1 / 0.01 at full width). Native `step="any"`, so exact 0 is always reachable; `lib/slider` does the rounding. The server clamps guesses to the question's range.
+- **Ticks:**
+  - Both ends are labelled at 2 significant figures (÷8, ×8). "same" is always in the middle.
+  - Up to two round multipliers per side are shown (×2, ×5, ×10, ×100, ×1,000), only where they fit on a 250 px phone row without overlapping.
+  - The reveal pins use the same positions. The readout's pop now fires on crossing a tick rather than a power of ten.
+- **Seed content:** k was chosen for all 20 questions from plausibility, as round numbers (1.1, 2, 4, 5, 8, 10, 20 … 1000). Answers sit 32–84% of the way out.
+- **For M5:** the generators must propose k *without seeing the answer*, so how far out the answer sits leaks nothing. Then the rules above are checked, and k is raised if the answer is too close to the end.
+- **Cleanup pending Dani's OK:** the first version's `min_end_value`/`max_end_value` columns are still in the table, unused, and marked UNUSED (dropping columns is a delete).
+
+**Why:** Dani: with ×1000 available on "UN members since 1945", a silly ×10 still scored well. With k = 8, the scores change (real answer ×3.8):
+
+| Guess | Old score | New score |
+| --- | --- | --- |
+| ×2 | 63 | 33 |
+| ×3 | 87 | 75 |
+| ×5 | 84 | 71 |
+| ×8 | 57 | 21 (the top of the slider) |
+| ×10 | 44 | not selectable |

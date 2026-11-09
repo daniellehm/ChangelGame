@@ -83,18 +83,18 @@ export interface MultLabel {
   direction: Direction;
 }
 
-/** Label for a log10 multiplier l. */
-export function multLabel(l: number): MultLabel {
+/** Label for a log10 multiplier l. `eps` is the question's "no change" threshold (lib/range epsilon()). */
+export function multLabel(l: number, eps: number = SCORING.EPSILON): MultLabel {
   const m = Math.pow(10, l);
-  if (Math.abs(l) < SCORING.EPSILON) return { big: "×1", sub: "no change", short: "same", cls: "", direction: "same" };
+  if (Math.abs(l) < eps) return { big: "×1", sub: "no change", short: "same", cls: "", direction: "same" };
   const p = pctChange(m);
   if (l > 0) return { big: "×" + prettyMultiplier(m), sub: "+" + p + " bigger", short: "+" + p, cls: "up", direction: "up" };
   return { big: "÷" + prettyMultiplier(1 / m), sub: p + " smaller", short: "−" + p, cls: "down", direction: "down" };
 }
 
 /** Screen-reader text for the slider, e.g. "2.4 times bigger" (SPEC §9). */
-export function multSpoken(l: number): string {
-  const lab = multLabel(l);
+export function multSpoken(l: number, eps: number = SCORING.EPSILON): string {
+  const lab = multLabel(l, eps);
   if (lab.direction === "same") return "no change";
   const x = lab.direction === "up" ? Math.pow(10, l) : Math.pow(10, -l);
   const n = x >= 100 ? group(Math.round(x)) : x >= 10 ? String(Math.round(x * 10) / 10) : String(sig(x, 2));

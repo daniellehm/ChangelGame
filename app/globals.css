@@ -50,14 +50,16 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
 .mult.up{color:var(--up)} .mult.down{color:var(--down)}
 .mult-sub{font-family:var(--font-mono-stack);font-size:13px;color:var(--muted);margin-top:6px;min-height:18px}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;margin:10px 0 2px;touch-action:none}
-input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:10px;background:linear-gradient(90deg,var(--down),var(--slider-down-mid) 50%,var(--slider-up-mid) 50%,var(--up))}
-input[type=range]::-moz-range-track{height:10px;border-radius:10px;background:linear-gradient(90deg,var(--down),var(--slider-down-mid) 50%,var(--slider-up-mid) 50%,var(--up))}
+input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:10px;background:linear-gradient(90deg,var(--down),var(--slider-down-mid) var(--zero,50%),var(--slider-up-mid) var(--zero,50%),var(--up))}
+input[type=range]::-moz-range-track{height:10px;border-radius:10px;background:linear-gradient(90deg,var(--down),var(--slider-down-mid) var(--zero,50%),var(--slider-up-mid) var(--zero,50%),var(--up))}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:var(--card);border:3px solid var(--ink);margin-top:-12px;cursor:grab;box-shadow:2px 2px 0 var(--ink)}
 input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:var(--card);border:3px solid var(--ink);cursor:grab}
 input[type=range]:focus{outline:none}
 input[type=range]:focus-visible::-webkit-slider-thumb{outline:3px solid var(--up);outline-offset:2px}
 input[type=range]:focus-visible::-moz-range-thumb{outline:3px solid var(--up);outline-offset:2px}
-.ticks{display:flex;justify-content:space-between;font-family:var(--font-mono-stack);font-size:11px;color:var(--muted);margin-bottom:20px}
+.ticks{position:relative;height:14px;margin:0 17px 20px;font-family:var(--font-mono-stack);font-size:11px;line-height:14px;color:var(--muted)}
+.ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.ticks .lo{transform:translateX(-17px)} .ticks .hi{transform:translateX(calc(-100% + 17px))}
 .reveal{display:none}
 .reveal.show{display:block;animation:pop .35s ease}
 @keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}

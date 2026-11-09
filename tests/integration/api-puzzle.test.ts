@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { questionRange } from "@/lib/puzzles/repo";
 import { GET } from "@/app/api/puzzle/route";
 import { get, seededRounds } from "./helpers";
 
@@ -26,6 +27,7 @@ describe("GET /api/puzzle", () => {
       start_value: expected[0]!.start_value,
       end_year: expected[0]!.end_year,
       format: expected[0]!.format,
+      range: questionRange(expected[0]!),
     });
   });
 

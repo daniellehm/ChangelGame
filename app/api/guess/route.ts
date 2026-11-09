@@ -39,7 +39,6 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(json);
   if (!parsed.success) return invalid(parsed.error);
   const { play_id, position, question_id } = parsed.data;
-  const guess = clampGuess(parsed.data.guess_log);
 
   try {
     const play = await findPlayById(play_id);
@@ -57,7 +56,8 @@ export async function POST(req: Request) {
       return apiError("question_changed", "This round was just updated. Reload to see it.", 409);
     }
 
-    const s = scoreRound(guess, actualLog(answer.start_value, answer.end_value));
+    const guess = clampGuess(parsed.data.guess_log, answer.range);
+    const s = scoreRound(guess, actualLog(answer.start_value, answer.end_value), answer.range);
     const { data, error } = await adminClient().rpc("submit_guess", {
       p_play_id: play.id,
       p_player_id: user.id,

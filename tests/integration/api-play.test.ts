@@ -2,16 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { POST as guessPOST } from "@/app/api/guess/route";
 import { GET as meGET } from "@/app/api/me/route";
 import { POST as playPOST } from "@/app/api/play/route";
-import { actualLog, scoreRound } from "@/lib/scoring";
+import { GET as puzzleGET } from "@/app/api/puzzle/route";
+import { FULL_RANGE } from "@/lib/range";
 import { adminClient } from "@/lib/supabase/admin";
-import { cleanup, newPlayer, req, setupTestPuzzle, TEST_DATE, TEST_QUESTIONS } from "./fixtures";
+import { cleanup, expectedScore, newPlayer, req, setupTestPuzzle, TEST_DATE, TEST_NOW, TEST_QUESTIONS, testRange } from "./fixtures";
+import { get } from "./helpers";
 
 let qids: number[] = [];
 let A: Awaited<ReturnType<typeof newPlayer>>;
 let B: Awaited<ReturnType<typeof newPlayer>>;
 let playId = "";
 
-const expectedScore = (i: number, g: number) => scoreRound(g, actualLog(TEST_QUESTIONS[i]!.start_value, TEST_QUESTIONS[i]!.end_value));
 const guess = (cookie: string, body: Record<string, unknown>, now?: string) => guessPOST(req("/api/guess", { method: "POST", cookie, body, now }));
 
 beforeAll(async () => {
@@ -29,6 +30,33 @@ describe("players", () => {
   it("a players row is created by the auth trigger (deferred check from 2.2)", async () => {
     const { data } = await adminClient().from("players").select("id").eq("id", A.id).maybeSingle();
     expect(data?.id).toBe(A.id);
+  });
+});
+
+describe("guess ranges", () => {
+  it("each round carries its question's range; a question without bounds gets the full ÷1000…×1000", async () => {
+    const body = await (await puzzleGET(get(`/api/puzzle?date=${TEST_DATE}`, TEST_NOW))).json();
+    expect(body.rounds[0].range).toEqual({ lo: -1, hi: 1 }); // max_change 10 → ÷10 … ×10
+    for (const i of [0, 1, 2, 4]) expect(body.rounds[i].range).toEqual(testRange(i));
+    expect(body.rounds[3].range).toEqual(FULL_RANGE);
+  });
+
+  it("the database refuses a range the game can't play", async () => {
+    const db = adminClient();
+    const base = { ...TEST_QUESTIONS[0]!, slug: "itest-bad-range" };
+    const bad = [
+      { max_change: 2.6 }, // answer (×2.5) 96% of the way to the end
+      { max_change: 1.01 }, // narrower than ÷1.05 … ×1.05
+      { max_change: 5000 }, // wider than ÷1000 … ×1000
+      { max_change: 0 },
+      { max_change: -3 },
+    ];
+    for (const b of bad) {
+      const { error } = await db.from("questions").insert({ ...base, ...b });
+      expect(error?.code, JSON.stringify(b)).toBe("23514");
+    }
+    const { error } = await db.from("questions").insert({ ...base, max_change: null, status: "verified" });
+    expect(error?.code, "verified without a range").toBe("23514");
   });
 });
 

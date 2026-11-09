@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { MAX_TOTAL } from "@/lib/config";
 import { formatCountdown, nextLocalMidnight } from "@/lib/dates";
 import { multLabel } from "@/lib/format";
+import { epsilon } from "@/lib/range";
 import { shareText } from "@/lib/game/share";
 import type { StatsSummary } from "@/lib/game/storage";
 import type { Puzzle, RoundResult } from "@/lib/game/types";
@@ -75,7 +76,7 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
           return (
             <div className="row" key={r.position}>
               <span>{`${TIERS[r.tier].emoji} ${round?.prompt ?? ""}`}</span>
-              <span className="r">{`${multLabel(r.actual_log).big} · ${r.points}`}</span>
+              <span className="r">{`${multLabel(r.actual_log, round ? epsilon(round.range) : undefined).big} · ${r.points}`}</span>
             </div>
           );
         })}

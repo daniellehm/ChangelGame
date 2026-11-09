@@ -4,6 +4,7 @@
  * interchangeable.
  */
 import type { Format } from "../format";
+import type { GuessRange } from "../range";
 import type { TierId } from "../scoring";
 
 /** A round as served before lock-in: no answer fields. */
@@ -17,6 +18,8 @@ export interface PublicRound {
   start_value: number;
   end_year: number;
   format: Format;
+  /** The slider's ends as log10 multipliers (from the question's plausible end-value bounds). */
+  range: GuessRange;
 }
 
 export interface Puzzle {

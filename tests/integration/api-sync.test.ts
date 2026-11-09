@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { POST as playPOST } from "@/app/api/play/route";
 import { POST as syncPOST } from "@/app/api/sync/route";
-import { actualLog, scoreRound } from "@/lib/scoring";
 import { adminClient } from "@/lib/supabase/admin";
-import { cleanup, newPlayer, req, setupTestPuzzle, TEST_DATE, TEST_QUESTIONS } from "./fixtures";
+import { cleanup, expectedScore, newPlayer, req, setupTestPuzzle, TEST_DATE } from "./fixtures";
 
 let A: Awaited<ReturnType<typeof newPlayer>>;
 
@@ -34,7 +33,7 @@ describe("POST /api/sync", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("synced");
-    const total = guesses.reduce((a, g, i) => a + scoreRound(g.guess_log, actualLog(TEST_QUESTIONS[i]!.start_value, TEST_QUESTIONS[i]!.end_value)).points, 0);
+    const total = guesses.reduce((a, g, i) => a + expectedScore(i, g.guess_log).points, 0);
     const { data: play } = await adminClient().from("plays").select("source, total, completed_at").eq("id", body.play_id).single();
     expect(play).toMatchObject({ source: "local", total });
     expect(play!.completed_at).not.toBeNull();

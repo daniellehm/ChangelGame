@@ -79,8 +79,8 @@ export async function POST(req: Request) {
     for (const g of guesses) {
       const answer = await roundAnswer(puzzle.roundsDate, g.position);
       if (!answer) throw new Error(`round ${g.position} missing`);
-      const guess = clampGuess(g.guess_log);
-      const s = scoreRound(guess, actualLog(answer.start_value, answer.end_value));
+      const guess = clampGuess(g.guess_log, answer.range);
+      const s = scoreRound(guess, actualLog(answer.start_value, answer.end_value), answer.range);
       const { data, error: e } = await db.rpc("submit_guess", {
         p_play_id: play.id, p_player_id: user.id, p_position: g.position, p_question_id: answer.question_id,
         p_guess_log: guess, p_points: s.points, p_tier: s.tier, p_wrong_way: s.wrongWay,

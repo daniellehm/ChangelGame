@@ -1,9 +1,11 @@
 /**
  * Pure scoring module (SPEC §2). Shared by the server (authoritative) and the
- * client (previews + local-only fallback). Must stay identical to the prototype's
- * score()/tier() in reference/prototype.html.
+ * client (previews + local-only fallback). Each question has its own guess range
+ * (lib/range.ts, DECISIONS 2026-11-09); on the full ÷1000…×1000 range this is
+ * identical to the prototype's score()/tier() in reference/prototype.html.
  */
-import { FINAL_TITLES, MAX_POINTS_PER_ROUND, SCORING, SLIDER, TIER_CUTOFFS } from "./config";
+import { FINAL_TITLES, MAX_POINTS_PER_ROUND, TIER_CUTOFFS } from "./config";
+import { clampTo, epsilon, tolerance, type GuessRange } from "./range";
 
 export type TierId = "nailed" | "close" | "meh" | "off" | "wrong";
 
@@ -29,10 +31,10 @@ export interface RoundScore {
   tier: TierId;
 }
 
-/** Clamp a guess to the slider range. Non-finite input is rejected. */
-export function clampGuess(guessLog: number): number {
+/** Clamp a guess to the question's range. Non-finite input is rejected. */
+export function clampGuess(guessLog: number, range: GuessRange): number {
   if (!Number.isFinite(guessLog)) throw new RangeError("guess_log must be a finite number");
-  return Math.min(SLIDER.MAX, Math.max(SLIDER.MIN, guessLog));
+  return clampTo(range, guessLog);
 }
 
 /** a = log10(end / start). Both values must be > 0. */
@@ -42,8 +44,8 @@ export function actualLog(startValue: number, endValue: number): number {
 }
 
 /** True when both moves are beyond ε and point in opposite directions. */
-export function isWrongWay(guessLog: number, actual: number): boolean {
-  const e = SCORING.EPSILON;
+export function isWrongWay(guessLog: number, actual: number, range: GuessRange): boolean {
+  const e = epsilon(range);
   return Math.abs(actual) > e && Math.abs(guessLog) > e && Math.sign(guessLog) !== Math.sign(actual);
 }
 
@@ -55,11 +57,11 @@ export function tierFor(points: number, wrongWay: boolean): TierId {
   return "off";
 }
 
-/** Score one round. guessLog is clamped to the slider range first. */
-export function scoreRound(guessLog: number, actual: number): RoundScore {
-  const g = clampGuess(guessLog);
-  if (isWrongWay(g, actual)) return { points: 0, wrongWay: true, tier: "wrong" };
-  const points = Math.max(0, Math.round(MAX_POINTS_PER_ROUND * (1 - Math.abs(g - actual) / SCORING.SPAN)));
+/** Score one round. guessLog is clamped to the question's range first. */
+export function scoreRound(guessLog: number, actual: number, range: GuessRange): RoundScore {
+  const g = clampGuess(guessLog, range);
+  if (isWrongWay(g, actual, range)) return { points: 0, wrongWay: true, tier: "wrong" };
+  const points = Math.max(0, Math.round(MAX_POINTS_PER_ROUND * (1 - Math.abs(g - actual) / tolerance(range))));
   return { points, wrongWay: false, tier: tierFor(points, false) };
 }
 

@@ -1,26 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SLIDER } from "@/lib/config";
 import { multLabel } from "@/lib/format";
 import type { RoundResult } from "@/lib/game/types";
+import { epsilon, toPercent, type GuessRange } from "@/lib/range";
 import { TIERS } from "@/lib/scoring";
 import { confetti, useCountUp } from "./motion";
 
-/** Pin position on the track as a percentage (prototype's pos()). */
-export function pinPercent(l: number): number {
-  return ((Math.min(SLIDER.MAX, Math.max(SLIDER.MIN, l)) - SLIDER.MIN) / (SLIDER.MAX - SLIDER.MIN)) * 100;
-}
-
 interface Props {
   result: RoundResult;
+  /** The question's slider range: pins sit where they would on the slider. */
+  range: GuessRange;
   isLast: boolean;
   /** Count-up + confetti (false under reduced motion). */
   motion: boolean;
   onNext: () => void;
 }
 
-export function Reveal({ result, isLast, motion, onNext }: Props) {
+export function Reveal({ result, range, isLast, motion, onNext }: Props) {
+  const zero = `${toPercent(range, 0)}%`;
   const tier = TIERS[result.tier];
   const verdictRef = useRef<HTMLDivElement>(null);
   const [placed, setPlaced] = useState(false);
@@ -51,13 +49,13 @@ export function Reveal({ result, isLast, motion, onNext }: Props) {
       </div>
       <div className="bar" aria-hidden="true">
         <div className="track" />
-        <div className="mid" />
-        <div className="pin you" id="pinYou" style={{ left: placed ? `${pinPercent(result.guess_log)}%` : "50%" }}>
+        <div className="mid" style={{ left: zero }} />
+        <div className="pin you" id="pinYou" style={{ left: placed ? `${toPercent(range, result.guess_log)}%` : zero }}>
           YOU<b />
         </div>
-        <div className="pin real" id="pinReal" style={{ left: placed ? `${pinPercent(result.actual_log)}%` : "50%" }}>
+        <div className="pin real" id="pinReal" style={{ left: placed ? `${toPercent(range, result.actual_log)}%` : zero }}>
           <b />
-          <span id="pinRealLbl">{`REAL ${multLabel(result.actual_log).big}`}</span>
+          <span id="pinRealLbl">{`REAL ${multLabel(result.actual_log, epsilon(range)).big}`}</span>
         </div>
       </div>
       <p className="fact" id="fact">{result.fact}</p>

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PageShell } from "@/components/PageShell";
 import { TIER_CUTOFFS } from "@/lib/config";
 import { formatValue, multLabel } from "@/lib/format";
+import { rangeFromFactor } from "@/lib/range";
 import { actualLog, scoreRound, TIERS, type TierId } from "@/lib/scoring";
 import { stickerFor } from "@/lib/sticker";
 
@@ -11,10 +12,10 @@ export const metadata: Metadata = {
   description: "Guess how many times bigger or smaller a number from the past is now. Five rounds a day, free, no account.",
 };
 
-/* A worked example, scored with the real scoring module. */
-const EXAMPLE = { cat: "People", prompt: "World population", y0: 1975, v0: 4.07e9, y1: 2025, v1: 8.2e9, guess: Math.log10(2) };
+/* A worked example, scored with the real scoring module (same max_change as the question bank). */
+const EXAMPLE = { cat: "People", prompt: "World population", y0: 1975, v0: 4.07e9, y1: 2025, v1: 8.2e9, maxChange: 4, guess: Math.log10(2) };
 const exActual = actualLog(EXAMPLE.v0, EXAMPLE.v1);
-const exScore = scoreRound(EXAMPLE.guess, exActual);
+const exScore = scoreRound(EXAMPLE.guess, exActual, rangeFromFactor(EXAMPLE.maxChange));
 const exSticker = stickerFor(EXAMPLE.cat);
 
 const STEPS = [
