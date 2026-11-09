@@ -118,3 +118,10 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: `POST /api/reveal` for M2 (and the M3 offline fallback)
 **Decision:** M2 adds a stateless `POST /api/reveal { date, position, guess_log }`. It checks the date window, then returns that one round's answer and score, and stores nothing. The M2 client uses it on "Lock in" until M3's session-based `/api/guess` replaces it. M3's local-only fallback then reuses it, instead of putting every answer in the puzzle response (this refines decision item 7).
 **Why:** It's needed to switch the client to the API in M2 (task 2.7) before sessions exist. It keeps answers out of the page bundle and the puzzle response. Peeking costs one deliberate request per round, which was already accepted for the offline mode. Rate limits arrive in M3.
+
+### 2026-11-09: M3 auth setup (Dani's choices) and how sign-up is rate-limited
+**Decision:**
+- Supabase auth settings are applied by Dani from a dashboard checklist (option b), not via a personal access token. That avoids sharing an account-wide key.
+- Turnstile moves to M6 (launch hardening). M3 keeps a slot for it in `POST /api/session` but doesn't require it.
+- `POST /api/session` signs players in anonymously on the server with the **secret** key, forwarding the player's IP in the `Sb-Forwarded-For` header. Supabase then applies its anonymous sign-in limit (30/hour) **per player IP**, not per Vercel server, which would otherwise throttle everyone. This needs "IP Address Forwarding" enabled in Supabase (checklist). Supabase's own per-IP limit replaces our planned Upstash limit for sign-ups. Upstash still covers guesses and puzzle reads.
+**Why:** Dani asked to use the checklist and to defer Turnstile. Supabase's docs say server-side sign-ins are rate-limited by the server's IP unless `Sb-Forwarded-For` is sent with a secret key and forwarding is enabled.
