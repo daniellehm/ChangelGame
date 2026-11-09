@@ -14,7 +14,7 @@ PROGRESS.md says where we are and what's next. DECISIONS.md records every choice
 - Build one milestone at a time, in the order in SPEC.md section 12. At the end of each milestone, stop and wait for Dani's go-ahead.
 - Match the prototype exactly for look, feel and scoring.
 - Write the tests the spec lists as you go. Run them before calling a task done.
-- Commit to git after each completed task with a clear message (e.g. "M2: add puzzle date-window check").
+- Commit to git after each completed task with a clear message (e.g. "M2: add puzzle date-window check"), then push. Each milestone has its own branch (e.g. `m1-scaffold-visuals`), pushed to GitHub after every commit and merged into `main` when Dani approves the milestone. Never commit straight to `main`.
 - Never put secrets in client code or commit them. Use .env.local and keep .env.example current.
 - If something in the spec is unclear or contradictory, pick the simplest option, log it in DECISIONS.md, and tell Dani.
 - When you show Dani code changes, show them inline in the chat.

@@ -68,3 +68,9 @@ Each item is applied in the milestone where it comes up.
 ### 2026-11-09: Header menu button is 34 px (hit area 44 px)
 **Decision:** The menu button is drawn at 34 × 34 px, the same as the logo mark, and an invisible `::after` extends its touch area to 44 px.
 **Why:** A visible 44 px button would make the header taller than the prototype's and push every screen down, which breaks the screenshot match. The spec's 44 px minimum is for the slider. The larger hit area still meets it here.
+
+### 2026-11-09: Font fallbacks and weights mirror what the prototype actually renders
+**Decision:**
+- `next/font` runs with `adjustFontFallback: false`, and its fallbacks are the prototype's stacks (`system-ui, sans-serif` / `monospace`).
+- Bricolage text that is "bold" (700) is set to 800: `h1`–`h3`, `b`, `strong`, `.btn`, `.nudge button`, `.toast`. JetBrains Mono keeps 700, because it has a real 700 face.
+**Why:** Found by the parity test. (1) → and ≈ aren't in either font's subsets. The prototype falls back to `system-ui` for them, but `next/font`'s auto fallback is a metric-adjusted Arial, which drew a thin arrow and shifted the year cards. (2) The prototype's Google Fonts request declares only 400/600/800 faces, so the browser renders every 700 at 800. With both fixed, all 14 parity screenshots differ by 0 pixels. Cost: no metric-matched fallback during font swap. The fonts are preloaded, so any layout shift is rare. We'll re-check it in the M6 Lighthouse pass.
