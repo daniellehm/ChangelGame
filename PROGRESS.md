@@ -2,12 +2,12 @@
 
 ## Current status
 
-**M2 complete in code (2026-11-09), waiting on one Vercel setting from Dani, then review.** All tasks 2.1–2.7 done and both acceptance criteria met locally. The Vercel preview needs `SUPABASE_SERVICE_ROLE_KEY` added by Dani (see Needs from Dani); then verify the preview, then stop for Dani's M2 review.
+**M2 complete in code (2026-11-09), waiting on one Vercel setting from Dani, then review.** All tasks 2.1–2.7 done and both acceptance criteria met locally. Vercel env complete; verifying the preview, then stop for Dani's M2 review.
 
 ## Needs from Dani
 
 **Now:**
-- [ ] **Blocks the M2 preview:** add `SUPABASE_SERVICE_ROLE_KEY` in Vercel → project changel → Settings → Environment Variables. Value = the same `sb_secret_…` key as in `.env.local`, type **Sensitive**, environments **Production + Preview**. (Claude Code blocks Claude from reading secrets, so this one is manual.) The other 3 vars are already set.
+- [x] Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel (done by Dani 2026-11-09; Sensitive, all environments)
 - [x] Review M1 (approved 2026-11-09)
 - [x] Pick which design-playground ideas to keep (2026-11-09: all five, but keep the round label; see DECISIONS)
 - [x] Go-ahead on the M1 plan + spec fixes (2026-11-09, all accepted, see DECISIONS.md)
@@ -136,6 +136,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: Dani added `SUPABASE_SERVICE_ROLE_KEY` to Vercel (Sensitive; production, preview, development). All 4 env vars are mirrored.
 - 2026-11-09: 2.7 Client on the API: `lib/game/api-source.ts` (GET /api/puzzle, POST /api/reveal, typed load errors), `components/LoadError.tsx` (device clock / no puzzle / offline, with retry). Fixture + fixture source deleted (no answers in JS bundles). E2E pins the server clock to the browser clock (`setClock`, dev server runs with `ALLOW_TEST_CLOCK=1`). New `tests/e2e/api.spec.ts`: no answer in any document/script/API response before its lock-in, one reveal per lock-in, clock-error and no-puzzle screens. Visual baselines refreshed (values now rounded to 3 s.f.). 166 unit + 24 integration + 21 E2E + 2 visual pass. Vercel env: URL, publishable key, LAUNCH_DATE set; the secret key is pending (Dani).
 - 2026-11-09: 2.6 API: `GET /api/puzzle` (Zod, window 403, 404 if not ready, 5-min edge cache on 200s only, number from LAUNCH_DATE, rerun-aware) and `POST /api/reveal` (window + 6 h grace, clamp, one round's answer + score, no-store). `lib/puzzles/repo.ts` selects public columns and answers in separate functions. Test clock header (`ALLOW_TEST_CLOCK=1`, never on Vercel production). New `npm run test:integration` (real DB): 24 pass, incl. no answer fields or values in any puzzle response. 176 unit tests pass.
 - 2026-11-09: 2.5 Date window: `puzzleWindow`, `isWindowOpen`, `isGuessAcceptable` (6 h grace), `servableDates` in `lib/dates.ts`; `tests/unit/dates-window.test.ts` covers the window boundaries, that every real local date in UTC−12…+14 is always servable, and all 7 rows of the SPEC §4 edge-case table. 172 unit tests pass.
