@@ -204,7 +204,7 @@ Each item is applied in the milestone where it comes up.
   - The reveal pins use the same positions. The readout's pop now fires on crossing a tick rather than a power of ten.
 - **Seed content:** k was chosen for all 20 questions from plausibility, as round numbers (1.1, 2, 4, 5, 8, 10, 20 … 1000). Answers sit 32–84% of the way out.
 - **For M5:** the generators must propose k *without seeing the answer*, so how far out the answer sits leaks nothing. Then the rules above are checked, and k is raised if the answer is too close to the end.
-- **Cleanup pending Dani's OK:** the first version's `min_end_value`/`max_end_value` columns are still in the table, unused, and marked UNUSED (dropping columns is a delete).
+- **Cleanup:** the first version's `min_end_value`/`max_end_value` columns were dropped by Dani in the SQL editor on 2026-11-09 (migration file `drop_unused_end_value_bounds`).
 
 **Why:** Dani: with ×1000 available on "UN members since 1945", a silly ×10 still scored well. With k = 8, the scores change (real answer ×3.8):
 

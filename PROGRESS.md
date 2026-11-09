@@ -9,7 +9,7 @@
 **Now:**
 - [x] M4 reviewed and approved (2026-11-09)
 - [x] Test the per-question ranges on the preview and approve the merge (2026-11-09)
-- [ ] Drop the unused `min_end_value`/`max_end_value` columns: Dani said yes, but the MCP permission check declined `alter table public.questions drop column min_end_value, drop column max_end_value;`. Dani approves the prompt or runs it in the Supabase SQL editor, then save it as a migration file.
+- [x] Dropped the unused `min_end_value`/`max_end_value` columns (Dani, SQL editor, 2026-11-09; saved as a migration file, not in the remote migration history)
 - [ ] Test relative scoring on the preview (branch `relative-scoring`) and approve the merge
 - [ ] Go-ahead for M5
 - [ ] Open questions: delete the 2 stray anonymous test players from the duplicate-session bug? Add `noindex` to changel.app until launch?
@@ -147,6 +147,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 ## Done log
 
 _Newest first._
+
+- 2026-11-09: Unused range columns dropped by Dani in the SQL editor; recorded as `supabase/migrations/*_drop_unused_end_value_bounds.sql` (`if exists`, safe to re-run).
 
 - 2026-11-09: Relative scoring (branch `relative-scoring`): tolerance = ⅓ of the slider on every question. The prototype-parity sweep is replaced by scale-invariance tests. Unit 205, integration 60, E2E 26 pass. Every visual baseline was regenerated: the 0.1% diff threshold had hidden small number changes.
 - 2026-11-09: Per-question ranges approved by Dani and merged into `main`.
