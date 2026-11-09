@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { addDays, localDate, puzzleNumber } from "@/lib/dates";
 import { fetchMe } from "@/lib/game/session-client";
-import { loadStats, summarize, type StatsSummary, type StoredStats } from "@/lib/game/storage";
+import { loadStats, summarize, type StatsEntry, type StatsSummary, type StoredStats } from "@/lib/game/storage";
+import { DayResult } from "./DayResult";
 import { TIERS, type TierId } from "@/lib/scoring";
 
 const ORDER: TierId[] = ["nailed", "close", "meh", "off", "wrong"];
@@ -20,6 +21,8 @@ export function StatsView({ launch }: { launch: string }) {
   const [data, setData] = useState<Loaded | null>(null);
   // Signed into a real account? (null = not known yet.)
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  // The day whose pop-up is open (a played square on the strip).
+  const [open, setOpen] = useState<StatsEntry | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -88,13 +91,17 @@ export function StatsView({ launch }: { launch: string }) {
       </div>
 
       <h2>Last {STRIP_DAYS} days</h2>
-      <div className="strip" role="img" aria-label={`Played ${playedInStrip} of the last ${STRIP_DAYS} days`}>
+      <div className="strip" role="group" aria-label={`Played ${playedInStrip} of the last ${STRIP_DAYS} days`}>
         {days.map((d) => {
           const p = byDate.get(d);
-          return <i key={d} className={p ? "played" : ""} title={p ? `${d}: ${p.total}/500` : `${d}: not played`} />;
+          return p ? (
+            <button key={d} type="button" className="played" aria-label={`${d}: ${p.total} points. Show how you did`} onClick={() => setOpen(p)} />
+          ) : (
+            <i key={d} title={`${d}: not played`} />
+          );
         })}
       </div>
-      {signedIn === true && <p className="note">Your stats are saved to your account, so they follow you to any device you sign in on.</p>}
+      {open && <DayResult entry={open} onClose={() => setOpen(null)} />}
       {signedIn === false && (
         <p className="note">
           Stats are kept on this device. <Link href="/account" className="text-link">Add your email</Link> to keep your streak on any device.
