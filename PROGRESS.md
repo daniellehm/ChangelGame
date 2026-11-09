@@ -2,12 +2,13 @@
 
 ## Current status
 
-**Milestone 2 complete (2026-11-09). Waiting for Dani's review and go-ahead.** Preview: https://changel-git-m2-database-api-releasedani.vercel.app (Vercel login required). On approval: merge `m2-database-api` into `main`, then M3 (anonymous play + server scoring) on branch `m3-anonymous-play`. M3 first needs: Supabase auth settings (Dani: personal access token or dashboard checklist) and Cloudflare Turnstile keys.
+**M2 approved by Dani and merged to `main` (2026-11-09).** Next: M3 (anonymous play + server scoring) on branch `m3-anonymous-play`, once Dani gives the go-ahead. M3 first needs: Supabase auth settings (personal access token or dashboard checklist) and Cloudflare Turnstile keys.
 
 ## Needs from Dani
 
 **Now:**
-- [ ] Review M2 (preview link in Current status) and give the go-ahead for M3
+- [x] Review M2 (approved 2026-11-09)
+- [ ] Go-ahead for M3, plus a choice for Supabase auth settings: a personal access token, or a dashboard checklist
 - [x] Add `SUPABASE_SERVICE_ROLE_KEY` in Vercel (done by Dani 2026-11-09; Sensitive, all environments)
 - [x] Review M1 (approved 2026-11-09)
 - [x] Pick which design-playground ideas to keep (2026-11-09: all five, but keep the round label; see DECISIONS)
@@ -63,7 +64,7 @@ Next.js app, tokens, fonts, all game screens ported from the prototype, running 
 
 Migrations, RLS, seed import, `GET /api/puzzle`, date window.
 **Milestone accepted when:** answers are absent from every network response before lock-in, and all date unit tests pass.
-**Status:** both met (E2E `tests/e2e/api.spec.ts` spies on every response; all date tests pass). Preview verified live (sin1): 200 with no answers for today, 403 for a future date, 400 for a bad date. Awaiting Dani's review.
+**Status:** both met (E2E `tests/e2e/api.spec.ts` spies on every response; all date tests pass). Preview verified live (sin1). ✅ Approved by Dani and merged to `main` on 2026-11-09.
 
 - [x] 2.1 `supabase/migrations` set-up (applied via MCP, see DECISIONS); `.env.local` written (URL, publishable key; secret key from Dani). *Accept:* `list_migrations` matches the repo.
 - [x] 2.2 Core schema: players (+ auth trigger), questions, puzzles, puzzle_rounds, plays, guesses, round_stats, merge_tokens, question_edits, with all constraints from SPEC section 6. *Accept:* constraint tests (bad values rejected); Supabase advisors clean.
@@ -137,6 +138,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-09: M2 approved by Dani and merged into `main`.
 - 2026-11-09: M2 preview verified on Vercel (functions in sin1): `/api/puzzle` 200 without answers for an open date, 403 `puzzle_not_available` for a future date, 400 for an invalid date. **M2 complete.**
 - 2026-11-09: Dani added `SUPABASE_SERVICE_ROLE_KEY` to Vercel (Sensitive; production, preview, development). All 4 env vars are mirrored.
 - 2026-11-09: 2.7 Client on the API: `lib/game/api-source.ts` (GET /api/puzzle, POST /api/reveal, typed load errors), `components/LoadError.tsx` (device clock / no puzzle / offline, with retry). Fixture + fixture source deleted (no answers in JS bundles). E2E pins the server clock to the browser clock (`setClock`, dev server runs with `ALLOW_TEST_CLOCK=1`). New `tests/e2e/api.spec.ts`: no answer in any document/script/API response before its lock-in, one reveal per lock-in, clock-error and no-puzzle screens. Visual baselines refreshed (values now rounded to 3 s.f.). 166 unit + 24 integration + 21 E2E + 2 visual pass. Vercel env: URL, publishable key, LAUNCH_DATE set; the secret key is pending (Dani).
