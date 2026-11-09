@@ -36,7 +36,10 @@ export default defineConfig({
   webServer: {
     command: `npx next dev -p ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    // Pins the server clock to the browser's mocked clock via a header (lib/api/clock.ts).
+    env: { ALLOW_TEST_CLOCK: "1" },
+    // Never reuse: a server started without ALLOW_TEST_CLOCK would make date-window tests flaky.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

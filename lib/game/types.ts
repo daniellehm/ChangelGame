@@ -21,6 +21,8 @@ export interface Puzzle {
   date: string; // YYYY-MM-DD (player's local date)
   number: number;
   theme: string | null;
+  /** Served from an earlier puzzle (fallback, SPEC §8). */
+  rerun?: boolean;
   rounds: PublicRound[];
 }
 
@@ -36,11 +38,13 @@ export interface RoundResult {
   fact: string;
   source_name: string;
   source_url: string | null;
+  /** Question actually answered (server results only). */
+  question_id?: number;
 }
 
 /**
- * Where the game gets puzzles and scores from. M1: hard-coded fixture.
- * M2+: the API. M3 local-only fallback: answers + lib/scoring on the client.
+ * Where the game gets puzzles and scores from. M2: the API (`api-source.ts`).
+ * M3 adds the session-backed source (/api/play, /api/guess).
  */
 export interface GameSource {
   loadPuzzle(date: string): Promise<Puzzle>;

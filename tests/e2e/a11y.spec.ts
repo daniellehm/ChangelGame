@@ -1,11 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { next, playRound, syd } from "./helpers";
+import { next, playRound, syd, setClock } from "./helpers";
 
 const DAY = "2026-11-10";
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(syd(`${DAY}T09:00:00`));
+  await setClock(page, syd(`${DAY}T09:00:00`));
 });
 
 /**
@@ -27,6 +27,7 @@ const KNOWN_CONTRAST = /#meta|\.meta|#verdict|#vText|#vPts|\.verdict|\.pts/;
 
 test("keyboard-only: a full game can be played without a pointer", async ({ page }) => {
   await page.goto("/");
+  await expect(page.locator("#startBtn")).toHaveText("Play #2"); // puzzle loaded from the API
   await page.keyboard.press("Tab"); // logo
   await page.keyboard.press("Tab"); // menu
   await page.keyboard.press("Tab"); // Play

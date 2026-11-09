@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { next, playRound, syd } from "./helpers";
+import { next, playRound, syd, setClock } from "./helpers";
 
 const GUESSES = [0.3, -1.2, 0.05, 0.6, -0.02];
 const DAY1 = "2026-11-10"; // puzzle #2 (launch 2026-11-09)
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.setFixedTime(syd(`${DAY1}T09:00:00`));
+  await setClock(page, syd(`${DAY1}T09:00:00`));
 });
 
 test("intro shows the trimmed copy", async ({ page }) => {
@@ -89,7 +89,7 @@ test("refreshing mid-game resumes at the next unplayed round", async ({ page }) 
 });
 
 test("a game started before midnight finishes after it; the new puzzle is offered after", async ({ page }) => {
-  await page.clock.setFixedTime(syd(`${DAY1}T23:58:00`));
+  await setClock(page, syd(`${DAY1}T23:58:00`));
   await page.goto("/");
   await page.locator("#startBtn").click();
   await playRound(page, DAY1, 0, 0.1);
@@ -97,7 +97,7 @@ test("a game started before midnight finishes after it; the new puzzle is offere
   await playRound(page, DAY1, 1, 0.1);
   await next(page);
 
-  await page.clock.setFixedTime(syd("2026-11-11T00:03:00"));
+  await setClock(page, syd("2026-11-11T00:03:00"));
   await page.reload();
   await expect(page.locator("#meta")).toContainText("#2"); // still yesterday's puzzle
   for (let i = 2; i < 5; i++) {
@@ -120,7 +120,7 @@ test("returning player next day skips the intro and builds a streak of 2", async
   }
   await expect(page.locator("#stStreak")).toHaveText("1");
 
-  await page.clock.setFixedTime(syd("2026-11-11T08:00:00"));
+  await setClock(page, syd("2026-11-11T08:00:00"));
   await page.reload();
   await expect(page.locator("#intro")).toHaveCount(0);
   for (let i = 0; i < 5; i++) {
