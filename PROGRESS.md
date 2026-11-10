@@ -191,10 +191,10 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 **Launch checklist** (SPEC §12):
 - [ ] `LAUNCH_DATE` set and puzzle #1 previewed (Dani: the date, and whether #1 is themed). Then delete the dev puzzles before it (Dani's OK).
 - [x] changel.app DNS on Vercel, HTTPS, www redirect (verified 2026-11-10)
-- [ ] Supabase backups: the project is on the **free plan (no restorable backups)**. Options: Pro ($25/month, daily backups), or a nightly `pg_dump` by Claude to private storage.
+- [ ] Backups: none for now (Dani 2026-11-10, DECISIONS). Revisit when the player count grows (Supabase Pro, $25/month, daily backups).
 - [x] Auth emails branded (M4). Google OAuth: not used (email only, Dani 2026-11-09).
 - [ ] 60 days scheduled (needs Anthropic credit), and a real admin alert email tested (Claude can send one test to releasedani@gmail.com on request).
-- [ ] Turnstile keys set (Needs from Dani), Sentry DSN (optional).
+- [x] Turnstile keys set (2026-11-10). Sentry: skipped for now (Dani); add at launch or when problems are reported (steps in this file's history: sentry.io → Next.js project `changel` → DSN → Vercel `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` as Config, Production + Preview).
 - [ ] Submit to Listdle, Alldle, Playlin, Dle Hunt on launch day.
 
 ---

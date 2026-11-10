@@ -591,3 +591,11 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - If the sender has a session, their player id is attached, so data or deletion requests can be matched to their games without an email.
   - Messages are stored in `contact_messages` (migration `contact_messages`; service role only) and shown in **Admin → Messages** (new / done), with a "Messages" tile on the admin home.
 - **Privacy text:** data requests and complaints go through the form ("leave an email so we can send it"). Contact messages are deleted within a year of being handled.
+
+## 2026-11-10: No database backups for now (Dani)
+
+**Decision:** no backups while there are few players. Supabase's free plan has no restorable backups, and Dani doesn't want a GitHub-based backup. Revisit when the player count grows; the simplest path then is Supabase Pro (daily backups, one-click restore).
+
+**Risk accepted:** a bad migration, a bug or an accidental delete would be permanent. Lost content (the question bank) can be regenerated at Claude cost; lost player history can't.
+
+**Mitigation in the meantime:** Claude asks before any destructive database change (CLAUDE.md rule), and migrations stay additive where possible.
