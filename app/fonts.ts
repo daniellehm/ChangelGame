@@ -22,6 +22,8 @@ export const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["500", "700"],
   display: "swap",
+  // Labels and numbers only, never the first big paint: don't let it compete with the page (M6 6.9).
+  preload: false,
   adjustFontFallback: false,
   fallback: ["monospace"],
   variable: "--font-mono",

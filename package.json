@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node --env-file-if-exists=.env.local scripts/check-bundle-secrets.mjs",
+    "build": "next build && node --env-file-if-exists=.env.local scripts/check-bundle-secrets.mjs && node scripts/check-bundle-budget.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -24,7 +24,8 @@
     "content:check-smoke": "tsx --env-file=.env.local scripts/content-check-smoke.ts",
     "content:fill-days": "tsx --env-file=.env.local scripts/fill-days.ts",
     "content:apply-edits": "tsx --env-file=.env.local scripts/apply-edits.ts",
-    "check:secrets": "node --env-file-if-exists=.env.local scripts/check-bundle-secrets.mjs"
+    "check:secrets": "node --env-file-if-exists=.env.local scripts/check-bundle-secrets.mjs",
+    "check:budget": "node scripts/check-bundle-budget.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",

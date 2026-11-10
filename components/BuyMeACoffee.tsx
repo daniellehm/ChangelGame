@@ -30,14 +30,27 @@ const ATTRS: Record<string, string> = {
 export function BuyMeACoffee() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
-    if (document.querySelector('script[data-name="BMC-Widget"]')) return; // once per page load
-    const s = document.createElement("script");
-    for (const [k, v] of Object.entries(ATTRS)) s.setAttribute(k, v);
-    s.src = SRC;
-    s.async = true;
-    s.onload = () => window.dispatchEvent(new Event("DOMContentLoaded"));
-    document.documentElement.classList.add("has-bmc");
-    document.body.appendChild(s);
+    // Third-party, not needed to play: load it once the page is idle after loading, so it
+    // never competes with the game's first paint (M6 6.9, Lighthouse).
+    let cancelled = false;
+    const add = () => {
+      if (cancelled || document.querySelector('script[data-name="BMC-Widget"]')) return; // once per page load
+      const s = document.createElement("script");
+      for (const [k, v] of Object.entries(ATTRS)) s.setAttribute(k, v);
+      s.src = SRC;
+      s.async = true;
+      s.onload = () => window.dispatchEvent(new Event("DOMContentLoaded"));
+      document.documentElement.classList.add("has-bmc");
+      document.body.appendChild(s);
+    };
+    const idle = () => ("requestIdleCallback" in window ? window.requestIdleCallback(add, { timeout: 4000 }) : setTimeout(add, 2000));
+    const later = () => setTimeout(idle, 1500);
+    if (document.readyState === "complete") later();
+    else window.addEventListener("load", later, { once: true });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", later);
+    };
   }, []);
   return null;
 }

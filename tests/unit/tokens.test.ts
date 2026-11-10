@@ -8,7 +8,7 @@ const rest = css.replace(rootBlock, "");
 describe("design tokens", () => {
   it("defines the spec tokens with the spec values", () => {
     const tokens: Record<string, string> = {
-      "--bg": "#f6f1e7", "--ink": "#16130f", "--muted": "#7a7166", "--card": "#fffdf8",
+      "--bg": "#f6f1e7", "--ink": "#16130f", "--muted": "#6e665b" /* spec #7a7166, darkened for AA (DECISIONS item 12) */, "--card": "#fffdf8",
       "--line": "#e3dacb", "--up": "#ff5a36", "--down": "#2f7cf6",
       "--g": "#2bb673", "--y": "#f3c13a", "--o": "#ff8a3d", "--r": "#e5484d",
     };

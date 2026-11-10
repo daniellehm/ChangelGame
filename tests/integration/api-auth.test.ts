@@ -149,7 +149,7 @@ describe("M4 acceptance: second device signs in and merges", () => {
 
     const out = await signoutPOST(post("/api/auth/signout", jar, {}));
     jar.update(out);
-    expect((await meGET(req("/api/me", { cookie: jar.header() }))).status).toBe(401);
+    expect((await meGET(req("/api/me", { cookie: jar.header() }))).status).toBe(204); // no session: nothing to show
   });
 
   it("a merge token can't be reused", async () => {

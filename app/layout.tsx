@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${bricolage.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
-        {children}
+        <main>{children}</main>
         <BuyMeACoffee />
       </body>
     </html>

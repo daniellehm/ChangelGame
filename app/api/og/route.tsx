@@ -13,7 +13,7 @@ import { clientIp } from "@/lib/supabase/request";
 import type { TierId } from "@/lib/scoring";
 
 /** Token colours (app/globals.css); Satori can't read CSS variables. */
-const C = { bg: "#f6f1e7", ink: "#16130f", muted: "#7a7166", card: "#fffdf8", line: "#e3dacb", up: "#ff5a36" };
+const C = { bg: "#f6f1e7", ink: "#16130f", muted: "#6e665b", card: "#fffdf8", line: "#e3dacb", up: "#ff5a36" };
 /** Same colours as the share text's emoji squares (🟩🟨🟧🟥). */
 const SQUARE: Record<TierId, string> = { nailed: "#2bb673", close: "#f3c13a", meh: "#ff8a3d", off: "#e5484d", wrong: "#e5484d" };
 

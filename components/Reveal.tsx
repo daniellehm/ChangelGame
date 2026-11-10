@@ -48,7 +48,7 @@ export function Reveal({ result, range, isLast, motion, onNext, playId = null, c
 
   return (
     <div className="reveal show" id="reveal">
-      <div className="verdict" id="verdict" ref={verdictRef} tabIndex={-1} style={{ background: tier.color }} aria-describedby="revealAnnounce">
+      <div className="verdict" id="verdict" ref={verdictRef} tabIndex={-1} style={{ background: tier.color, color: tier.text }} aria-describedby="revealAnnounce">
         <span id="vText">{tier.label}</span>
         <span className="pts" id="vPts">{`+${points}`}</span>
       </div>

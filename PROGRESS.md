@@ -184,7 +184,21 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.6 Sentry client + server. (Inert until a DSN is set: `instrumentation.ts`, lazy `instrumentation-client.ts`.)
 - [x] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output. (Turnstile inert until keys are set; new `session`/`account`/`og` limits; `npm run build` fails on a leaked secret.)
 - [x] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play). (`/privacy`, `/terms`, `robots.ts`, `sitemap.ts`, title template; E2E `seo.spec.ts`.)
-- [ ] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist.
+- [x] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist. (Mobile 95–97 performance, 100 accessibility on every page; AA contrast; `npm run build` enforces secrets + JS budget; domain verified.)
+
+**M6 acceptance:**
+- [x] Lighthouse mobile ≥ 95: verified locally on a production build. Re-check on changel.app after the merge.
+- [ ] The share link unfurls in iMessage, WhatsApp and X: the tags and image are tested. Unfurlers can't open previews (Vercel login), so this needs one real test on changel.app after the merge.
+- [ ] 60 days of verified puzzles scheduled: blocked by Anthropic credit. Now: 9–14 Nov, with 15–16 Nov empty.
+
+**Launch checklist** (SPEC §12):
+- [ ] `LAUNCH_DATE` set and puzzle #1 previewed (Dani: the date, and whether #1 is themed). Then delete the dev puzzles before it (Dani's OK).
+- [x] changel.app DNS on Vercel, HTTPS, www redirect (verified 2026-11-10)
+- [ ] Supabase backups: the project is on the **free plan (no restorable backups)**. Options: Pro ($25/month, daily backups), or a nightly `pg_dump` by Claude to private storage.
+- [x] Auth emails branded (M4). Google OAuth: not used (email only, Dani 2026-11-09).
+- [ ] 60 days scheduled (needs Anthropic credit), and a real admin alert email tested (Claude can send one test to releasedani@gmail.com on request).
+- [ ] Turnstile keys set (Needs from Dani), Sentry DSN (optional), hello@changel.app receiving mail.
+- [ ] Submit to Listdle, Alldle, Playlin, Dle Hunt on launch day.
 
 ---
 

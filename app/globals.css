@@ -4,7 +4,7 @@
  * Font families come from next/font (see app/fonts.ts) via --font-sans / --font-mono.
  */
 :root{
-  --bg:#f6f1e7; --ink:#16130f; --muted:#7a7166; --card:#fffdf8; --line:#e3dacb;
+  --bg:#f6f1e7; --ink:#16130f; --muted:#6e665b; --card:#fffdf8; --line:#e3dacb;
   --up:#ff5a36; --down:#2f7cf6; --g:#2bb673; --y:#f3c13a; --o:#ff8a3d; --r:#e5484d;
   /* Literal colours from the prototype, tokenised (DECISIONS.md 2026-11-09). */
   --ink-2:#3b352d;          /* body copy: intro p, fact */

@@ -551,3 +551,32 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - **Titles:** the default is the SPEC §10 title "Changel — the daily game about how much the world changed", with the template "%s · Changel". There's a new description and canonical URLs.
 - **`robots.txt`** disallows `/admin`, `/api/`, `/account`, `/stats` and `/auth`, and points at `/sitemap.xml` (home, how to play, privacy, terms). Stats and Account are also `noindex`.
 - These pages are a plain-language starting point, not legal advice. Dani should have them reviewed before launch if the game grows.
+
+## 2026-11-10: M6 6.9: Lighthouse, JS budget, launch checks
+
+**Decision:**
+- **Contrast (DECISIONS item 12, done):** verdict text is ink on the green, yellow and orange bars (7:1+), and white on red (3.9:1, AA for large bold text). `--muted` is `#6e665b` (was `#7a7166`; 5.0:1 on `--bg`). The axe test now requires zero contrast failures on every screen.
+- **Lighthouse fixes:**
+  - a `<main>` landmark around every page;
+  - JetBrains Mono isn't preloaded (labels only), so it doesn't compete with the first paint;
+  - the Buy Me a Coffee widget loads only when the page is idle after `load`.
+
+  `/api/me` with no session now returns **204** instead of 401: no session is normal on Stats and Account, and the 401 showed as a console error.
+- **Results:** Lighthouse 13.5 mobile, local production build.
+
+  | Page | Performance | Accessibility | Best practices | SEO |
+  | --- | --- | --- | --- | --- |
+  | Home | 97 | 100 | 100 | 100 |
+  | How to play | 97 | 100 | 100 | 100 |
+  | Privacy | 97 | 100 | 100 | 100 |
+  | Shared link | 96 | 100 | 100 | 100 |
+  | Stats | 96 | 100 | | 69 (deliberately noindex) |
+  | Account | 95 | 100 | | 69 (deliberately noindex) |
+
+- **JS budget:** SPEC §11's "under 120 KB gzipped" can't hold for the total, because Next 16 + React 19's shared runtime alone is ~129 KB gzipped. `npm run build` now runs `scripts/check-bundle-budget.mjs`:
+  - the game page's own chunks must stay ≤ 45 KB (now 22 KB);
+  - the total ≤ 170 KB (now 151 KB);
+  - lazy chunks (Sentry, Turnstile) aren't counted.
+
+  Lighthouse ≥ 95 stays the acceptance measure.
+- **Domain:** changel.app serves HTTPS with HSTS (2 years); `www.` and `http://` 308-redirect to `https://changel.app`.

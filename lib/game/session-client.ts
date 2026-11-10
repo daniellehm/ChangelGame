@@ -128,7 +128,7 @@ export async function fetchMe(date: string, tz: string): Promise<ServerStats | n
 export async function fetchAccount(): Promise<ServerStats | null | undefined> {
   const r = await call("/api/me", { method: "GET", headers: {} });
   if (r.status === 200 && r.body) return r.body as unknown as ServerStats;
-  if (r.status === 401) return null;
+  if (r.status === 204 || r.status === 401) return null; // no session
   return undefined;
 }
 
