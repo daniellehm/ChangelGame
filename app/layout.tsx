@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://changel.app"),
   title: "Changel — how much did it change?",
   description: "The daily game about how much the world changed.",
+  // Default link preview for every page; a shared result (?r=) overrides it (app/page.tsx).
+  openGraph: { siteName: "Changel", type: "website", images: [{ url: "/api/og", width: 1200, height: 630, alt: "Changel: how much did it change?" }] },
+  twitter: { card: "summary_large_image", images: ["/api/og"] },
 };
 
 export const viewport: Viewport = {

@@ -433,3 +433,14 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - `metadataBase` is `https://changel.app`.
 
 **Why:** SPEC §10 asks for one-tap sharing that unfurls with the result; these are the simplest shapes that do it.
+
+## 2026-11-10: M6 6.2: share images
+
+**Decision:**
+- **`/api/og`** (Node runtime, `next/og`) renders 1200×630 PNGs: the game's card (paper background, ink border, hard offset shadow, logo), plus either a shared result (puzzle number, score/500, five coloured squares, "Can you beat it?") or, without a valid code, the default "How much did it change?" card.
+  - Squares use the share emoji's colours (🟩 `--g`, 🟨 `--y`, 🟧 `--o`, 🟥 `--r`), with no text in them; the score is in words beside them.
+- **Fonts:** static TTFs of Bricolage Grotesque 800 (opsz 96) and JetBrains Mono 700 are committed in `assets/fonts/` (OFL). Satori can't read the site's WOFF2 or variable fonts. `outputFileTracingIncludes` ships them with the route.
+- **Caching:** an image depends only on its code, so it's `public, s-maxage=31536000, immutable`.
+- **Every page** has the default card as its OG/Twitter image (`summary_large_image`); a shared result overrides it.
+
+**Why:** SPEC §10. One renderer for both cards keeps the look consistent.

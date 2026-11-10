@@ -84,5 +84,5 @@ test("a bad ?r= code is ignored", async ({ page }) => {
   await page.goto("/?r=c-0-00000");
   await expect(page.locator("#startBtn")).toBeVisible();
   await expect(page.locator("#friendLine")).toHaveCount(0);
-  await expect(page.locator('meta[property="og:image"]')).toHaveCount(0);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://changel.app/api/og"); // the default card
 });
