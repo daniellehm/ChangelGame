@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { LogoMark } from "../LogoMark";
 
 export const ADMIN_NAV = [
   { href: "/admin", label: "Home" },
@@ -59,7 +60,7 @@ export function AdminShell({ title, children }: { title: string; children: React
     <div className="wrap admin">
       <header className="admin-head">
         <Link href="/" className="logo" aria-label="Changel home">
-          <span className="mark" aria-hidden="true">⇅</span>Changel
+          <LogoMark />Changel
         </Link>
         <span className="cat">Admin</span>
       </header>

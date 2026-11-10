@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { headerDate, localDate, puzzleNumber } from "@/lib/dates";
 import { Menu } from "./Menu";
+import { LogoMark } from "./LogoMark";
 
 interface Props {
   /** Server-provided launch date, used when no explicit puzzle is given. */
@@ -28,7 +29,7 @@ export function Header({ launch, puzzle }: Props) {
   return (
     <header>
       <Link href="/" className="logo" aria-label="Changel home">
-        <span className="mark" aria-hidden="true">⇅</span>Changel
+        <LogoMark />Changel
       </Link>
       <div className="head-right">
         <div className="meta" id="meta">

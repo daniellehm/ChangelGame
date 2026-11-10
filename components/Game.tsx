@@ -29,6 +29,7 @@ import { LegalLinks } from "./LegalLinks";
 import { FriendPopup } from "./FriendPopup";
 import type { SharedResult } from "@/lib/game/share";
 import { crowdLine, todaysTrap, type RoundCrowd } from "@/lib/game/crowd";
+import type { ScoreDistribution } from "@/lib/game/standing";
 import { LoadError } from "./LoadError";
 import { Round } from "./Round";
 import { useReducedMotion } from "./motion";
@@ -282,7 +283,7 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
   );
 
   // Crowd stats for today's rounds (SPEC §10), refreshed after each locked round. CDN-cached for a minute.
-  const [crowd, setCrowd] = useState<{ date: string; rounds: RoundCrowd[] } | null>(null);
+  const [crowd, setCrowd] = useState<{ date: string; rounds: RoundCrowd[]; scores: ScoreDistribution | null } | null>(null);
   const crowdKey = s.puzzle && s.results.length > 0 ? `${s.puzzle.date}|${s.results.length}` : null;
   useEffect(() => {
     if (!crowdKey) return;
@@ -290,13 +291,14 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
     let live = true;
     fetch(`/api/crowd?date=${date}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((b: { rounds: RoundCrowd[] } | null) => live && b && setCrowd({ date, rounds: b.rounds }))
+      .then((b: { rounds: RoundCrowd[]; scores?: ScoreDistribution } | null) => live && b && setCrowd({ date, rounds: b.rounds, scores: b.scores ?? null }))
       .catch(() => undefined); // offline: no crowd line
     return () => {
       live = false;
     };
   }, [crowdKey]);
   const dayCrowd = crowd && crowd.date === s.puzzle?.date ? crowd.rounds : null;
+  const dayScores = crowd && crowd.date === s.puzzle?.date ? crowd.scores : null;
 
   // The friend's shared result, as a pop-up once per visit (Dani 2026-11-10).
   const [showFriend, setShowFriend] = useState(true);
@@ -467,6 +469,7 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
             }}
             note={savedNote}
             onToast={showToast}
+            scores={dayScores}
             trap={(() => {
               const t = dayCrowd ? todaysTrap(dayCrowd, ROUNDS) : null;
               return t ? (s.puzzle.rounds[t.position - 1]?.prompt ?? null) : null;

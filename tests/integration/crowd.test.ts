@@ -61,6 +61,11 @@ describe("crowd stats", () => {
       { position: 1, plays: 2, wrong_way: 1, nailed: 1, avg_points: 47.5 },
       { position: 2, plays: 2, wrong_way: 0, nailed: 0, avg_points: 75 },
     ]);
+    // No finished games in this fixture yet, so no score spread.
+    expect(body.scores).toEqual({ n: 0, counts: {} });
+    await db.from("plays").update({ completed_at: new Date().toISOString(), total: 300 }).eq("puzzle_date", DATE);
+    const after = await (await GET(get(`/api/crowd?date=${DATE}`, MORNING))).json();
+    expect(after.scores).toEqual({ n: 3, counts: { "300": 3 } });
   });
 
   it("refuses days whose window hasn't opened, and bad dates", async () => {

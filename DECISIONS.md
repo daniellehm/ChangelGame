@@ -608,3 +608,36 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - For an older puzzle it says "That was an earlier puzzle. Today's is waiting." with "Play today's".
   - It closes with ×, Escape or a tap outside, and the dialog itself takes focus (no focus ring on touch).
 - **Admin portal:** `app/admin/layout.tsx` checks the session server-side, and anyone who isn't on `ADMIN_EMAILS` (signed out, anonymous, or another account) gets the normal **404**, with no "admin" page, sign-in prompt or menu. Dani signs in on /account first. `/api/admin/*` keeps its own 401/403 checks. The E2E test server uses `ADMIN_EMAILS=e2e-admin@example.com` (playwright.config).
+
+## 2026-11-10: "Top 15% today" sticker (Dani)
+
+**Decision:**
+- **Final screen:** a tilted sticker next to the title shows where your total sits among today's finished games. There's **no graph and never a player count** (Dani: "they shouldn't know how many players").
+  - **Top half:** "Top X% today", X = the share who scored higher, rounded up, at least 1%. Bands: 👑 ≤5%, 🚀 ≤10% (both green), ⭐ ≤25% (yellow), 👍 ≤50% (orange).
+  - **Bottom half:** "💪 Beat Y% of players today", on the card colour.
+  - **Last place:** no sticker (rather than "Beat 0%").
+  - It shows from the very first game; the only player so far is "Top 1%".
+  - The crowd data is cached for a minute, so if your own total isn't counted yet it's added before working out the percentage.
+- **Data:** `score_distribution(date)` (migration) returns finished games per total. `GET /api/crowd` returns it as `scores` next to the round stats (no extra request).
+- **Motion:** the sticker "slaps" on after the grid animation; it's static under reduced motion. The share text is unchanged.
+
+## 2026-11-10: Animated backgrounds, random each visit (Dani)
+
+**Decision:** one faint canvas behind every page except admin (`components/Backdrop.tsx`), showing one of three scenes, picked at random on each visit:
+- a rising skyline;
+- multiplying dots (doubling until full);
+- trend lines (red up, blue down) drawing across.
+
+Dani liked all three in the comparison artifact.
+- **Faint by design:** opacity 0.05–0.2, behind `main`, and dimmed to 45% during rounds (`html[data-playing]`).
+- **Speed:** starts only after `load` + idle (so it never competes with the first paint), ≤30 fps, nothing while the tab is hidden, canvas resolution capped at 1.5×.
+- **Reduced motion:** one still frame. Automated test browsers (`navigator.webdriver`) get none, so the visual baselines stay deterministic.
+- **Preview override:** `?bg=skyline|dots|lines` forces a scene, and `?bgt=SECONDS` fast-forwards it.
+- **They run indefinitely** (Dani: "it builds up then disappears; it should go much longer"):
+  - **Skyline:** each building grows over 1–2.5 min, then is rebuilt, at staggered times, so the city is always standing.
+  - **Dots:** they start with a visible handful (~3% of the screen's dots, at least 30), double every 6 s until full (~30 s), then stay full, twinkling, with occasional orange "newborns". At first they started with 4 tiny dots, which looked like no background at all.
+  - **Trend lines:** at least 8 slots (more on wide screens), spread evenly down the screen. Each line draws over ~35–55 s, holds, then fades as a new one starts in its slot.
+
+## 2026-11-10: Logo mark drawn as SVG (Dani: "the logo is distorted on mobile")
+
+**Decision:** the header's ⇅ mark is now an inline SVG (`components/LogoMark.tsx`, the same paths as `app/icon.svg`) in both the game and admin headers. The "⇅" character isn't in the site's fonts (DECISIONS M1), so phones drew it in a fallback font with their own metrics. The share text keeps the character, since it's plain text.

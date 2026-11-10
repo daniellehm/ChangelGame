@@ -27,6 +27,10 @@ for (const vp of VIEWPORTS) {
     const ctx = await browser.newContext({ viewport: vp, deviceScaleFactor: 1, locale: "en-US", timezoneId: "Australia/Sydney", reducedMotion: "reduce" });
     const page = await ctx.newPage();
     await setClock(page, syd("2026-11-10T09:00:00"));
+    // Crowd stats and the percentile sticker come from live data: pin them so screenshots are stable.
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < 200; i++) counts[String(Math.floor(i * 2.5))] = 1;
+    await page.route("**/api/crowd?**", (r) => r.fulfill({ json: { date: "2026-11-10", rounds: [], scores: { n: 200, counts } } }));
     await page.goto(baseURL!);
     await expect(page.locator("#startBtn")).toHaveText(/Play #/); // puzzle loaded
 
