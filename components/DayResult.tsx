@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { ServerPlay } from "@/lib/game/session-client";
 import { loadPlay, type StatsEntry } from "@/lib/game/storage";
 import { TIERS } from "@/lib/scoring";
 
+/** A day on the stats strip: this device's entry, or the account's (with its rounds). */
+export type StripDay = StatsEntry & { rounds?: ServerPlay["rounds"] };
+
 /**
- * Pop-up for one day on the stats strip: the score and how each round went. Round
- * questions come from the full play record when this device still has it; otherwise
- * just the round results.
+ * Pop-up for one day on the stats strip: the score and how each round went. Questions
+ * and points come from this device's play record, else from the account's (server).
  */
-export function DayResult({ entry, onClose }: { entry: StatsEntry; onClose: () => void }) {
+export function DayResult({ entry, onClose }: { entry: StripDay; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const play = loadPlay(entry.date);
   const date = new Date(`${entry.date}T12:00:00Z`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
@@ -44,18 +47,19 @@ export function DayResult({ entry, onClose }: { entry: StatsEntry; onClose: () =
         </div>
         <ol className="day-pop-rounds">
           {entry.tiers.map((t, i) => {
-            const round = play?.puzzle.rounds[i];
-            const result = play?.results[i];
+            const server = entry.rounds?.[i];
+            const prompt = play?.puzzle.rounds[i]?.prompt ?? server?.prompt;
+            const points = play?.results[i]?.points ?? server?.points;
             return (
               <li key={i}>
                 <span className="day-pop-tier" aria-hidden="true">
                   {TIERS[t].emoji}
                 </span>
                 <span className="day-pop-q">
-                  {round ? round.prompt : `Round ${i + 1}`}
+                  {prompt ?? `Round ${i + 1}`}
                   <small>{TIERS[t].label}</small>
                 </span>
-                {result ? <b>{result.points}</b> : null}
+                {points !== undefined ? <b>{points}</b> : null}
               </li>
             );
           })}

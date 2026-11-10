@@ -240,6 +240,8 @@ html[data-returning] #intro{visibility:hidden}
 .save-error{margin:0;font-size:14px;color:var(--r);font-weight:600}
 .save-note{margin:0;font-size:14px;color:var(--ink);font-weight:600}
 .account-rows{display:grid;gap:10px;margin:6px 0 4px}
+/* Delete sits a little apart from the other account actions (it lost its heading). */
+.account-rows+.danger,.account-rows+.account-rows{margin-top:20px}
 .danger{font:inherit;font-weight:800;border:2px solid var(--r);background:transparent;color:var(--r);border-radius:14px;padding:12px 16px;cursor:pointer;width:100%}
 .danger.solid{background:var(--r);color:var(--on-accent)}
 .danger:focus-visible{outline:3px solid var(--up);outline-offset:2px}

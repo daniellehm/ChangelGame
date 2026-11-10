@@ -3,6 +3,7 @@
  * result object instead of throwing, so the game can fall back to local-only
  * mode (SPEC §5) whenever the server path isn't available.
  */
+import type { TierId } from "../scoring";
 import type { RoundResult } from "./types";
 
 type Json = Record<string, unknown>;
@@ -94,6 +95,18 @@ export interface ServerStats {
   max_streak: number;
   best_total: number | null;
   avg_total: number | null;
+  /** Round results across every game on the account. */
+  tiers?: Record<TierId, number>;
+  /** The last 30 plays, newest first, with their rounds. */
+  recent?: ServerPlay[];
+}
+
+export interface ServerPlay {
+  date: string;
+  number: number;
+  total: number;
+  completed: boolean;
+  rounds: Array<{ position: number; points: number; tier: TierId; prompt: string }>;
 }
 
 /** Server stats (SPEC §4: the client never trusts its own streak when online). */
