@@ -490,3 +490,21 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - **No Plausible or PostHog for now.** The Analytics page reads Changel's own database (SPEC §8), so an outside tool is optional. Its account and key move to "Needs from Dani: optional".
 
 **Why:** this is cookieless and first-party, and nothing is shown per person.
+
+## 2026-11-10: M6 6.5: admin Analytics page
+
+**Decision:**
+- **`/admin/analytics`** has every panel in SPEC §8, a 7 / 30 / 90 days / all time picker, and a "Download CSV" button on each panel. Charts use Recharts 3.10.1 (admin bundle only).
+  - The colours passed the dataviz validator on `--card`, in this order: blue `#2f7cf6`, red `#ff5a36`, green `#2bb673`. Single series are blue.
+  - The validator's warnings (green contrast; green and red close for deutan colour blindness) are covered by legends, tables and CSV, so colour never carries meaning alone.
+- **Data:**
+  - finished days come from `daily_metrics`;
+  - open days, and any finished day not written yet, are computed live (cached 5 min in the function instance);
+  - `analytics_live(today)` (security definer, service role only) gives daily, weekly and monthly actives and the previous periods, totals, email accounts, retention cohorts by first-play week (D1, D7, D30 = played exactly N days after the first game; cells stay blank until the cohort is old enough), and current-streak buckets;
+  - questions come from `question_stats`, plus "carried on" = locked the next round (or finished) ÷ locked this round.
+- **Time zone:** days are puzzle dates, which are already each player's local day. "Today" on the tiles is Sydney's date. The SPEC's AEST re-bucketing toggle is deferred to v1.1: it would re-bucket plays by `started_at` and adds little for one admin.
+- Ranges never start before `LAUNCH_DATE`.
+- **Funnel and growth bars** are tables with inline bars, scaled to the largest row, so every number is printed.
+- Nothing lists emails or individual players; the API test asserts no "@" anywhere in the response.
+
+**Why:** SPEC §8. The time-zone toggle is the one simplification.

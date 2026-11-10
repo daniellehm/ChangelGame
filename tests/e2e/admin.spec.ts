@@ -11,7 +11,7 @@ test("admin signed out: sign-in prompt, every section reachable, noindex, no sid
   await expect(page.locator("h1")).toHaveText("Admin");
   await expect(page.getByText("Sign in with your admin email")).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-  await expect(page.getByRole("navigation", { name: "Admin sections" }).getByRole("link")).toHaveCount(6);
+  await expect(page.getByRole("navigation", { name: "Admin sections" }).getByRole("link")).toHaveCount(7);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
@@ -21,6 +21,7 @@ for (const [path, title] of [
   ["/admin/flagged", "Flagged"],
   ["/admin/bank", "Question bank"],
   ["/admin/health", "Health"],
+  ["/admin/analytics", "Analytics"],
   ["/admin/questions/1", "Question #1"],
 ] as const) {
   test(`${path} loads and asks a signed-out visitor to sign in`, async ({ page }) => {

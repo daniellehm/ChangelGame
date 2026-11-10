@@ -16,6 +16,7 @@ export const ADMIN_NAV = [
   { href: "/admin/flagged", label: "Flagged" },
   { href: "/admin/bank", label: "Bank" },
   { href: "/admin/health", label: "Health" },
+  { href: "/admin/analytics", label: "Analytics" },
 ] as const;
 
 export type Load<T> = { state: "loading" } | { state: "ok"; data: T } | { state: "signin" } | { state: "denied" } | { state: "error"; message: string };

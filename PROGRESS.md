@@ -174,7 +174,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.2 `/api/og` images (1200×630). (Shared-result and default cards; TTFs in `assets/fonts/`; default OG/Twitter image on every page; unit test `og.test.ts`.)
 - [x] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen. (`round_crowd` SQL, `GET /api/crowd`, `lib/game/crowd.ts`; tests: unit crowd, integration crowd, E2E crowd.)
 - [x] 6.4 Analytics events + `visits` + `daily_metrics` cron. (Migration `analytics`; `lib/analytics/{server,client,metrics}.ts`; `POST /api/events`; visits on page load; metrics in the cleanup cron; tests: unit + integration analytics.)
-- [ ] 6.5 Admin Analytics page (Recharts, CSV export).
+- [x] 6.5 Admin Analytics page (Recharts, CSV export). (`/admin/analytics`, `GET /api/admin/analytics`, `lib/admin/analytics.ts`, migration `analytics_live`; AEST toggle deferred, DECISIONS.)
 - [ ] 6.6 Sentry client + server.
 - [ ] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output.
 - [ ] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play).
