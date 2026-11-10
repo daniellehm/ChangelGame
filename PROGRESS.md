@@ -54,7 +54,7 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M6: Sentry account/DSN. (Plausible/PostHog now optional: analytics are first-party, DECISIONS 2026-11-10.)
+- [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
 - [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
@@ -175,7 +175,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen. (`round_crowd` SQL, `GET /api/crowd`, `lib/game/crowd.ts`; tests: unit crowd, integration crowd, E2E crowd.)
 - [x] 6.4 Analytics events + `visits` + `daily_metrics` cron. (Migration `analytics`; `lib/analytics/{server,client,metrics}.ts`; `POST /api/events`; visits on page load; metrics in the cleanup cron; tests: unit + integration analytics.)
 - [x] 6.5 Admin Analytics page (Recharts, CSV export). (`/admin/analytics`, `GET /api/admin/analytics`, `lib/admin/analytics.ts`, migration `analytics_live`; AEST toggle deferred, DECISIONS.)
-- [ ] 6.6 Sentry client + server.
+- [x] 6.6 Sentry client + server. (Inert until a DSN is set: `instrumentation.ts`, lazy `instrumentation-client.ts`.)
 - [ ] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output.
 - [ ] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play).
 - [ ] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist.

@@ -508,3 +508,13 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - Nothing lists emails or individual players; the API test asserts no "@" anywhere in the response.
 
 **Why:** SPEC §8. The time-zone toggle is the one simplification.
+
+## 2026-11-10: M6 6.6: Sentry
+
+**Decision:**
+- **Server:** `instrumentation.ts` starts `@sentry/nextjs` 11.9.0 only when `SENTRY_DSN` is set, and exports `onRequestError = captureRequestError`. Errors only, no tracing.
+- **Browser:** `instrumentation-client.ts` listens for uncaught errors and rejected promises. It fetches `@sentry/browser` (a separate chunk) only the first time one happens, and only when `NEXT_PUBLIC_SENTRY_DSN` is set. Nothing is added to the game page's initial JavaScript (DECISIONS item 11, "Sentry is lazy-loaded"). There's no replay or tracing, and only the dedupe and linked-errors integrations are on.
+- Versions were chosen at least two weeks old (11.11.0 was too new).
+- No source-map upload yet (it needs a Sentry auth token in the build). Stack traces show minified names until it's added.
+
+**Why:** SPEC §11 plus the JS budget. It's inert until Dani creates the Sentry project.
