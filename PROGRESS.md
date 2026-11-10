@@ -203,7 +203,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
-- 2026-11-10: SEO extras on branch `seo-extras` (waiting for Dani's OK to deploy): JSON-LD structured data (free web game) and a web app manifest with icons (Add to Home Screen). Still to do at launch (needs Dani's Google login): Google Search Console + sitemap submission, then Bing Webmaster Tools (import from Search Console).
+- 2026-11-10: SEO extras live (Dani's OK; verified on changel.app): JSON-LD structured data (free web game) and a web app manifest with icons (Add to Home Screen). Still to do at launch (needs Dani's Google login): Google Search Console + sitemap submission, then Bing Webmaster Tools (import from Search Console).
 
 - 2026-11-10: Fun pass live (Dani's OK), verified on changel.app:
   - "Top X% today" sticker on the final screen (no graph, never a player count);
