@@ -3,7 +3,7 @@ import { PageShell } from "@/components/PageShell";
 import { StatsView } from "@/components/StatsView";
 import { launchDate } from "@/lib/config";
 
-export const metadata: Metadata = { title: "Your stats · Changel" };
+export const metadata: Metadata = { title: "Your stats", robots: { index: false } };
 
 export default function Stats() {
   return (

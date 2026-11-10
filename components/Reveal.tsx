@@ -15,12 +15,14 @@ interface Props {
   /** Server play id: shows "Something wrong with this?" (hidden in local-only mode). */
   playId?: string | null;
   isLast: boolean;
+  /** "38% of players went the wrong way" (SPEC §10); null while loading. */
+  crowd?: string | null;
   /** Count-up + confetti (false under reduced motion). */
   motion: boolean;
   onNext: () => void;
 }
 
-export function Reveal({ result, range, isLast, motion, onNext, playId = null }: Props) {
+export function Reveal({ result, range, isLast, motion, onNext, playId = null, crowd = null }: Props) {
   const zero = `${toPercent(range, 0)}%`;
   const tier = TIERS[result.tier];
   const verdictRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,7 @@ export function Reveal({ result, range, isLast, motion, onNext, playId = null }:
 
   return (
     <div className="reveal show" id="reveal">
-      <div className="verdict" id="verdict" ref={verdictRef} tabIndex={-1} style={{ background: tier.color }} aria-describedby="revealAnnounce">
+      <div className="verdict" id="verdict" ref={verdictRef} tabIndex={-1} style={{ background: tier.color, color: tier.text }} aria-describedby="revealAnnounce">
         <span id="vText">{tier.label}</span>
         <span className="pts" id="vPts">{`+${points}`}</span>
       </div>
@@ -61,6 +63,8 @@ export function Reveal({ result, range, isLast, motion, onNext, playId = null }:
           <span id="pinRealLbl">{`REAL ${multLabel(result.actual_log, epsilon(range)).big}`}</span>
         </div>
       </div>
+      {/* Reserves its line while loading, so the fact doesn't jump. */}
+      <p className="crowd" id="crowdLine">{crowd ?? "\u00a0"}</p>
       <p className="fact" id="fact">{result.fact}</p>
       <div className="src" id="src">
         <span className="sr-only">Source: </span>

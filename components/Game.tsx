@@ -25,6 +25,9 @@ import type { GameSource, Puzzle, RoundResult } from "@/lib/game/types";
 import { Final } from "./Final";
 import { Header } from "./Header";
 import { Intro } from "./Intro";
+import { LegalLinks } from "./LegalLinks";
+import type { SharedResult } from "@/lib/game/share";
+import { crowdLine, todaysTrap, type RoundCrowd } from "@/lib/game/crowd";
 import { LoadError } from "./LoadError";
 import { Round } from "./Round";
 import { useReducedMotion } from "./motion";
@@ -219,7 +222,8 @@ const toSummary = (s: ServerStats, local: StatsSummary): StatsSummary => ({
   average: s.avg_total ?? 0,
 });
 
-export function Game({ launch }: { launch: string }) {
+/** `friend`: a shared result from `?r=` (SPEC §10), decoded by the page on the server. */
+export function Game({ launch, friend = null }: { launch: string; friend?: SharedResult | null }) {
   const source = useMemo(() => createApiSource(), []);
   const [s, dispatch] = useReducer(reducer, initial);
   const motion = !useReducedMotion();
@@ -276,9 +280,27 @@ export function Game({ launch }: { launch: string }) {
     [source, loadServerStats],
   );
 
+  // Crowd stats for today's rounds (SPEC §10), refreshed after each locked round. CDN-cached for a minute.
+  const [crowd, setCrowd] = useState<{ date: string; rounds: RoundCrowd[] } | null>(null);
+  const crowdKey = s.puzzle && s.results.length > 0 ? `${s.puzzle.date}|${s.results.length}` : null;
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!crowdKey) return;
+    const date = crowdKey.split("|")[0]!;
+    let live = true;
+    fetch(`/api/crowd?date=${date}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: { rounds: RoundCrowd[] } | null) => live && b && setCrowd({ date, rounds: b.rounds }))
+      .catch(() => undefined); // offline: no crowd line
+    return () => {
+      live = false;
+    };
+  }, [crowdKey]);
+  const dayCrowd = crowd && crowd.date === s.puzzle?.date ? crowd.rounds : null;
+
+  useEffect(() => {
+    // A shared link shows the intro (with the friend's score) even to returning players.
+    void load({ preferIntro: !!friend });
+  }, [load, friend]);
 
   // New local day: load the new puzzle unless mid-game (SPEC §4).
   const phase = s.phase;
@@ -397,7 +419,7 @@ export function Game({ launch }: { launch: string }) {
       <div className="wrap">
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
-          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot" || s.pending} />
+          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} friend={friend} onPlay={start} disabled={s.phase === "boot" || s.pending} />
         )}
         {s.phase === "error" && s.errorKind && (
           <LoadError
@@ -420,6 +442,7 @@ export function Game({ launch }: { launch: string }) {
             onLock={lockIn}
             onNext={next}
             playId={s.mode === "server" ? s.playId : null}
+            crowd={dayCrowd ? crowdLine(dayCrowd.find((c) => c.position === s.idx + 1)) : null}
           />
         )}
         {s.phase === "final" && s.puzzle && stats && (
@@ -440,8 +463,14 @@ export function Game({ launch }: { launch: string }) {
             }}
             note={savedNote}
             onToast={showToast}
+            trap={(() => {
+              const t = dayCrowd ? todaysTrap(dayCrowd, ROUNDS) : null;
+              return t ? (s.puzzle.rounds[t.position - 1]?.prompt ?? null) : null;
+            })()}
           />
         )}
+        {/* Privacy & terms and Contact live here, not in the menu (Dani 2026-11-10); hidden mid-round. */}
+        {s.phase !== "round" && <LegalLinks />}
       </div>
       <Toast message={toast.message} show={toast.show} />
     </>

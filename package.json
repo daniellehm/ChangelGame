@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node --env-file-if-exists=.env.local scripts/check-bundle-secrets.mjs && node scripts/check-bundle-budget.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -23,10 +23,14 @@
     "content:smoke": "tsx --env-file=.env.local scripts/content-smoke.ts",
     "content:check-smoke": "tsx --env-file=.env.local scripts/content-check-smoke.ts",
     "content:fill-days": "tsx --env-file=.env.local scripts/fill-days.ts",
-    "content:apply-edits": "tsx --env-file=.env.local scripts/apply-edits.ts"
+    "content:apply-edits": "tsx --env-file=.env.local scripts/apply-edits.ts",
+    "check:secrets": "node --env-file-if-exists=.env.local scripts/check-bundle-secrets.mjs",
+    "check:budget": "node scripts/check-bundle-budget.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
+    "@sentry/browser": "11.9.0",
+    "@sentry/nextjs": "11.9.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "@upstash/ratelimit": "^2.2.0",
@@ -34,6 +38,7 @@
     "next": "^16.4.5",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "recharts": "3.10.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

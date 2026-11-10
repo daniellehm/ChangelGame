@@ -15,14 +15,16 @@ export interface TierInfo {
   label: string;
   /** CSS colour (token reference) for the verdict bar. */
   color: string;
+  /** Text on that bar: ink on the light bars, white on red (AA large text; DECISIONS item 12). */
+  text: string;
 }
 
 export const TIERS: Record<TierId, TierInfo> = {
-  nailed: { id: "nailed", emoji: "🟩", label: "Nailed it", color: "var(--g)" },
-  close: { id: "close", emoji: "🟨", label: "Close", color: "var(--y-strong)" },
-  meh: { id: "meh", emoji: "🟧", label: "Meh", color: "var(--o)" },
-  off: { id: "off", emoji: "🟥", label: "Way off", color: "var(--r)" },
-  wrong: { id: "wrong", emoji: "🟥", label: "Wrong way!", color: "var(--r)" },
+  nailed: { id: "nailed", emoji: "🟩", label: "Nailed it", color: "var(--g)", text: "var(--ink)" },
+  close: { id: "close", emoji: "🟨", label: "Close", color: "var(--y-strong)", text: "var(--ink)" },
+  meh: { id: "meh", emoji: "🟧", label: "Meh", color: "var(--o)", text: "var(--ink)" },
+  off: { id: "off", emoji: "🟥", label: "Way off", color: "var(--r)", text: "var(--on-accent)" },
+  wrong: { id: "wrong", emoji: "🟥", label: "Wrong way!", color: "var(--r)", text: "var(--on-accent)" },
 };
 
 export interface RoundScore {

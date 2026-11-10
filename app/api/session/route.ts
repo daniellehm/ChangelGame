@@ -3,7 +3,9 @@
  * Called on the first Play click, never on page load, so bounces create no users.
  * Reuses an existing valid session; otherwise signs in anonymously on the server
  * (secret key + Sb-Forwarded-For, so Supabase rate-limits per player IP).
- * Turnstile verification slots in here in M6.
+ * Creating a NEW anonymous player needs a Turnstile token when TURNSTILE_SECRET is set
+ * (403 turnstile_required → the browser gets one and retries), then passes our per-IP limit.
+ * Existing sessions never need either.
  */
 import { z } from "zod";
 import { apiError, invalid } from "@/lib/api/http";
@@ -11,10 +13,14 @@ import { sessionUser } from "@/lib/api/auth";
 import { TEST_CLOCK_HEADER, testClockEnabled } from "@/lib/api/clock";
 import { isValidTimeZone } from "@/lib/dates";
 import { adminClient } from "@/lib/supabase/admin";
-import { supabaseForRequest } from "@/lib/supabase/request";
+import { clientIp, supabaseForRequest } from "@/lib/supabase/request";
+import { rateLimit } from "@/lib/api/ratelimit";
+import { turnstileRequired, verifyTurnstile } from "@/lib/api/turnstile";
 
 const Body = z.object({
   tz: z.string().max(64).refine(isValidTimeZone, "unknown time zone").optional(),
+  /** Cloudflare Turnstile token (only needed to create a new player). */
+  turnstile: z.string().max(4096).optional(),
 });
 
 async function touchPlayer(id: string, tz: string | undefined) {
@@ -34,7 +40,7 @@ export async function POST(req: Request) {
   }
   const parsed = Body.safeParse(json);
   if (!parsed.success) return invalid(parsed.error);
-  const { tz } = parsed.data;
+  const { tz, turnstile } = parsed.data;
 
   // Existing session?
   const existing = await sessionUser(req);
@@ -43,9 +49,17 @@ export async function POST(req: Request) {
     return existing.sb.applyCookies(Response.json({ user_id: existing.user.id, anonymous: existing.user.isAnonymous, created: false }, { headers: { "Cache-Control": "no-store" } }));
   }
 
-  const sb = supabaseForRequest(req, { secret: true });
   // Test runs (test clock on, never in production) tag their users so cleanup can find them.
   const isTestRun = testClockEnabled() && req.headers.has(TEST_CLOCK_HEADER);
+  const ip = clientIp(req);
+  if (turnstileRequired() && !isTestRun) {
+    if (!turnstile) return apiError("turnstile_required", "Quick check needed before your first game.", 403);
+    if (!(await verifyTurnstile(turnstile, ip))) return apiError("turnstile_failed", "That check didn't go through. Try again.", 403);
+  }
+  const limited = await rateLimit("session", ip ?? "unknown");
+  if (limited) return limited;
+
+  const sb = supabaseForRequest(req, { secret: true });
   const { data, error } = await sb.client.auth.signInAnonymously(isTestRun ? { options: { data: { e2e: true } } } : undefined);
   if (error || !data.user) {
     if (error?.status === 429 || error?.code === "over_request_rate_limit") {

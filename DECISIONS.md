@@ -421,3 +421,181 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - **Copy:** questions don't always end in the present (e.g. 2009, 2012), so "One number from the past. How big is it now?" became "A real number from one year. How big was it years later?". The How to Play page and its description were changed the same way.
 
 **Why:** Dani's call on look and feel (a visual departure from the M4 screens, approved by her).
+
+## 2026-11-10: M6 6.1: share sheet and `?r=` links
+
+**Decision:**
+- **`?r=` code** `<number base36>-<total base36>-<5 digits>` (e.g. `c-ac-01040`): the puzzle number, the total and each round's result. The total isn't an answer, and the OG image needs it. Malformed or impossible codes are ignored, e.g. a total that doesn't fit the rounds' results.
+- **Phones** (a share API and a coarse pointer): Share opens the OS share sheet with the first two lines of the share text plus `url: https://changel.app/?r=<code>`, so the chat unfurls this result's image. Closing the sheet does nothing; any other failure copies instead.
+- **Desktops** copy the exact SPEC §10 text, which still ends in plain `changel.app` (the spec's exact format). Only the share sheet carries the `?r=` link.
+- **Landing:** the home page reads `?r=` on the server. It sets the OG/Twitter title and `og:image` = `/api/og?r=<code>`, and shows "A friend scored N 🟩🟨… Can you beat it?" on the intro. A returning player opening a shared link sees the intro too, so the challenge isn't skipped. If the friend played a different puzzle, it says "A friend playing #N scored … Try today's."
+- **The home page is now rendered per request** (it reads the query string). Re-check speed in 6.9; it was static before.
+- `metadataBase` is `https://changel.app`.
+
+**Why:** SPEC §10 asks for one-tap sharing that unfurls with the result; these are the simplest shapes that do it.
+
+## 2026-11-10: M6 6.2: share images
+
+**Decision:**
+- **`/api/og`** (Node runtime, `next/og`) renders 1200×630 PNGs: the game's card (paper background, ink border, hard offset shadow, logo), plus either a shared result (puzzle number, score/500, five coloured squares, "Can you beat it?") or, without a valid code, the default "How much did it change?" card.
+  - Squares use the share emoji's colours (🟩 `--g`, 🟨 `--y`, 🟧 `--o`, 🟥 `--r`), with no text in them; the score is in words beside them.
+- **Fonts:** static TTFs of Bricolage Grotesque 800 (opsz 96) and JetBrains Mono 700 are committed in `assets/fonts/` (OFL). Satori can't read the site's WOFF2 or variable fonts. `outputFileTracingIncludes` ships them with the route.
+- **Caching:** an image depends only on its code, so it's `public, s-maxage=31536000, immutable`.
+- **Every page** has the default card as its OG/Twitter image (`summary_large_image`); a shared result overrides it.
+
+**Why:** SPEC §10. One renderer for both cards keeps the look consistent.
+
+## 2026-11-10: M6 6.3: crowd line and today's trap
+
+**Decision:**
+- **Data:** `round_crowd(date)` (migration `round_crowd`) counts each round's plays, wrong-way and nailed guesses, and average points, from that date's plays.
+  - It only counts guesses on the question currently in the round, so a same-day swap doesn't mix two questions. A rerun day starts its own count.
+  - `GET /api/crowd?date=` serves it CDN-cached for 60 s; it holds no answers or user data. Days whose window hasn't opened get 403.
+- **Reveal line** (under the pins, above the fact; `lib/game/crowd.ts`):
+  - under 50 plays: "Too early for crowd stats on this one.";
+  - else if ≥ 20% went the wrong way: "N% of players went the wrong way";
+  - else if under 25% nailed it: "Only N% nailed this";
+  - else "N% of players nailed this".
+
+  The line reserves its height while loading, so the fact doesn't jump. Offline, it stays blank.
+- **Today's trap** (final screen, above the stats): the round with the lowest average points, shown only once every round has 50 plays, as "Today's trap: <question>".
+- The game refetches crowd stats after each locked round (cheap: CDN-cached).
+
+**Why:** SPEC §10 gives the examples and the 50-play threshold. The 20% and 25% cut-offs pick whichever fact is more striking, and they're constants in `CROWD`.
+
+## 2026-11-10: M6 6.4: first-party, cookieless analytics
+
+**Decision:**
+- **No visitor cookie.** SPEC §8 says `visitor_id` cookie, but §11 requires cookieless analytics (no banner). Visits use a daily-rotating salted hash of IP + user agent + UTC date, like Plausible. It's stable within a day, so one row per visitor per day, and no one can be followed across days. Retention (D1/D7) comes from plays (player ids), which need no cookie.
+- **`visits`:** written server-side on every game-page load, after the response (`runAfter`).
+  - Country comes from `x-vercel-ip-country`, the puzzle date from `x-vercel-ip-timezone` (else UTC), device from the user agent.
+  - Referrer is stored as a domain only, and dropped for our own site, Do Not Track or GPC.
+  - `from_share` is set when there's a valid `?r=`.
+  - Bots, link unfurlers and headless browsers (our tests, Lighthouse) are skipped.
+- **`events`** holds only what the browser or auth knows: `share_clicked` {method: share_sheet, clipboard or manual}, `signup_prompt_shown` (once per day per device), and `signup_completed` (server-side, the first time an account confirms an email; reserved test domains like example.com are skipped). SPEC §11's other events come from existing data:
+
+  | SPEC event | Source |
+  | --- | --- |
+  | `puzzle_viewed` | visits |
+  | `play_started` | plays |
+  | `round_locked` | guesses |
+  | `play_completed` | plays.completed_at |
+  | `share_landing` | visits.from_share |
+  | `streak_broken` | derived from plays |
+
+- **`daily_metrics`:** one jsonb row per finished puzzle day (`compute_daily_metrics`). It holds visits by share, device, country and referrer; players, new players and completions; locked rounds by position; score buckets; average and wrong-way by round; shares by method; sign-up prompts and sign-ups.
+  - It's written by the existing nightly cleanup cron, before old anonymous players are purged, so their games still count. That avoids a third cron on the Hobby plan.
+  - A day is final once its window closes (D+1 12:00 UTC). Missing days in the last 14 are back-filled.
+  - Raw visits and events are deleted after 400 days; daily rows stay.
+- **No Plausible or PostHog for now.** The Analytics page reads Changel's own database (SPEC §8), so an outside tool is optional. Its account and key move to "Needs from Dani: optional".
+
+**Why:** this is cookieless and first-party, and nothing is shown per person.
+
+## 2026-11-10: M6 6.5: admin Analytics page
+
+**Decision:**
+- **`/admin/analytics`** has every panel in SPEC §8, a 7 / 30 / 90 days / all time picker, and a "Download CSV" button on each panel. Charts use Recharts 3.10.1 (admin bundle only).
+  - The colours passed the dataviz validator on `--card`, in this order: blue `#2f7cf6`, red `#ff5a36`, green `#2bb673`. Single series are blue.
+  - The validator's warnings (green contrast; green and red close for deutan colour blindness) are covered by legends, tables and CSV, so colour never carries meaning alone.
+- **Data:**
+  - finished days come from `daily_metrics`;
+  - open days, and any finished day not written yet, are computed live (cached 5 min in the function instance);
+  - `analytics_live(today)` (security definer, service role only) gives daily, weekly and monthly actives and the previous periods, totals, email accounts, retention cohorts by first-play week (D1, D7, D30 = played exactly N days after the first game; cells stay blank until the cohort is old enough), and current-streak buckets;
+  - questions come from `question_stats`, plus "carried on" = locked the next round (or finished) ÷ locked this round.
+- **Time zone:** days are puzzle dates, which are already each player's local day. "Today" on the tiles is Sydney's date. The SPEC's AEST re-bucketing toggle is deferred to v1.1: it would re-bucket plays by `started_at` and adds little for one admin.
+- Ranges never start before `LAUNCH_DATE`.
+- **Funnel and growth bars** are tables with inline bars, scaled to the largest row, so every number is printed.
+- Nothing lists emails or individual players; the API test asserts no "@" anywhere in the response.
+
+**Why:** SPEC §8. The time-zone toggle is the one simplification.
+
+## 2026-11-10: M6 6.6: Sentry
+
+**Decision:**
+- **Server:** `instrumentation.ts` starts `@sentry/nextjs` 11.9.0 only when `SENTRY_DSN` is set, and exports `onRequestError = captureRequestError`. Errors only, no tracing.
+- **Browser:** `instrumentation-client.ts` listens for uncaught errors and rejected promises. It fetches `@sentry/browser` (a separate chunk) only the first time one happens, and only when `NEXT_PUBLIC_SENTRY_DSN` is set. Nothing is added to the game page's initial JavaScript (DECISIONS item 11, "Sentry is lazy-loaded"). There's no replay or tracing, and only the dedupe and linked-errors integrations are on.
+- Versions were chosen at least two weeks old (11.11.0 was too new).
+- No source-map upload yet (it needs a Sentry auth token in the build). Stack traces show minified names until it's added.
+
+**Why:** SPEC §11 plus the JS budget. It's inert until Dani creates the Sentry project.
+
+## 2026-11-10: M6 6.7: Turnstile, rate-limit review, secret check
+
+**Decision:**
+- **Turnstile** applies only when a NEW anonymous player would be created and `TURNSTILE_SECRET` is set:
+  1. `POST /api/session` answers 403 `turnstile_required`.
+  2. The browser loads Cloudflare's script on demand (`lib/game/turnstile-client.ts`, a separate chunk) and runs an invisible "interaction-only" widget. It's shown at the bottom of the screen only if Cloudflare wants a click.
+  3. The browser retries with the token; the server verifies it at `siteverify` (with the player's IP) and then applies our per-IP limit.
+
+  Returning players with a session never load Turnstile. If it fails, the game falls back to local play (SPEC §5). Test runs (test clock on, never production) skip it. Without keys, nothing changes.
+- **Rate-limit review** (every `app/api` route):
+  - New limits: `session` 30/hour per IP for new players (on top of Supabase's per-IP limit; mobile carriers share IPs, so not lower), `account` 10/10 min per player for export, delete and merge, and `og` 60/min per IP (each new share code costs a render).
+  - Unchanged: all other public routes already had limits. Admin and cron routes are guarded by `ADMIN_EMAILS` and `CRON_SECRET`. Sign-out needs none.
+- **Secret check:** `npm run build` = `next build` + `scripts/check-bundle-secrets.mjs`.
+  - It scans `.next/static` for the values of the service key, Anthropic, Resend, cron, Upstash and Turnstile secrets, and for anything shaped like a Supabase service-role key (`sb_secret_…`, a `service_role` JWT).
+  - It fails the build, so a leak stops the Vercel deploy. It was verified to fail on a planted leak.
+
+**Why:** SPEC §11 security.
+
+## 2026-11-10: M6 6.8: privacy, terms and SEO
+
+**Decision:**
+- **`/privacy` and `/terms`** are written for the Australian Privacy Principles and GDPR basics, and describe exactly what the code does:
+  - what's stored and why, and that the only cookies are strictly necessary;
+  - every processor with its region (APP 8 cross-border disclosure);
+  - retention (7 / 400 days, matching the cleanup cron and the analytics pruning);
+  - rights: delete in the app, a copy or correction by email (the export button was removed on 2026-11-10, and the endpoint is still there for these requests), and complaints to the OAIC or an EU/UK authority.
+  - Terms: fair play, numbers "a game, not a reference", the Australian Consumer Law carve-out, governed by **New South Wales** law (assumed: Dani is in Sydney).
+  - Contact is **hello@changel.app** (see Needs from Dani: it must actually receive mail).
+- **They're linked** from the menu and from small links under every page's "Back to today's Changel" button.
+- **Titles:** the default is the SPEC §10 title "Changel — the daily game about how much the world changed", with the template "%s · Changel". There's a new description and canonical URLs.
+- **`robots.txt`** disallows `/admin`, `/api/`, `/account`, `/stats` and `/auth`, and points at `/sitemap.xml` (home, how to play, privacy, terms). Stats and Account are also `noindex`.
+- These pages are a plain-language starting point, not legal advice. Dani should have them reviewed before launch if the game grows.
+
+## 2026-11-10: M6 6.9: Lighthouse, JS budget, launch checks
+
+**Decision:**
+- **Contrast (DECISIONS item 12, done):** verdict text is ink on the green, yellow and orange bars (7:1+), and white on red (3.9:1, AA for large bold text). `--muted` is `#6e665b` (was `#7a7166`; 5.0:1 on `--bg`). The axe test now requires zero contrast failures on every screen.
+- **Lighthouse fixes:**
+  - a `<main>` landmark around every page;
+  - JetBrains Mono isn't preloaded (labels only), so it doesn't compete with the first paint;
+  - the Buy Me a Coffee widget loads only when the page is idle after `load`.
+
+  `/api/me` with no session now returns **204** instead of 401: no session is normal on Stats and Account, and the 401 showed as a console error.
+- **Results:** Lighthouse 13.5 mobile, local production build.
+
+  | Page | Performance | Accessibility | Best practices | SEO |
+  | --- | --- | --- | --- | --- |
+  | Home | 97 | 100 | 100 | 100 |
+  | How to play | 97 | 100 | 100 | 100 |
+  | Privacy | 97 | 100 | 100 | 100 |
+  | Shared link | 96 | 100 | 100 | 100 |
+  | Stats | 96 | 100 | | 69 (deliberately noindex) |
+  | Account | 95 | 100 | | 69 (deliberately noindex) |
+
+- **JS budget:** SPEC §11's "under 120 KB gzipped" can't hold for the total, because Next 16 + React 19's shared runtime alone is ~129 KB gzipped. `npm run build` now runs `scripts/check-bundle-budget.mjs`:
+  - the game page's own chunks must stay ≤ 45 KB (now 22 KB);
+  - the total ≤ 170 KB (now 151 KB);
+  - lazy chunks (Sentry, Turnstile) aren't counted.
+
+  Lighthouse ≥ 95 stays the acceptance measure.
+- **Domain:** changel.app serves HTTPS with HSTS (2 years); `www.` and `http://` 308-redirect to `https://changel.app`.
+
+## 2026-11-10: Privacy & terms on one page; a contact form instead of an email (Dani)
+
+**Decision:**
+- **`/privacy` is "Privacy & terms":** both sections on one page (`#privacy`, `#terms`), and `/terms` redirects permanently to `/privacy#terms`. It names no operator (no person or company) and gives no email address.
+- **Links:** not in the menu. They sit at the foot of every page as "Privacy & terms · Contact" (`components/LegalLinks.tsx`). That includes the game's intro and final screens, but not mid-round.
+- **Contact form** (`/contact`): topic (question or idea, data copy or correction, delete my data, bug, other), a message (5–2,000 characters), and an optional email used only for a reply.
+  - A honeypot field drops naive bots quietly, and it's limited to 5 per 10 minutes per IP.
+  - If the sender has a session, their player id is attached, so data or deletion requests can be matched to their games without an email.
+  - Messages are stored in `contact_messages` (migration `contact_messages`; service role only) and shown in **Admin → Messages** (new / done), with a "Messages" tile on the admin home.
+- **Privacy text:** data requests and complaints go through the form ("leave an email so we can send it"). Contact messages are deleted within a year of being handled.
+
+## 2026-11-10: No database backups for now (Dani)
+
+**Decision:** no backups while there are few players. Supabase's free plan has no restorable backups, and Dani doesn't want a GitHub-based backup. Revisit when the player count grows; the simplest path then is Supabase Pro (daily backups, one-click restore).
+
+**Risk accepted:** a bad migration, a bug or an accidental delete would be permanent. Lost content (the question bank) can be regenerated at Claude cost; lost player history can't.
+
+**Mitigation in the meantime:** Claude asks before any destructive database change (CLAUDE.md rule), and migrations stay additive where possible.

@@ -2,6 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { GET as overviewGET } from "@/app/api/admin/overview/route";
 import { POST as runPOST } from "@/app/api/admin/run/route";
+import { GET as analyticsGET } from "@/app/api/admin/analytics/route";
 import { cleanup, newAccount, newPlayer, req } from "./fixtures";
 
 let admin: Awaited<ReturnType<typeof newAccount>>;
@@ -41,5 +42,17 @@ describe("admin access", () => {
   it("'Run now' is admin-only", async () => {
     expect((await runPOST(req("/api/admin/run", { method: "POST", cookie: other.cookie }))).status).toBe(403);
     expect((await runPOST(req("/api/admin/run", { method: "POST" }))).status).toBe(401);
+  });
+
+  it("Analytics is admin-only and returns days, live totals and questions (aggregates only)", async () => {
+    expect((await analyticsGET(req("/api/admin/analytics?range=7"))).status).toBe(401);
+    expect((await analyticsGET(req("/api/admin/analytics?range=7", { cookie: other.cookie }))).status).toBe(403);
+    expect((await analyticsGET(req("/api/admin/analytics?range=9", { cookie: admin.cookie }))).status).toBe(400);
+    const res = await analyticsGET(req("/api/admin/analytics?range=7", { cookie: admin.cookie }));
+    expect(res.status).toBe(200);
+    const a = await res.json();
+    expect(a).toMatchObject({ range: "7", live: { dau: expect.any(Number), total_players: expect.any(Number), accounts: expect.any(Number), retention: expect.any(Array) } });
+    expect(Array.isArray(a.days) && Array.isArray(a.questions)).toBe(true);
+    expect(JSON.stringify(a)).not.toMatch(/@/); // no emails anywhere
   });
 });

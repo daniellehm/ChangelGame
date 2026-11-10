@@ -8,12 +8,15 @@ import { apiError, invalid } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
 import { AUTH_FLOW_COOKIE, clearCookie, MERGE_COOKIE } from "@/lib/auth/cookies";
 import { adminClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/api/ratelimit";
 
 const Body = z.object({ confirm: z.literal("DELETE") });
 
 export async function POST(req: Request) {
   const { user, sb } = await sessionUser(req);
   if (!user) return apiError("unauthorized", "Sign in first.", 401);
+  const limited = await rateLimit("account", user.id);
+  if (limited) return limited;
   let json: unknown;
   try {
     json = await req.json();

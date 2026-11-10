@@ -12,9 +12,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 /**
- * axe violations, excluding colour contrast. The prototype's verdict colours
- * and --muted on --bg are below AA by design until M6 (DECISIONS.md item 12),
- * and the contrast rule is asserted separately so we see exactly which elements fail.
+ * axe violations, with colour contrast reported separately so a failure names the
+ * elements. Since M6 (DECISIONS.md item 12) every screen passes AA contrast too.
  */
 async function axe(page: Page) {
   // Let the reveal pop / pin slide finish, or axe measures half-faded text.
@@ -25,8 +24,6 @@ async function axe(page: Page) {
   return { other, contrast };
 }
 
-/** Elements allowed to fail contrast until M6. */
-const KNOWN_CONTRAST = /#meta|\.meta|#verdict|#vText|#vPts|\.verdict|\.pts/;
 
 test("keyboard-only: a full game can be played without a pointer", async ({ page }) => {
   await page.goto("/");
@@ -105,7 +102,7 @@ test("slider touch target is at least 44 px tall", async ({ page }) => {
   expect(box!.height).toBeGreaterThanOrEqual(44);
 });
 
-test("axe: no violations on any screen apart from known prototype contrast", async ({ page }) => {
+test("axe: no violations on any screen, contrast included (AA)", async ({ page }) => {
   await page.goto("/");
   const screens: Record<string, Awaited<ReturnType<typeof axe>>> = {};
   screens.intro = await axe(page);
@@ -122,7 +119,6 @@ test("axe: no violations on any screen apart from known prototype contrast", asy
 
   for (const [name, r] of Object.entries(screens)) {
     expect(r.other.map((v) => `${v.id}: ${v.help}`), name).toEqual([]);
-    const unexpected = r.contrast.filter((t) => !KNOWN_CONTRAST.test(t));
-    expect(unexpected, `${name} unexpected contrast failures`).toEqual([]);
+    expect(r.contrast, `${name} contrast failures`).toEqual([]);
   }
 });

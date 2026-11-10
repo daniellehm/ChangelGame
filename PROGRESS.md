@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). Next: UI tweaks (branch `ui-tweaks`, done), then **M6**. **`main` is merged locally but not pushed: waiting for Dani's OK to deploy to production.** Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **All M6 tasks are built** on branch `m6-virality-launch`; waiting for Dani to review the preview and approve the merge. Two acceptance items need things only Dani can do: Anthropic credit (60 days of puzzles), and one real unfurl test on changel.app after the merge. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -53,8 +53,10 @@
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
-- [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M6: Sentry account/DSN; PostHog or Plausible account
+- [x] **Cloudflare Turnstile keys** set by Dani in Vercel, Production only (2026-11-10): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Config), `TURNSTILE_SECRET` (Secret). Goes live with the M6 merge; test a brand-new player on changel.app then.
+- [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
+- [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
+- [ ] **Read /privacy** (Privacy & terms, one page; a plain-language draft, not legal advice). No operator named and no email (Dani 2026-11-10); contact is the form at /contact → Admin → Messages. Confirm governing law New South Wales.
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
 
@@ -169,15 +171,31 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 **Milestone accepted when:** Lighthouse mobile ≥ 95, the share link unfurls correctly in iMessage/WhatsApp/X, and 60 days of verified puzzles are scheduled.
 
-- [ ] 6.1 Share sheet (`navigator.share`) + `?r=` code + landing.
-- [ ] 6.2 `/api/og` images (1200×630).
-- [ ] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen.
-- [ ] 6.4 Analytics events + `visits` + `daily_metrics` cron.
-- [ ] 6.5 Admin Analytics page (Recharts, CSV export).
-- [ ] 6.6 Sentry client + server.
-- [ ] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output.
-- [ ] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play).
-- [ ] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist.
+- [x] 6.1 Share sheet (`navigator.share`) + `?r=` code + landing. (`lib/game/share.ts` encode/decode, `ShareButton` sheet-or-copy, home page reads `?r=` for OG tags + the intro's friend line; tests: unit share, E2E `share.spec.ts`.)
+- [x] 6.2 `/api/og` images (1200×630). (Shared-result and default cards; TTFs in `assets/fonts/`; default OG/Twitter image on every page; unit test `og.test.ts`.)
+- [x] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen. (`round_crowd` SQL, `GET /api/crowd`, `lib/game/crowd.ts`; tests: unit crowd, integration crowd, E2E crowd.)
+- [x] 6.4 Analytics events + `visits` + `daily_metrics` cron. (Migration `analytics`; `lib/analytics/{server,client,metrics}.ts`; `POST /api/events`; visits on page load; metrics in the cleanup cron; tests: unit + integration analytics.)
+- [x] 6.5 Admin Analytics page (Recharts, CSV export). (`/admin/analytics`, `GET /api/admin/analytics`, `lib/admin/analytics.ts`, migration `analytics_live`; AEST toggle deferred, DECISIONS.)
+- [x] 6.6 Sentry client + server. (Inert until a DSN is set: `instrumentation.ts`, lazy `instrumentation-client.ts`.)
+- [x] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output. (Turnstile inert until keys are set; new `session`/`account`/`og` limits; `npm run build` fails on a leaked secret.)
+- [x] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play). (`/privacy`, `/terms`, `robots.ts`, `sitemap.ts`, title template; E2E `seo.spec.ts`.)
+- [x] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist. (Mobile 95–97 performance, 100 accessibility on every page; AA contrast; `npm run build` enforces secrets + JS budget; domain verified.)
+
+- [x] Extra (Dani 2026-11-10): Privacy & terms combined into one page, linked at the foot of pages (not the menu); contact form → Admin → Messages instead of an email address.
+
+**M6 acceptance:**
+- [x] Lighthouse mobile ≥ 95: verified locally on a production build. Re-check on changel.app after the merge.
+- [ ] The share link unfurls in iMessage, WhatsApp and X: the tags and image are tested. Unfurlers can't open previews (Vercel login), so this needs one real test on changel.app after the merge.
+- [ ] 60 days of verified puzzles scheduled: blocked by Anthropic credit. Now: 9–14 Nov, with 15–16 Nov empty.
+
+**Launch checklist** (SPEC §12):
+- [ ] `LAUNCH_DATE` set and puzzle #1 previewed (Dani: the date, and whether #1 is themed). Then delete the dev puzzles before it (Dani's OK).
+- [x] changel.app DNS on Vercel, HTTPS, www redirect (verified 2026-11-10)
+- [ ] Backups: none for now (Dani 2026-11-10, DECISIONS). Revisit when the player count grows (Supabase Pro, $25/month, daily backups).
+- [x] Auth emails branded (M4). Google OAuth: not used (email only, Dani 2026-11-09).
+- [ ] 60 days scheduled (needs Anthropic credit), and a real admin alert email tested (Claude can send one test to releasedani@gmail.com on request).
+- [x] Turnstile keys set (2026-11-10). Sentry: skipped for now (Dani); add at launch or when problems are reported (steps in this file's history: sentry.io → Next.js project `changel` → DSN → Vercel `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` as Config, Production + Preview).
+- [ ] Submit to Listdle, Alldle, Playlin, Dle Hunt on launch day.
 
 ---
 

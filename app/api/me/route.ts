@@ -20,7 +20,8 @@ const Query = z.object({
 
 export async function GET(req: Request) {
   const { user, sb } = await sessionUser(req);
-  if (!user) return apiError("unauthorized", "Start a session first.", 401);
+  // No session is normal (a new visitor on Stats/Account), not an error: 204, so browsers don't log one.
+  if (!user) return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
   const limited = await rateLimit("me", user.id);
   if (limited) return limited;
   const parsed = Query.safeParse(Object.fromEntries(new URL(req.url).searchParams));

@@ -4,7 +4,7 @@
  * Font families come from next/font (see app/fonts.ts) via --font-sans / --font-mono.
  */
 :root{
-  --bg:#f6f1e7; --ink:#16130f; --muted:#7a7166; --card:#fffdf8; --line:#e3dacb;
+  --bg:#f6f1e7; --ink:#16130f; --muted:#6e665b; --card:#fffdf8; --line:#e3dacb;
   --up:#ff5a36; --down:#2f7cf6; --g:#2bb673; --y:#f3c13a; --o:#ff8a3d; --r:#e5484d;
   /* Literal colours from the prototype, tokenised (DECISIONS.md 2026-11-09). */
   --ink-2:#3b352d;          /* body copy: intro p, fact */
@@ -164,6 +164,11 @@ html[data-returning] #intro{visibility:hidden}
 .dist{display:flex;height:14px;border-radius:7px;overflow:hidden;border:2px solid var(--ink);margin:8px 0 6px}
 .dist i{display:block;height:100%}
 .dist-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono-stack);font-size:11px;color:var(--muted);margin-bottom:6px}
+.crowd{font-family:var(--font-mono-stack);font-size:13px;color:var(--ink-2);margin:12px 0 14px;min-height:1.4em;text-align:center}
+.trap{font-size:15px;margin:4px 0 12px;padding:10px 12px;border:2px dashed var(--ink);border-radius:12px}
+.trap span{font-weight:800}
+.intro p.friend{color:var(--ink);border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:0 0 14px;background:var(--bg);font-size:15px;line-height:1.4}
+.intro p.friend b{font-family:var(--font-mono-stack)}
 .strip{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:8px 0 4px}
 .strip i{aspect-ratio:1;border-radius:5px;background:var(--line);display:block}
 .strip i.played,.strip button.played{background:var(--ink)}
@@ -280,6 +285,21 @@ html[data-returning] #intro{visibility:hidden}
 .qcard-flag{color:var(--r);font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .qcard-checks{font-size:13px;margin-top:6px}
 .qcard-checks ul{margin:6px 0;padding-left:16px}
+.an-ranges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.an-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0 18px}
+.an-tile{border:2px solid var(--ink);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px;background:var(--bg)}
+.an-tile b{font-size:28px}
+.an-tile small{font-family:var(--font-mono-stack);font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-2)}
+.an-tile span{font-size:12px;color:var(--ink-2)}
+.an-panel{border-top:2px solid var(--line);padding:14px 0 10px}
+.an-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.an-head h2{margin:0;font-size:20px}
+.an-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.an-table{width:100%;border-collapse:collapse;font-size:14px}
+.an-table th,.an-table td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.an-barcell{width:40%}
+.an-barcell i{display:block;height:14px;border-radius:0 4px 4px 0;min-width:2px}
+.an-sort{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--ink);cursor:pointer}
 .qcard-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .picker{border:2px solid var(--ink);border-radius:14px;padding:12px;margin:10px 0;background:var(--card)}
 .picker-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:8px;margin-bottom:8px}
@@ -317,3 +337,20 @@ html[data-returning] #intro{visibility:hidden}
 .report-actions{display:flex;gap:8px;margin-top:8px}
 .report-done{font-size:13px;color:var(--muted);margin:0 0 8px}
 .corrected{font-size:13px;font-weight:700;margin:0 0 6px}
+
+/* Cloudflare Turnstile: invisible unless Cloudflare needs an interaction (lib/game/turnstile-client.ts). */
+.turnstile-host{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60}
+.legal-links{text-align:center;font-size:13px;color:var(--ink-2);margin:14px 0 0}
+.legal-links a{color:var(--ink-2)}
+.prose-list{padding-left:20px;line-height:1.5}
+.prose-list li{margin:6px 0}
+.contact-form{display:grid;gap:12px;margin-top:10px}
+.contact-form label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700}
+.contact-form select,.contact-form input,.contact-form textarea{font:inherit;font-weight:400;border:2px solid var(--ink);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink);min-height:44px}
+.contact-form .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.msgs{list-style:none;padding:0;margin:0}
+.msg-body{white-space:pre-wrap;margin:8px 0}
+.page h3{font-size:17px;margin:18px 0 6px}
+.page section{margin-top:22px}
+.legal-jump{font-size:14px}
+.legal-jump a{color:var(--ink)}

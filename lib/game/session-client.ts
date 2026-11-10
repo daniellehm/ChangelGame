@@ -34,11 +34,20 @@ let sessionInFlight: Promise<boolean> | null = null;
  */
 export function ensureSession(tz: string): Promise<boolean> {
   if (!sessionInFlight) {
-    sessionInFlight = call("/api/session", { method: "POST", body: JSON.stringify({ tz }) })
-      .then((r) => r.status === 200)
-      .finally(() => {
-        sessionInFlight = null;
-      });
+    sessionInFlight = (async () => {
+      const r = await call("/api/session", { method: "POST", body: JSON.stringify({ tz }) });
+      if (r.status === 200) return true;
+      // A brand-new player needs a Turnstile token (SPEC §11); get one and retry once.
+      if (r.status === 403 && errCode(r.body) === "turnstile_required") {
+        const { getTurnstileToken } = await import("./turnstile-client");
+        const turnstile = await getTurnstileToken();
+        if (!turnstile) return false; // falls back to local play
+        return (await call("/api/session", { method: "POST", body: JSON.stringify({ tz, turnstile }) })).status === 200;
+      }
+      return false;
+    })().finally(() => {
+      sessionInFlight = null;
+    });
   }
   return sessionInFlight;
 }
@@ -119,7 +128,7 @@ export async function fetchMe(date: string, tz: string): Promise<ServerStats | n
 export async function fetchAccount(): Promise<ServerStats | null | undefined> {
   const r = await call("/api/me", { method: "GET", headers: {} });
   if (r.status === 200 && r.body) return r.body as unknown as ServerStats;
-  if (r.status === 401) return null;
+  if (r.status === 204 || r.status === 401) return null; // no session
   return undefined;
 }
 

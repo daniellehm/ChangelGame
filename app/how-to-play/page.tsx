@@ -8,7 +8,8 @@ import { actualLog, scoreRound, TIERS, type TierId } from "@/lib/scoring";
 import { stickerFor } from "@/lib/sticker";
 
 export const metadata: Metadata = {
-  title: "How to play · Changel",
+  title: "How to play",
+  alternates: { canonical: "/how-to-play" },
   description: "Guess how many times bigger or smaller a real number got between two years. Five rounds a day, free, no account.",
 };
 

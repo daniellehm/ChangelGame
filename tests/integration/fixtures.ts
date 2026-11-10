@@ -72,7 +72,7 @@ function cookieHeaderFrom(setCookies: string[]): string {
  * test user, signed in through @supabase/ssr so the cookie format is identical.
  */
 export async function newPlayer(): Promise<{ id: string; cookie: string; anonymous: boolean }> {
-  const res = await sessionPOST(new Request("http://localhost/api/session", { method: "POST", body: JSON.stringify({ tz: "Australia/Sydney" }), headers: { "x-forwarded-for": `198.51.100.${Math.floor(Math.random() * 200) + 1}` } }));
+  const res = await sessionPOST(new Request("http://localhost/api/session", { method: "POST", body: JSON.stringify({ tz: "Australia/Sydney" }), headers: { "x-forwarded-for": `198.51.100.${Math.floor(Math.random() * 200) + 1}`, "x-changel-test-now": TEST_NOW } })); // a test run: skips Turnstile
   if (res.status === 200) {
     const body = await res.json();
     createdUsers.push(body.user_id);
