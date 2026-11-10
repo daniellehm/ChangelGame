@@ -149,6 +149,10 @@ describe("POST /api/guess", () => {
     expect(me).toMatchObject({ games_played: 1, best_total: total, avg_total: total, current_streak: 1, max_streak: 1 });
     expect(Object.values(me.tiers as Record<string, number>).reduce((a, b) => a + b, 0)).toBe(5);
     expect(me.recent[0]).toMatchObject({ date: TEST_DATE, total, completed: true });
+    // Each round's result and question, so stats on another device can show the day.
+    expect(me.recent[0].rounds.map((r: { position: number }) => r.position)).toEqual([1, 2, 3, 4, 5]);
+    expect(me.recent[0].rounds.reduce((a: number, r: { points: number }) => a + r.points, 0)).toBe(total);
+    expect(me.recent[0].rounds.every((r: { prompt: string; tier: string }) => r.prompt.length > 0 && r.tier)).toBe(true);
   });
 
   it("concurrent double-tap on the same round stores exactly one guess", async () => {

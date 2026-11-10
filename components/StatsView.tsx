@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { addDays, localDate, puzzleNumber } from "@/lib/dates";
-import { fetchMe } from "@/lib/game/session-client";
-import { loadStats, summarize, type StatsEntry, type StatsSummary, type StoredStats } from "@/lib/game/storage";
-import { DayResult } from "./DayResult";
+import { fetchMe, type ServerPlay } from "@/lib/game/session-client";
+import { loadStats, summarize, type StatsSummary, type StoredStats } from "@/lib/game/storage";
+import { DayResult, type StripDay } from "./DayResult";
 import { TIERS, type TierId } from "@/lib/scoring";
 
 const ORDER: TierId[] = ["nailed", "close", "meh", "off", "wrong"];
@@ -15,6 +15,8 @@ interface Loaded {
   summary: StatsSummary;
   stats: StoredStats;
   today: string;
+  /** The account's recent plays (signed in or anonymous session), when the server answered. */
+  server?: ServerPlay[];
 }
 
 export function StatsView({ launch }: { launch: string }) {
@@ -22,7 +24,7 @@ export function StatsView({ launch }: { launch: string }) {
   // Signed into a real account? (null = not known yet.)
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   // The day whose pop-up is open (a played square on the strip).
-  const [open, setOpen] = useState<StatsEntry | null>(null);
+  const [open, setOpen] = useState<StripDay | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -35,7 +37,12 @@ export function StatsView({ launch }: { launch: string }) {
       void fetchMe(today, tz).then((me) => {
         setSignedIn(!!me && !me.anonymous);
         if (me && me.games_played >= summary.played) {
-          setData({ stats, today, summary: { ...summary, played: me.games_played, streak: me.current_streak, maxStreak: me.max_streak, best: me.best_total ?? 0, average: me.avg_total ?? 0 } });
+          setData({
+            stats,
+            today,
+            server: me.recent,
+            summary: { ...summary, played: me.games_played, streak: me.current_streak, maxStreak: me.max_streak, best: me.best_total ?? 0, average: me.avg_total ?? 0, tierCounts: me.tiers ?? summary.tierCounts },
+          });
         }
       });
     });
@@ -43,7 +50,7 @@ export function StatsView({ launch }: { launch: string }) {
   }, [launch]);
 
   if (!data) return <p className="note">Loading…</p>;
-  const { summary: s, stats, today } = data;
+  const { summary: s, stats, today, server } = data;
 
   if (s.played === 0) {
     return (
@@ -62,7 +69,13 @@ export function StatsView({ launch }: { launch: string }) {
   }
 
   const totalRounds = ORDER.reduce((a, t) => a + s.tierCounts[t], 0);
-  const byDate = new Map(stats.plays.map((p) => [p.date, p]));
+  // This device's games, plus the account's (another device's games show here too).
+  const byDate = new Map<string, StripDay>(stats.plays.map((p) => [p.date, p]));
+  for (const p of server ?? []) {
+    if (!p.completed || p.rounds.length !== 5) continue;
+    const local = byDate.get(p.date);
+    byDate.set(p.date, local ? { ...local, rounds: p.rounds } : { date: p.date, number: p.number, tz: "", total: p.total, tiers: p.rounds.map((r) => r.tier), rounds: p.rounds });
+  }
   const days = Array.from({ length: STRIP_DAYS }, (_, i) => addDays(today, i - (STRIP_DAYS - 1)));
   const playedInStrip = days.filter((d) => byDate.has(d)).length;
 

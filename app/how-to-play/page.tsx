@@ -9,7 +9,7 @@ import { stickerFor } from "@/lib/sticker";
 
 export const metadata: Metadata = {
   title: "How to play · Changel",
-  description: "Guess how many times bigger or smaller a number from the past is now. Five rounds a day, free, no account.",
+  description: "Guess how many times bigger or smaller a real number got between two years. Five rounds a day, free, no account.",
 };
 
 /* A worked example, scored with the real scoring module (same max_change as the question bank). */
@@ -44,7 +44,7 @@ export default function HowToPlay() {
     <PageShell>
       <div className="cat">How to play</div>
       <h1>Guess the change.</h1>
-      <p>A number from the past. How many times bigger or smaller is it now?</p>
+      <p>A real number from one year. How many times bigger or smaller was it years later?</p>
 
       <figure className="demo" aria-label="Example round">
         <div className="round-cat cat">

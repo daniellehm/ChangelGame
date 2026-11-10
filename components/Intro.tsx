@@ -12,7 +12,7 @@ export function Intro({ theme, number, onPlay, disabled }: Props) {
       <div className="cat">Daily · 5 rounds · 2 min</div>
       {theme && <div className="chip">{theme}</div>}
       <h1>How much did it change?</h1>
-      <p>One number from the past. How big is it now?</p>
+      <p>A real number from one year. How big was it years later?</p>
       <ul className="rules">
         <li><span>1</span>Slide right if it grew, left if it shrank.</li>
         <li><span>2</span>Closer guess, more points.</li>

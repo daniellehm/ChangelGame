@@ -1,5 +1,5 @@
 /**
- * GET /api/me?date=YYYY-MM-DD&tz=Area/City → player stats + last 30 plays
+ * GET /api/me?date=YYYY-MM-DD&tz=Area/City → player stats + last 30 plays (with each round's tier, points and question)
  * (SPEC §7). Streaks are computed here from plays with lib/streaks (date-line
  * rule). `date`/`tz` (the player's today) decide whether the current streak is
  * still alive.
@@ -32,12 +32,22 @@ export async function GET(req: Request) {
     const db = adminClient();
     const [{ data: stats, error: e1 }, { data: plays, error: e2 }] = await Promise.all([
       db.from("player_stats").select("*").eq("player_id", user.id).maybeSingle(),
-      db.from("plays").select("puzzle_date, started_at, completed_at, total, tz_at_play").eq("player_id", user.id).order("puzzle_date", { ascending: false }),
+      db.from("plays").select("id, puzzle_date, started_at, completed_at, total, tz_at_play").eq("player_id", user.id).order("puzzle_date", { ascending: false }),
     ]);
     if (e1) throw e1;
     if (e2) throw e2;
 
     const completed = (plays ?? []).filter((p) => p.completed_at);
+    // Rounds of the recent plays, so stats on a new device can show the strip and each day's pop-up.
+    const recentPlays = (plays ?? []).slice(0, 30);
+    const { data: guesses, error: e3 } = recentPlays.length
+      ? await db.from("guesses").select("play_id, position, points, tier, questions!inner(prompt)").in("play_id", recentPlays.map((p) => p.id)).order("position")
+      : { data: [], error: null };
+    if (e3) throw e3;
+    const roundsOf = new Map<string, Array<{ position: number; points: number; tier: string; prompt: string }>>();
+    for (const g of (guesses ?? []) as unknown as Array<{ play_id: string; position: number; points: number; tier: string; questions: { prompt: string } }>) {
+      roundsOf.set(g.play_id, [...(roundsOf.get(g.play_id) ?? []), { position: g.position, points: g.points, tier: g.tier, prompt: g.questions.prompt }]);
+    }
     const refs = completed.map((p) => ({ number: puzzleNumber(p.puzzle_date, launch), tz: p.tz_at_play ?? "" }));
     const today = date ? { number: puzzleNumber(date, launch), tz: tz ?? "" } : undefined;
 
@@ -59,11 +69,12 @@ export async function GET(req: Request) {
             off: stats?.tier_off ?? 0,
             wrong: stats?.tier_wrong ?? 0,
           },
-          recent: (plays ?? []).slice(0, 30).map((p) => ({
+          recent: recentPlays.map((p) => ({
             date: p.puzzle_date,
             number: puzzleNumber(p.puzzle_date, launch),
             total: p.total,
             completed: p.completed_at !== null,
+            rounds: roundsOf.get(p.id) ?? [],
           })),
         },
         { headers: { "Cache-Control": "no-store" } },

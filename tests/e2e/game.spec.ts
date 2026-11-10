@@ -13,7 +13,7 @@ test("intro shows the trimmed copy", async ({ page }) => {
   const intro = page.locator("#intro");
   await expect(intro.locator(".cat")).toHaveText("Daily · 5 rounds · 2 min");
   await expect(intro.locator("h1")).toHaveText("How much did it change?");
-  await expect(intro.locator("p")).toHaveText("One number from the past. How big is it now?");
+  await expect(intro.locator("p")).toHaveText("A real number from one year. How big was it years later?");
   await expect(intro.locator(".rules li")).toHaveText([
     "1Slide right if it grew, left if it shrank.",
     "2Closer guess, more points.",

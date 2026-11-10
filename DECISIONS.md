@@ -414,4 +414,8 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - the "Export my data" button is removed. The `/api/account/export` endpoint stays, so a data request (e.g. under the Privacy Act or GDPR) can still be answered by hand;
   - the "Delete account" heading above "Delete my account" is removed.
 
+- **Delete account** now has 20px more space above it, since it lost its heading.
+- **Stats on another device:** the result bar, last-30-days strip and day pop-up also use the account's history. `/api/me` returns each recent play's rounds (tier, points, question prompt). Before this they only used games stored on this device, so a new device showed the account's totals but an empty strip and an all-zero result bar.
+- **Copy:** questions don't always end in the present (e.g. 2009, 2012), so "One number from the past. How big is it now?" became "A real number from one year. How big was it years later?". The How to Play page and its description were changed the same way.
+
 **Why:** Dani's call on look and feel (a visual departure from the M4 screens, approved by her).

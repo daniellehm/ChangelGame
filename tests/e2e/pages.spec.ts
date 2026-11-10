@@ -92,6 +92,28 @@ test("stats page reflects a completed game", async ({ page }) => {
   await expect(page.getByText("coming soon")).toHaveCount(0);
 });
 
+test("stats on a device with no local games still show the account's history (strip, results, day pop-up)", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#startBtn").click();
+  let total = 0;
+  for (let i = 0; i < 5; i++) {
+    total += (await playRound(page, "2026-11-10", i, 0.25)).points;
+    await next(page);
+  }
+  // Same session, but this device's saved games are gone (like signing in on a new phone).
+  await page.evaluate(() => {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("changel:v1:")) localStorage.removeItem(k);
+  });
+  await page.goto("/stats");
+  await expect(page.locator("#sPlayed")).toHaveText("1");
+  await expect(page.locator(".strip button.played")).toHaveCount(1);
+  await expect(page.locator("#sDist")).not.toContainText("Nailed it 0 Close 0 Meh 0 Way off 0 Wrong way! 0");
+  await page.locator(".strip button.played").click();
+  const pop = page.getByRole("dialog");
+  await expect(pop.locator("#dayPopTitle")).toHaveText(`${total}/500`);
+  await expect(pop.getByText(roundsFor("2026-11-10")[0]!.prompt)).toBeVisible();
+});
+
 test("account page on a fresh browser offers sign-in (no account created just by visiting)", async ({ page }) => {
   await page.goto("/account");
   await expect(page.locator(".save-title")).toHaveText("Sign in");
