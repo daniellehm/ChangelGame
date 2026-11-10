@@ -27,6 +27,8 @@ interface Props {
   /** Shown after signing in from this screen (what happened to this device's games). */
   note: string | null;
   onToast: (message: string) => void;
+  /** The round the crowd did worst on today (SPEC §10), once there are enough plays. */
+  trap?: string | null;
 }
 
 function useCountdown(): string {
@@ -48,7 +50,7 @@ function useCountdown(): string {
   return text;
 }
 
-export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, note, onToast }: Props) {
+export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, note, onToast, trap = null }: Props) {
   const [saveExpanded, setSaveExpanded] = useState(saveOpen);
   const total = totalOf(results.map((r) => r.points));
   const shown = useCountUp(total, animate, 900);
@@ -81,6 +83,11 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
           );
         })}
       </div>
+      {trap && (
+        <p className="trap" id="trapLine">
+          <span>Today&apos;s trap:</span> {trap}
+        </p>
+      )}
       <div className="stats">
         <div><b id="stPlayed">{stats.played}</b><small>played</small></div>
         <div><b id="stStreak">{stats.streak}</b><small>streak</small></div>

@@ -171,7 +171,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 - [x] 6.1 Share sheet (`navigator.share`) + `?r=` code + landing. (`lib/game/share.ts` encode/decode, `ShareButton` sheet-or-copy, home page reads `?r=` for OG tags + the intro's friend line; tests: unit share, E2E `share.spec.ts`.)
 - [x] 6.2 `/api/og` images (1200×630). (Shared-result and default cards; TTFs in `assets/fonts/`; default OG/Twitter image on every page; unit test `og.test.ts`.)
-- [ ] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen.
+- [x] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen. (`round_crowd` SQL, `GET /api/crowd`, `lib/game/crowd.ts`; tests: unit crowd, integration crowd, E2E crowd.)
 - [ ] 6.4 Analytics events + `visits` + `daily_metrics` cron.
 - [ ] 6.5 Admin Analytics page (Recharts, CSV export).
 - [ ] 6.6 Sentry client + server.

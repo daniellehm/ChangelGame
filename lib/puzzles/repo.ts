@@ -8,6 +8,7 @@ import { questionRange, type GuessRange } from "../range";
 import { isWindowOpen } from "../dates";
 import { adminClient } from "../supabase/admin";
 import { ensureRerun } from "./rerun";
+import type { RoundCrowd } from "../game/crowd";
 
 export interface StoredPuzzle {
   date: string;
@@ -127,4 +128,17 @@ export async function answersByQuestionId(ids: number[]): Promise<Map<number, Ro
     });
   }
   return out;
+}
+
+/** Crowd stats per round for a puzzle day (SPEC §10), from the `round_crowd` function. */
+export async function roundCrowd(date: string): Promise<RoundCrowd[]> {
+  const { data, error } = await adminClient().rpc("round_crowd", { p_date: date });
+  if (error) throw error;
+  return ((data ?? []) as Array<{ pos: number; plays: number; wrong_way: number; nailed: number; avg_points: number | string }>).map((r) => ({
+    position: r.pos,
+    plays: r.plays,
+    wrong_way: r.wrong_way,
+    nailed: r.nailed,
+    avg_points: Number(r.avg_points),
+  }));
 }

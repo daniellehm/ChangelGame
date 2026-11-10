@@ -444,3 +444,21 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - **Every page** has the default card as its OG/Twitter image (`summary_large_image`); a shared result overrides it.
 
 **Why:** SPEC §10. One renderer for both cards keeps the look consistent.
+
+## 2026-11-10: M6 6.3: crowd line and today's trap
+
+**Decision:**
+- **Data:** `round_crowd(date)` (migration `round_crowd`) counts each round's plays, wrong-way and nailed guesses, and average points, from that date's plays.
+  - It only counts guesses on the question currently in the round, so a same-day swap doesn't mix two questions. A rerun day starts its own count.
+  - `GET /api/crowd?date=` serves it CDN-cached for 60 s; it holds no answers or user data. Days whose window hasn't opened get 403.
+- **Reveal line** (under the pins, above the fact; `lib/game/crowd.ts`):
+  - under 50 plays: "Too early for crowd stats on this one.";
+  - else if ≥ 20% went the wrong way: "N% of players went the wrong way";
+  - else if under 25% nailed it: "Only N% nailed this";
+  - else "N% of players nailed this".
+
+  The line reserves its height while loading, so the fact doesn't jump. Offline, it stays blank.
+- **Today's trap** (final screen, above the stats): the round with the lowest average points, shown only once every round has 50 plays, as "Today's trap: <question>".
+- The game refetches crowd stats after each locked round (cheap: CDN-cached).
+
+**Why:** SPEC §10 gives the examples and the 50-play threshold. The 20% and 25% cut-offs pick whichever fact is more striking, and they're constants in `CROWD`.
