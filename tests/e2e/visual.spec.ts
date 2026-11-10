@@ -32,7 +32,7 @@ for (const vp of VIEWPORTS) {
     for (let i = 0; i < 200; i++) counts[String(Math.floor(i * 2.5))] = 1;
     await page.route("**/api/crowd?**", (r) => r.fulfill({ json: { date: "2026-11-10", rounds: [], scores: { n: 200, counts } } }));
     await page.goto(baseURL!);
-    await expect(page.locator("#startBtn")).toHaveText(/Play #/); // puzzle loaded
+    await expect(page.locator("#startBtn")).toBeEnabled(); // puzzle loaded
 
     await snap(page, `${vp.name}-1-intro`);
     await page.locator("#startBtn").click();

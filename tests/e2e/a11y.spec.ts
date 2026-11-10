@@ -27,7 +27,7 @@ async function axe(page: Page) {
 
 test("keyboard-only: a full game can be played without a pointer", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("#startBtn")).toHaveText("Play #2"); // puzzle loaded from the API
+  await expect(page.locator("#startBtn")).toBeEnabled(); // puzzle loaded from the API
   await page.keyboard.press("Tab"); // logo
   await page.keyboard.press("Tab"); // menu
   await page.keyboard.press("Tab"); // Play

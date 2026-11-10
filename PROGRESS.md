@@ -204,6 +204,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 _Newest first._
 
 - 2026-11-10: Cross-device fixes on branch `fix-cross-device` (waiting for Dani's OK to deploy): today's game now follows you to another device, and session refresh is centralised in `proxy.ts` (the admin layout, /api/events and /api/contact were dropping refreshed tokens, silently signing people out). Stats/final screen no longer say "save your streak" to signed-in players (DECISIONS 2026-11-10 "Cross-device fixes").
+- 2026-11-10: Branch `home-play-label` (waiting for Dani's OK to deploy): intro button reads "Play today's" instead of "Play #N" (DECISIONS 2026-11-10). Separate branch `fix-analytics-all-range` also waiting. Next: Dani is choosing ideas for a more fun home page.
 
 - 2026-11-10: Search: changel.app verified in Google Search Console with the sitemap submitted, and added to Bing Webmaster Tools (Dani). Keep `public/google45efaf38ccaf1332.html`: removing it un-verifies the property.
 

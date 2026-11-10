@@ -70,7 +70,7 @@ test("a shared link opens a pop-up with the friend's score (Play starts the game
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", `https://changel.app/api/og?r=${code}`);
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Changel #2 ⇅ 372/500");
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
-  await expect(page.locator("#startBtn")).toHaveText("Play #2"); // puzzle loaded behind the pop-up
+  await expect(page.locator("#startBtn")).toBeEnabled(); // puzzle loaded behind the pop-up
   await pop.getByRole("button", { name: "Play", exact: true }).click();
   await expect(pop).toHaveCount(0);
   await expect(page.locator("#slider")).toBeVisible(); // round 1 started
@@ -81,7 +81,7 @@ test("a returning player opening an older shared link sees the pop-up; × closes
   const code = encodeShareCode({ number: 1, total: 300, tiers: ["meh", "meh", "close", "meh", "close"] });
   await page.goto(`/?r=${code}`);
   const pop = page.getByRole("dialog");
-  await expect(page.locator("#startBtn")).toHaveText("Play #2");
+  await expect(page.locator("#startBtn")).toBeEnabled();
   await expect(pop.locator("#friendLine")).toHaveText("That was an earlier puzzle. Today's is waiting.");
   await expect(pop.getByRole("button", { name: "Play today's" })).toBeVisible();
   await pop.getByRole("button", { name: "Close" }).click();

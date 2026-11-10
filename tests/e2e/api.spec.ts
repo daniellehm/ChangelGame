@@ -79,7 +79,7 @@ test("device clock 3 days ahead shows 'Check your device clock'", async ({ page 
   // Fixing the clock and retrying loads the game.
   await page.clock.setFixedTime(syd(`${DAY}T09:00:00`));
   await page.locator("#retryBtn").click();
-  await expect(page.locator("#startBtn")).toHaveText("Play #2");
+  await expect(page.locator("#startBtn")).toBeEnabled();
 });
 
 test("a date with no puzzle shows 'No puzzle yet'", async ({ page }) => {

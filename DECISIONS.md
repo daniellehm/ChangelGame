@@ -667,3 +667,10 @@ Dani liked all three in the comparison artifact.
   - `session-refresh` (integration): an expired session goes through the proxy and comes back with new long-lived HTTP-only tokens, and the account is still signed in.
   - `cross-device` (E2E): finished and half-done games move to a second device.
   - The anonymous test now expects the automatic resume.
+
+## 2026-11-10 — Home button says "Play today's"
+
+- Dani: "Play #2 is confusing. Just say Play today's."
+- The intro button now reads **Play today's** at all times. The puzzle number still shows in the header (and on the final screen and share text).
+- Tests now treat "button enabled" as the sign that the puzzle has loaded; the label used to do that job.
+- The intro visual baseline was updated to match.

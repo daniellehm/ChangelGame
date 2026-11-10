@@ -19,7 +19,7 @@ test("intro shows the trimmed copy", async ({ page }) => {
     "2Closer guess, more points.",
     "3Wrong direction scores 0.",
   ]);
-  await expect(page.locator("#startBtn")).toHaveText("Play #2");
+  await expect(page.locator("#startBtn")).toBeEnabled();
   await expect(page.locator("#meta")).toContainText("#2");
   await expect(page.locator("#meta")).toContainText("Nov 10");
 });

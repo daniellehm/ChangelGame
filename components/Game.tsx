@@ -439,7 +439,7 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
       <div className="wrap">
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
-          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot" || s.pending} />
+          <Intro theme={s.puzzle?.theme ?? null} onPlay={start} disabled={s.phase === "boot" || s.pending} />
         )}
         {s.phase === "error" && s.errorKind && (
           <LoadError
