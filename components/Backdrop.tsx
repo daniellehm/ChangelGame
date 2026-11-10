@@ -20,54 +20,62 @@ const DOWN = "47,124,246";
 const rgba = (c: string, a: number) => `rgba(${c},${a})`;
 /** Seeded random, so a scene looks the same every time it's picked. */
 const rng = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-const fadeOut = (p: number, from: number) => (p > from ? 1 - (p - from) / (1 - from) : 1);
+const easeOut = (x: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
 
-type Building = { x: number; w: number; h0: number; h1: number; d: number };
-type Dot = { x: number; y: number };
-type Line = { up: boolean; pts: Array<[number, number]>; delay: number };
+/*
+ * Every scene runs indefinitely (Dani 2026-11-10: it built up and vanished too quickly).
+ * Each builds up over a minute or more and then keeps changing, never emptying or resetting.
+ */
+type Building = { x: number; w: number; h0: number; h1: number; period: number; offset: number };
+type Dot = { x: number; y: number; phase: number };
+type LineSlot = { up: boolean; period: number; offset: number; seed: number };
+type LineState = { w: number; h: number; slots: LineSlot[]; cache: Map<string, Array<[number, number]>> };
 
 const SCENES: Scene[] = [
   {
-    // Rising skyline: buildings along the bottom grow taller over the loop.
+    // Rising skyline: each building grows over 1–2.5 minutes, then is knocked down and rebuilt,
+    // all at different times, so the city is always standing and always changing.
     init(w, h) {
       const r = rng(7);
       const b: Building[] = [];
       for (let x = -10; x < w + 10; ) {
         const bw = 14 + r() * 26;
-        b.push({ x, w: bw, h0: 18 + r() * 40, h1: 70 + r() * (h * 0.42), d: r() });
+        b.push({ x, w: bw, h0: 14 + r() * 30, h1: 70 + r() * (h * 0.45), period: 60 + r() * 90, offset: r() });
         x += bw + 3;
       }
       return b;
     },
-    draw(ctx, w, h, t, b: Building[]) {
-      const p = (t % 18) / 18;
-      const fade = fadeOut(p, 0.92);
+    draw(ctx, _w, h, t, b: Building[]) {
       for (const k of b) {
-        const local = Math.min(1, Math.max(0, p * 1.4 - k.d * 0.4));
-        const e = 1 - Math.pow(1 - local, 3);
+        const c = (t / k.period + k.offset) % 1;
+        // Grow for 90% of the cycle, then a quick rebuild down to its base.
+        const e = c < 0.9 ? easeOut(c / 0.9) : 1 - easeOut((c - 0.9) / 0.1);
         const hh = k.h0 + (k.h1 - k.h0) * e;
-        ctx.fillStyle = rgba(INK, 0.055 * fade);
+        ctx.fillStyle = rgba(INK, 0.055);
         ctx.fillRect(k.x, h - hh, k.w, hh);
-        ctx.fillStyle = rgba(UP, 0.05 * fade * e);
+        ctx.fillStyle = rgba(UP, 0.05 * e);
         for (let y = h - hh + 6; y < h - 6; y += 9) for (let x = k.x + 4; x < k.x + k.w - 4; x += 7) if ((x * 7 + y) % 5 < 2) ctx.fillRect(x, y, 2, 3);
       }
     },
   },
   {
-    // Multiplying dots: a few dots double until the screen is full, then reset.
+    // Multiplying dots: double every ~7 s until the screen is full (about a minute), then stay
+    // full, twinkling, with a few "newborn" dots glowing at any moment.
     init(w, h) {
       const r = rng(42);
       const n = Math.min(2400, Math.round((w * h) / 380));
-      return Array.from({ length: n }, () => ({ x: r() * w, y: r() * h }));
+      return Array.from({ length: n }, () => ({ x: r() * w, y: r() * h, phase: r() * Math.PI * 2 }));
     },
-    draw(ctx, w, h, t, dots: Dot[]) {
-      const p = (t % 16) / 16;
-      const n = Math.min(dots.length, Math.floor(4 * Math.pow(2, p * Math.log2(dots.length / 4) * 1.05)));
-      const fade = fadeOut(p, 0.9);
-      const fresh = Math.floor(n * 0.88);
+    draw(ctx, _w, _h, t, dots: Dot[]) {
+      const doublings = Math.log2(dots.length / 4);
+      const n = Math.min(dots.length, Math.floor(4 * Math.pow(2, Math.min(doublings, t / 7))));
+      const growing = n < dots.length;
       for (let i = 0; i < n; i++) {
         const d = dots[i]!;
-        ctx.fillStyle = i >= fresh ? rgba(UP, 0.16 * fade) : rgba(INK, 0.075 * fade);
+        // While growing, the newest eighth glows; once full, dots take turns glowing.
+        const glow = growing ? i >= n * 0.88 : Math.sin(t * 0.35 + d.phase * 7) > 0.985;
+        const twinkle = growing ? 1 : 0.75 + 0.25 * Math.sin(t * 0.6 + d.phase);
+        ctx.fillStyle = glow ? rgba(UP, 0.16) : rgba(INK, 0.075 * twinkle);
         ctx.beginPath();
         ctx.arc(d.x, d.y, 2.2, 0, Math.PI * 2);
         ctx.fill();
@@ -75,36 +83,50 @@ const SCENES: Scene[] = [
     },
   },
   {
-    // Trend lines: faint red-up and blue-down lines draw themselves across.
+    // Trend lines: each line takes ~35–55 s to draw across, stays a while, then fades as the
+    // next one in its slot starts. Slots are staggered, so several are always on screen.
     init(w, h) {
       const r = rng(99);
-      return Array.from({ length: Math.max(4, Math.round(w / 140)) }, (_, i) => {
-        const up = i % 3 !== 2;
-        const pts: Array<[number, number]> = [];
-        let y = h * (0.15 + r() * 0.75);
-        for (let x = 0; x <= w; x += 6) {
-          y += (up ? -1 : 1) * (0.35 + r() * 0.9) * (h / 700) + (r() - 0.5) * 3.2;
-          pts.push([x, y]);
-        }
-        return { up, pts, delay: r() * 0.35 };
-      });
+      const slots = Array.from({ length: Math.max(8, Math.round(w / 70)) }, (_, i) => ({ up: i % 3 !== 2, period: 55 + r() * 30, offset: r(), seed: 1 + Math.floor(r() * 1e6) }));
+      return { w, h, slots, cache: new Map() } satisfies LineState;
     },
-    draw(ctx, _w, _h, t, lines: Line[]) {
-      const p = (t % 20) / 20;
-      const fade = fadeOut(p, 0.88);
+    draw(ctx, _w, _h, t, st: LineState) {
       ctx.lineWidth = 2.2;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
-      for (const L of lines) {
-        const upto = Math.floor(L.pts.length * Math.min(1, Math.max(0, (p - L.delay) / 0.55)));
+      for (const slot of st.slots) {
+        const cycles = t / slot.period + slot.offset;
+        const n = Math.floor(cycles);
+        const c = cycles - n;
+        // A fresh line each cycle (seeded by slot and cycle), cached while it's on screen.
+        const key = `${slot.seed}:${n}`;
+        let pts = st.cache.get(key);
+        if (!pts) {
+          const r = rng(slot.seed + n * 7919);
+          pts = [];
+          // Lines are spread evenly down the screen (so some always run outside the card).
+          const band = (st.slots.indexOf(slot) + 0.5) / st.slots.length;
+          let y = st.h * (0.06 + band * 0.9) + (r() - 0.5) * (st.h / st.slots.length) * 0.6;
+          if (slot.up) y += st.h * 0.06; // start a little low so the rise stays on screen
+          else y -= st.h * 0.06;
+          for (let x = 0; x <= st.w; x += 6) {
+            y += (slot.up ? -1 : 1) * (0.5 + r() * 1.1) * (st.h / 1000) * (900 / Math.max(400, st.w)) + (r() - 0.5) * 3.2;
+            pts.push([x, y]);
+          }
+          st.cache.set(key, pts);
+          if (st.cache.size > st.slots.length * 2) st.cache.delete(st.cache.keys().next().value!);
+        }
+        // Draw for 65% of the cycle, hold for 25%, fade over the last 10%.
+        const upto = Math.floor(pts.length * Math.min(1, c / 0.65));
         if (upto < 2) continue;
-        ctx.strokeStyle = rgba(L.up ? UP : DOWN, 0.13 * fade);
+        const fade = c > 0.9 ? 1 - (c - 0.9) / 0.1 : 1;
+        ctx.strokeStyle = rgba(slot.up ? UP : DOWN, 0.13 * fade);
         ctx.beginPath();
-        ctx.moveTo(...L.pts[0]!);
-        for (let i = 1; i < upto; i++) ctx.lineTo(...L.pts[i]!);
+        ctx.moveTo(...pts[0]!);
+        for (let i = 1; i < upto; i++) ctx.lineTo(...pts[i]!);
         ctx.stroke();
-        const [ex, ey] = L.pts[upto - 1]!;
-        ctx.fillStyle = rgba(L.up ? UP : DOWN, 0.2 * fade);
+        const [ex, ey] = pts[upto - 1]!;
+        ctx.fillStyle = rgba(slot.up ? UP : DOWN, 0.2 * fade);
         ctx.beginPath();
         ctx.arc(ex, ey, 3.2, 0, Math.PI * 2);
         ctx.fill();
@@ -157,8 +179,10 @@ export function Backdrop() {
       if (cancelled) return;
       size();
       canvas.classList.add("on");
-      if (still) return paint(7); // reduced motion: one still frame
-      started = performance.now() - Math.random() * 8000; // start mid-loop, not always empty
+      if (still) return paint(90); // reduced motion: one still frame, fully built
+      // ?bgt=SECONDS fast-forwards (for previews). Dots start small and multiply; skyline and lines are staggered already.
+      const skip = Number(new URLSearchParams(location.search).get("bgt")) || 0;
+      started = performance.now() - Math.min(3600, Math.max(0, skip)) * 1000;
       raf = requestAnimationFrame(loop);
     };
     let resizeTimer: ReturnType<typeof setTimeout>;
@@ -166,7 +190,7 @@ export function Backdrop() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         size();
-        if (still) paint(7);
+        if (still) paint(90);
       }, 150);
     };
     // Only once the page has loaded and gone idle, so it never competes with the first paint.

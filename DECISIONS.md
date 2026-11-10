@@ -632,4 +632,8 @@ Dani liked all three in the comparison artifact.
 - **Faint by design:** opacity 0.05–0.2, behind `main`, and dimmed to 45% during rounds (`html[data-playing]`).
 - **Speed:** starts only after `load` + idle (so it never competes with the first paint), ≤30 fps, nothing while the tab is hidden, canvas resolution capped at 1.5×.
 - **Reduced motion:** one still frame. Automated test browsers (`navigator.webdriver`) get none, so the visual baselines stay deterministic.
-- **Preview override:** `?bg=skyline|dots|lines` forces a scene.
+- **Preview override:** `?bg=skyline|dots|lines` forces a scene, and `?bgt=SECONDS` fast-forwards it.
+- **They run indefinitely** (Dani: "it builds up then disappears; it should go much longer"):
+  - **Skyline:** each building grows over 1–2.5 min, then is rebuilt, at staggered times, so the city is always standing.
+  - **Dots:** they double every ~7 s until full (~1 min), then stay full, twinkling, with occasional orange "newborns".
+  - **Trend lines:** at least 8 slots (more on wide screens), spread evenly down the screen. Each line draws over ~35–55 s, holds, then fades as a new one starts in its slot.
