@@ -1,36 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { scoreBars, standing, standingText, type ScoreDistribution } from "@/lib/game/standing";
+import { standing, standingText, withYou, type ScoreDistribution } from "@/lib/game/standing";
 
 /** 100 players scoring 0, 5, 10, … 495. */
 const spread: ScoreDistribution = { n: 100, counts: Object.fromEntries(Array.from({ length: 100 }, (_, i) => [String(i * 5), 1])) };
+const text = (t: number, d: ScoreDistribution) => standingText(standing(t, d));
 
-describe("standing", () => {
-  it("waits for 20 finished games", () => {
-    expect(standing(300, { n: 19, counts: { "300": 19 } })).toEqual({ kind: "early", n: 19 });
-    expect(standingText(standing(300, null))).toBe("Too early to compare: 0 players so far today.");
-    expect(standingText({ kind: "early", n: 1 })).toBe("Too early to compare: 1 player so far today.");
+describe("standing sticker", () => {
+  it("top half: Top X% = share who scored higher (the best is Top 1%), with a band", () => {
+    expect(standing(495, spread)).toEqual({ kind: "top", pct: 1, band: "crown" });
+    expect(standing(450, spread)).toEqual({ kind: "top", pct: 9, band: "rocket" });
+    expect(standing(400, spread)).toEqual({ kind: "top", pct: 19, band: "star" });
+    expect(standing(260, spread)).toEqual({ kind: "top", pct: 47, band: "thumbs" });
+    expect(text(425, spread)).toBe("Top 14% today");
   });
 
-  it("top half: Top X% (the best score is Top 1%)", () => {
-    expect(standingText(standing(495, spread))).toBe("Top 1% today");
-    expect(standingText(standing(425, spread))).toBe("Top 15% today"); // 14 scored higher
-    expect(standingText(standing(250, spread))).toBe("Top 50% today");
+  it("bottom half: Beat Y% of players instead (never a put-down)", () => {
+    expect(standing(100, spread)).toEqual({ kind: "better", pct: 20, band: "flex" });
+    expect(text(0, spread)).toBe("Beat 0% of players today"); // the sticker hides this case (StandingSticker)
   });
 
-  it("bottom half: better than Y% instead", () => {
-    expect(standingText(standing(100, spread))).toBe("Better than 20% of players today");
-    expect(standingText(standing(0, spread))).toBe("Better than 0% of players today");
+  it("works from the very first game, and counts you even if the cached data hasn't caught up", () => {
+    expect(text(300, { n: 0, counts: {} })).toBe("Top 1% today"); // the only player so far
+    expect(withYou(320, { n: 3, counts: { "100": 1, "200": 1, "400": 1 } })).toEqual({ n: 4, counts: { "100": 1, "200": 1, "400": 1, "320": 1 } });
+    expect(text(320, { n: 3, counts: { "100": 1, "200": 1, "400": 1 } })).toBe("Top 25% today"); // 1 of 4 higher
+    expect(withYou(300, { n: 2, counts: { "300": 2 } })).toEqual({ n: 2, counts: { "300": 2 } }); // already counted
   });
 
   it("ties count as neither above nor below", () => {
-    expect(standing(300, { n: 40, counts: { "300": 40 } })).toEqual({ kind: "top", pct: 3, n: 40 });
+    expect(standing(300, { n: 40, counts: { "300": 40 } })).toMatchObject({ kind: "top", pct: 1 });
   });
 
-  it("bars: 20 buckets of 25 points, 500 in the last, with yours marked", () => {
-    const b = scoreBars(425, spread);
-    expect(b.counts).toHaveLength(20);
-    expect(b.counts.reduce((a, c) => a + c, 0)).toBe(100);
-    expect(b.mine).toBe(17);
-    expect(scoreBars(500, { n: 1, counts: { "500": 1 } }).counts[19]).toBe(1);
+  it("never mentions how many people played", () => {
+    for (const t of [0, 100, 260, 450, 495]) expect(text(t, spread)).not.toMatch(/100|players so far/);
   });
 });

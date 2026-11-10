@@ -13,7 +13,7 @@ import { finalTitle, TIERS, totalOf } from "@/lib/scoring";
 import { useCountUp } from "./motion";
 import { SaveStreak } from "./SaveStreak";
 import { ShareButton } from "./ShareButton";
-import { ScoreGraph } from "./ScoreGraph";
+import { StandingSticker } from "./StandingSticker";
 import type { ScoreDistribution } from "@/lib/game/standing";
 
 interface Props {
@@ -81,8 +81,10 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
           <span key={i} style={{ "--i": i } as CSSProperties}>{TIERS[t].emoji}</span>
         ))}
       </div>
-      <div className="title" id="finalTitle">{finalTitle(total)}</div>
-      <ScoreGraph total={total} scores={scores} />
+      <div className="final-stickers">
+        <div className="title" id="finalTitle">{finalTitle(total)}</div>
+        <StandingSticker total={total} scores={scores} />
+      </div>
       <div className="rows" id="finalRows">
         {results.map((r) => {
           const round = puzzle.rounds[r.position - 1];
