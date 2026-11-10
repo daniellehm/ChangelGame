@@ -203,6 +203,14 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
+- 2026-11-10: SEO extras on branch `seo-extras` (waiting for Dani's OK to deploy): JSON-LD structured data (free web game) and a web app manifest with icons (Add to Home Screen). Still to do at launch (needs Dani's Google login): Google Search Console + sitemap submission, then Bing Webmaster Tools (import from Search Console).
+
+- 2026-11-10: Fun pass live (Dani's OK), verified on changel.app:
+  - "Top X% today" sticker on the final screen (no graph, never a player count);
+  - animated backgrounds (skyline, dots or trend lines; random each visit; continuous; dimmed in rounds; still under reduced motion);
+  - SVG logo mark (the ⇅ glyph was distorted on phones).
+  - Previews: `?bg=skyline|dots|lines`, `&bgt=SECONDS`.
+
 - 2026-11-10: M5 merged into `main` locally (approved by Dani: "ready to move on"); pushing `main` needs Dani's explicit OK (production deploy).
   - UI tweaks on branch `ui-tweaks` (DECISIONS 2026-11-10):
     - a stats day pop-up (score + each round);

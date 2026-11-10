@@ -50,3 +50,29 @@ test("privacy & terms and contact are linked at the bottom (game intro and other
   await page.goto("/how-to-play");
   await expect(page.locator(".legal-links").getByRole("link", { name: "Contact" })).toBeVisible();
 });
+
+test("web app manifest: linked from the page, name, colours, and icons that load", async ({ page, request }) => {
+  await page.goto("/");
+  const href = await page.locator('link[rel="manifest"]').getAttribute("href");
+  expect(href).toBeTruthy();
+  const m = await (await request.get(href!)).json();
+  expect(m).toMatchObject({ name: "Changel", short_name: "Changel", start_url: "/", display: "standalone", background_color: "#f6f1e7" });
+  expect(m.icons.map((i: { purpose: string }) => i.purpose).sort()).toEqual(["any", "any", "maskable"]);
+  for (const icon of m.icons as Array<{ src: string }>) {
+    const res = await request.get(icon.src);
+    expect(res.status(), icon.src).toBe(200);
+    expect(res.headers()["content-type"]).toBe("image/png");
+  }
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
+});
+
+test("structured data says it's a free daily web game", async ({ page }) => {
+  await page.goto("/");
+  const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(blocks).toHaveLength(1);
+  const data = JSON.parse(blocks[0]!) as Array<Record<string, unknown>>;
+  expect(data.find((d) => d["@type"] === "WebSite")).toMatchObject({ name: "Changel", url: "https://changel.app/" });
+  const game = data.find((d) => Array.isArray(d["@type"]))!;
+  expect(game["@type"]).toEqual(["VideoGame", "WebApplication"]);
+  expect(game).toMatchObject({ isAccessibleForFree: true, offers: { price: "0" }, applicationCategory: "GameApplication" });
+});
