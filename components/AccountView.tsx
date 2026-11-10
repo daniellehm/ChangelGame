@@ -94,7 +94,7 @@ export function AccountView() {
           ) : (
             <div className="account-rows">
               <button className="btn ghost" type="button" onClick={() => setChanging(true)}>Change email</button>
-              <button className="btn ghost" type="button" onClick={doSignOut} disabled={busy}>Sign out</button>
+              <button className="btn" type="button" onClick={doSignOut} disabled={busy}>Sign out</button>
             </div>
           )}
 
@@ -105,7 +105,7 @@ export function AccountView() {
               <button className="btn ghost" type="button" onClick={() => setConfirmDelete(false)}>Keep my account</button>
             </div>
           ) : (
-            <button className="danger" type="button" onClick={() => setConfirmDelete(true)}>Delete my account</button>
+            <button className="danger solid" type="button" onClick={() => setConfirmDelete(true)}>Delete my account</button>
           )}
         </>
       )}

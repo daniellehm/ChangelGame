@@ -6,7 +6,7 @@ import { addDays, localDate, puzzleNumber } from "@/lib/dates";
 import { fetchMe, type ServerPlay } from "@/lib/game/session-client";
 import { loadStats, summarize, type StatsSummary, type StoredStats } from "@/lib/game/storage";
 import { DayResult, type StripDay } from "./DayResult";
-import { TIERS, type TierId } from "@/lib/scoring";
+import { TIERS, tierFor, type TierId } from "@/lib/scoring";
 
 const ORDER: TierId[] = ["nailed", "close", "meh", "off", "wrong"];
 const STRIP_DAYS = 30;
@@ -107,8 +107,17 @@ export function StatsView({ launch }: { launch: string }) {
       <div className="strip" role="group" aria-label={`Played ${playedInStrip} of the last ${STRIP_DAYS} days`}>
         {days.map((d) => {
           const p = byDate.get(d);
-          return p ? (
-            <button key={d} type="button" className="played" aria-label={`${d}: ${p.total} points. Show how you did`} onClick={() => setOpen(p)} />
+          // Coloured by the day's average round (total ÷ 5), with the same cut-offs and colours as a round's result.
+          const tier = p ? tierFor(Math.round(p.total / 5), false) : null;
+          return p && tier ? (
+            <button
+              key={d}
+              type="button"
+              className="played"
+              style={{ background: TIERS[tier].color }}
+              aria-label={`${d}: ${p.total} points (${TIERS[tier].label}). Show how you did`}
+              onClick={() => setOpen(p)}
+            />
           ) : (
             <i key={d} title={`${d}: not played`} />
           );
