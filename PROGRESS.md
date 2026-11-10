@@ -53,11 +53,7 @@
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
-- [ ] **Cloudflare Turnstile keys** (free; needed before launch to stop bot sign-ups):
-  1. dash.cloudflare.com → sign up or log in → **Turnstile** → **Add widget**.
-  2. Name `changel`; hostnames `changel.app`, `www.changel.app`, `localhost`; widget mode **Invisible**; pre-clearance: No.
-  3. Add the **Site key** in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **Secret key** as `TURNSTILE_SECRET` (Sensitive), Production + Preview. Tell Claude when done; Claude adds them to `.env.local` from Vercel and tests.
-  4. Preview URLs (`*.vercel.app`) aren't allowed as a hostname pattern, so previews would fail Turnstile: Claude will only set the keys for Production unless you add each preview host.
+- [x] **Cloudflare Turnstile keys** set by Dani in Vercel, Production only (2026-11-10): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Config), `TURNSTILE_SECRET` (Secret). Goes live with the M6 merge; test a brand-new player on changel.app then.
 - [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
 - [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
 - [ ] **Read /privacy** (Privacy & terms, one page; a plain-language draft, not legal advice). No operator named and no email (Dani 2026-11-10); contact is the form at /contact → Admin → Messages. Confirm governing law New South Wales.
