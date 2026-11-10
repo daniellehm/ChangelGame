@@ -599,3 +599,12 @@ The numbers themselves are already guarded by the source quote and the blind cro
 **Risk accepted:** a bad migration, a bug or an accidental delete would be permanent. Lost content (the question bank) can be regenerated at Claude cost; lost player history can't.
 
 **Mitigation in the meantime:** Claude asks before any destructive database change (CLAUDE.md rule), and migrations stay additive where possible.
+
+## 2026-11-10: Friend pop-up; admin is a 404 for everyone else (Dani)
+
+**Decision:**
+- **Shared link landing:** the friend's result is a closeable pop-up instead of a box in the intro (which crowded the label and wrapped the squares).
+  - It shows "A friend played Changel #N", their score/500, the five squares on one line, "Can you beat it?", and a **Play** button that starts today's game.
+  - For an older puzzle it says "That was an earlier puzzle. Today's is waiting." with "Play today's".
+  - It closes with ×, Escape or a tap outside, and the dialog itself takes focus (no focus ring on touch).
+- **Admin portal:** `app/admin/layout.tsx` checks the session server-side, and anyone who isn't on `ADMIN_EMAILS` (signed out, anonymous, or another account) gets the normal **404**, with no "admin" page, sign-in prompt or menu. Dani signs in on /account first. `/api/admin/*` keeps its own 401/403 checks. The E2E test server uses `ADMIN_EMAILS=e2e-admin@example.com` (playwright.config).
