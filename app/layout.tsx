@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Backdrop } from "@/components/Backdrop";
 import { BuyMeACoffee } from "@/components/BuyMeACoffee";
 import { bricolage, jetbrainsMono } from "./fonts";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${bricolage.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
+        <Backdrop />
         <main>{children}</main>
         <BuyMeACoffee />
       </body>

@@ -620,3 +620,16 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - The crowd data is cached for a minute, so if your own total isn't counted yet it's added before working out the percentage.
 - **Data:** `score_distribution(date)` (migration) returns finished games per total. `GET /api/crowd` returns it as `scores` next to the round stats (no extra request).
 - **Motion:** the sticker "slaps" on after the grid animation; it's static under reduced motion. The share text is unchanged.
+
+## 2026-11-10: Animated backgrounds, random each visit (Dani)
+
+**Decision:** one faint canvas behind every page except admin (`components/Backdrop.tsx`), showing one of three scenes, picked at random on each visit:
+- a rising skyline;
+- multiplying dots (doubling until full);
+- trend lines (red up, blue down) drawing across.
+
+Dani liked all three in the comparison artifact.
+- **Faint by design:** opacity 0.05–0.2, behind `main`, and dimmed to 45% during rounds (`html[data-playing]`).
+- **Speed:** starts only after `load` + idle (so it never competes with the first paint), ≤30 fps, nothing while the tab is hidden, canvas resolution capped at 1.5×.
+- **Reduced motion:** one still frame. Automated test browsers (`navigator.webdriver`) get none, so the visual baselines stay deterministic.
+- **Preview override:** `?bg=skyline|dots|lines` forces a scene.
