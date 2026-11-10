@@ -205,7 +205,7 @@ _Newest first._
 
 - 2026-11-10: Search: changel.app verified in Google Search Console with the sitemap submitted, and added to Bing Webmaster Tools (Dani). Keep `public/google45efaf38ccaf1332.html`: removing it un-verifies the property.
 
-- 2026-11-10: SEO extras on branch `seo-extras` (waiting for Dani's OK to deploy): JSON-LD structured data (free web game) and a web app manifest with icons (Add to Home Screen). Search Console and Bing done (see above).
+- 2026-11-10: SEO extras live (Dani's OK; verified on changel.app): JSON-LD structured data (free web game) and a web app manifest with icons (Add to Home Screen).
 
 - 2026-11-10: Fun pass live (Dani's OK), verified on changel.app:
   - "Top X% today" sticker on the final screen (no graph, never a player count);
