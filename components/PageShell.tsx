@@ -9,7 +9,7 @@ export function PageShell({ children }: { children: ReactNode }) {
     <div className="wrap">
       <Header launch={launchDate()} />
       <section className="card page">{children}</section>
-      <Link href="/" className="btn ghost back">Back to today&apos;s Changel</Link>
+      <Link href="/" className="btn back">Back to today&apos;s Changel</Link>
     </div>
   );
 }
