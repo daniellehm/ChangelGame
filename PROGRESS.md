@@ -60,6 +60,8 @@
   4. Preview URLs (`*.vercel.app`) aren't allowed as a hostname pattern, so previews would fail Turnstile: Claude will only set the keys for Production unless you add each preview host.
 - [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
 - [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
+- [ ] **hello@changel.app must receive mail** (it's the contact on Privacy and Terms). Options: Resend inbound, or a free forwarder (ImprovMX, or Cloudflare Email Routing). Claude can set the DNS records in Vercel once you pick one and create its account.
+- [ ] **Read /privacy and /terms** (a plain-language draft, not legal advice). Confirm: governing law New South Wales; whether to name the operator (e.g. your name or a company); anything you'd add.
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
 
@@ -181,7 +183,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.5 Admin Analytics page (Recharts, CSV export). (`/admin/analytics`, `GET /api/admin/analytics`, `lib/admin/analytics.ts`, migration `analytics_live`; AEST toggle deferred, DECISIONS.)
 - [x] 6.6 Sentry client + server. (Inert until a DSN is set: `instrumentation.ts`, lazy `instrumentation-client.ts`.)
 - [x] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output. (Turnstile inert until keys are set; new `session`/`account`/`og` limits; `npm run build` fails on a leaked secret.)
-- [ ] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play).
+- [x] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play). (`/privacy`, `/terms`, `robots.ts`, `sitemap.ts`, title template; E2E `seo.spec.ts`.)
 - [ ] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist.
 
 ---

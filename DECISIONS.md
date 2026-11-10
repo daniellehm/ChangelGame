@@ -536,3 +536,18 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - It fails the build, so a leak stops the Vercel deploy. It was verified to fail on a planted leak.
 
 **Why:** SPEC §11 security.
+
+## 2026-11-10: M6 6.8: privacy, terms and SEO
+
+**Decision:**
+- **`/privacy` and `/terms`** are written for the Australian Privacy Principles and GDPR basics, and describe exactly what the code does:
+  - what's stored and why, and that the only cookies are strictly necessary;
+  - every processor with its region (APP 8 cross-border disclosure);
+  - retention (7 / 400 days, matching the cleanup cron and the analytics pruning);
+  - rights: delete in the app, a copy or correction by email (the export button was removed on 2026-11-10, and the endpoint is still there for these requests), and complaints to the OAIC or an EU/UK authority.
+  - Terms: fair play, numbers "a game, not a reference", the Australian Consumer Law carve-out, governed by **New South Wales** law (assumed: Dani is in Sydney).
+  - Contact is **hello@changel.app** (see Needs from Dani: it must actually receive mail).
+- **They're linked** from the menu and from small links under every page's "Back to today's Changel" button.
+- **Titles:** the default is the SPEC §10 title "Changel — the daily game about how much the world changed", with the template "%s · Changel". There's a new description and canonical URLs.
+- **`robots.txt`** disallows `/admin`, `/api/`, `/account`, `/stats` and `/auth`, and points at `/sitemap.xml` (home, how to play, privacy, terms). Stats and Account are also `noindex`.
+- These pages are a plain-language starting point, not legal advice. Dani should have them reviewed before launch if the game grows.

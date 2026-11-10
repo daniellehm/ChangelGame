@@ -340,3 +340,7 @@ html[data-returning] #intro{visibility:hidden}
 
 /* Cloudflare Turnstile: invisible unless Cloudflare needs an interaction (lib/game/turnstile-client.ts). */
 .turnstile-host{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60}
+.legal-links{text-align:center;font-size:13px;color:var(--ink-2);margin:14px 0 0}
+.legal-links a{color:var(--ink-2)}
+.prose-list{padding-left:20px;line-height:1.5}
+.prose-list li{margin:6px 0}

@@ -10,6 +10,9 @@ export function PageShell({ children }: { children: ReactNode }) {
       <Header launch={launchDate()} />
       <section className="card page">{children}</section>
       <Link href="/" className="btn back">Back to today&apos;s Changel</Link>
+      <p className="legal-links">
+        <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
+      </p>
     </div>
   );
 }
