@@ -13,6 +13,8 @@ export const LIMITS = {
   guess: { tokens: 30, window: "1 m" },
   /** 60 puzzle reads/min per IP (most reads are CDN hits and never reach this). */
   puzzle: { tokens: 60, window: "1 m" },
+  /** Analytics events from the browser (a few per game). */
+  events: { tokens: 30, window: "1 m" },
   /** One reveal per round, so 30/min per IP is generous. */
   reveal: { tokens: 30, window: "1 m" },
   /** Plays, syncs and stats are rare per player. */

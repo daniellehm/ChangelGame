@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { runAfter } from "@/lib/api/after";
+import { recordVisit } from "@/lib/analytics/server";
 import { Game } from "@/components/Game";
 import { launchDate } from "@/lib/config";
 import { decodeShareCode, encodeShareCode } from "@/lib/game/share";
@@ -35,6 +38,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 
 export default async function Home({ searchParams }: Props) {
   const shared = await sharedFrom(searchParams);
+  // Count the visit (SPEC §8) after the response is sent, so it never slows the page.
+  const h = new Headers(await headers());
+  runAfter(() => recordVisit(h, !!shared));
   return (
     <>
       {!shared && <script dangerouslySetInnerHTML={{ __html: RETURNING_SCRIPT }} />}

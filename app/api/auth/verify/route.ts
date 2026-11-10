@@ -4,7 +4,9 @@
  * if this browser was an anonymous player signing into an existing account,
  * merges that history in (earlier-started play wins on clashes).
  */
+import { runAfter } from "@/lib/api/after";
 import { z } from "zod";
+import { recordSignup } from "@/lib/analytics/server";
 import { apiError, invalid } from "@/lib/api/http";
 import { rateLimit } from "@/lib/api/ratelimit";
 import { readFlow } from "@/lib/auth/cookies";
@@ -32,6 +34,10 @@ export async function POST(req: Request) {
   const sb = supabaseForRequest(req);
   const { data, error } = await sb.client.auth.verifyOtp({ email: flow.email, token: parsed.data.code, type: flow.type });
   if (error || !data.user) return apiError("invalid_code", "That code didn't work. Check it, or ask for a new one.", 400);
+
+  // Analytics: the first time an account confirms an email counts as its sign-up (SPEC §11).
+  const { id: userId, email: userEmail } = data.user;
+  runAfter(() => recordSignup(userId, userEmail, flow.type, new Date().toISOString().slice(0, 10)));
 
   let merged = null;
   let mergeError = false;

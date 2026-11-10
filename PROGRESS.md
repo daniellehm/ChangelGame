@@ -54,7 +54,8 @@
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
 - [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
-- [ ] M6: Sentry account/DSN; PostHog or Plausible account
+- [ ] M6: Sentry account/DSN. (Plausible/PostHog now optional: analytics are first-party, DECISIONS 2026-11-10.)
+- [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
 
@@ -172,7 +173,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.1 Share sheet (`navigator.share`) + `?r=` code + landing. (`lib/game/share.ts` encode/decode, `ShareButton` sheet-or-copy, home page reads `?r=` for OG tags + the intro's friend line; tests: unit share, E2E `share.spec.ts`.)
 - [x] 6.2 `/api/og` images (1200×630). (Shared-result and default cards; TTFs in `assets/fonts/`; default OG/Twitter image on every page; unit test `og.test.ts`.)
 - [x] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen. (`round_crowd` SQL, `GET /api/crowd`, `lib/game/crowd.ts`; tests: unit crowd, integration crowd, E2E crowd.)
-- [ ] 6.4 Analytics events + `visits` + `daily_metrics` cron.
+- [x] 6.4 Analytics events + `visits` + `daily_metrics` cron. (Migration `analytics`; `lib/analytics/{server,client,metrics}.ts`; `POST /api/events`; visits on page load; metrics in the cleanup cron; tests: unit + integration analytics.)
 - [ ] 6.5 Admin Analytics page (Recharts, CSV export).
 - [ ] 6.6 Sentry client + server.
 - [ ] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output.

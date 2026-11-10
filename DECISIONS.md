@@ -462,3 +462,31 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - The game refetches crowd stats after each locked round (cheap: CDN-cached).
 
 **Why:** SPEC §10 gives the examples and the 50-play threshold. The 20% and 25% cut-offs pick whichever fact is more striking, and they're constants in `CROWD`.
+
+## 2026-11-10: M6 6.4: first-party, cookieless analytics
+
+**Decision:**
+- **No visitor cookie.** SPEC §8 says `visitor_id` cookie, but §11 requires cookieless analytics (no banner). Visits use a daily-rotating salted hash of IP + user agent + UTC date, like Plausible. It's stable within a day, so one row per visitor per day, and no one can be followed across days. Retention (D1/D7) comes from plays (player ids), which need no cookie.
+- **`visits`:** written server-side on every game-page load, after the response (`runAfter`).
+  - Country comes from `x-vercel-ip-country`, the puzzle date from `x-vercel-ip-timezone` (else UTC), device from the user agent.
+  - Referrer is stored as a domain only, and dropped for our own site, Do Not Track or GPC.
+  - `from_share` is set when there's a valid `?r=`.
+  - Bots, link unfurlers and headless browsers (our tests, Lighthouse) are skipped.
+- **`events`** holds only what the browser or auth knows: `share_clicked` {method: share_sheet, clipboard or manual}, `signup_prompt_shown` (once per day per device), and `signup_completed` (server-side, the first time an account confirms an email; reserved test domains like example.com are skipped). SPEC §11's other events come from existing data:
+
+  | SPEC event | Source |
+  | --- | --- |
+  | `puzzle_viewed` | visits |
+  | `play_started` | plays |
+  | `round_locked` | guesses |
+  | `play_completed` | plays.completed_at |
+  | `share_landing` | visits.from_share |
+  | `streak_broken` | derived from plays |
+
+- **`daily_metrics`:** one jsonb row per finished puzzle day (`compute_daily_metrics`). It holds visits by share, device, country and referrer; players, new players and completions; locked rounds by position; score buckets; average and wrong-way by round; shares by method; sign-up prompts and sign-ups.
+  - It's written by the existing nightly cleanup cron, before old anonymous players are purged, so their games still count. That avoids a third cron on the Hobby plan.
+  - A day is final once its window closes (D+1 12:00 UTC). Missing days in the last 14 are back-filled.
+  - Raw visits and events are deleted after 400 days; daily rows stay.
+- **No Plausible or PostHog for now.** The Analytics page reads Changel's own database (SPEC §8), so an outside tool is optional. Its account and key move to "Needs from Dani: optional".
+
+**Why:** this is cookieless and first-party, and nothing is shown per person.
