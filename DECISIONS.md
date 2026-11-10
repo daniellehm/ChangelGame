@@ -415,7 +415,7 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - the "Delete account" heading above "Delete my account" is removed.
 
 - **Delete account** now has 20px more space above it, since it lost its heading.
-- **Account buttons:** "Sign out" is filled ink (like Play) and "Delete my account" is filled red. "Change email" stays outlined.
+- **Buttons:** "Back to today's Changel" (at the bottom of every page) is filled ink, like Play. The account's "Change email", "Sign out" and "Delete my account" stay outlined (Dani tried them filled and preferred this).
 - **Last 30 days:** each played square is coloured by that day's average round (total ÷ 5), with the round result cut-offs and colours (green Nailed it, yellow Close, orange Meh, red Way off). The label says the result too.
 - **Stats on another device:** the result bar, last-30-days strip and day pop-up also use the account's history. `/api/me` returns each recent play's rounds (tier, points, question prompt). Before this they only used games stored on this device, so a new device showed the account's totals but an empty strip and an all-zero result bar.
 - **Copy:** questions don't always end in the present (e.g. 2009, 2012), so "One number from the past. How big is it now?" became "A real number from one year. How big was it years later?". The How to Play page and its description were changed the same way.
