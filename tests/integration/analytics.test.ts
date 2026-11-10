@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { POST as eventsPOST } from "@/app/api/events/route";
 import { recordVisit } from "@/lib/analytics/server";
 import { writeDailyMetrics } from "@/lib/analytics/metrics";
+import { getAnalytics } from "@/lib/admin/analytics";
 import { adminClient } from "@/lib/supabase/admin";
 
 const db = adminClient();
@@ -104,4 +105,18 @@ describe("daily metrics", () => {
     // Already written days aren't recomputed (except the latest finished one).
     expect(await writeDailyMetrics(new Date("2099-08-03T17:30:00Z"))).toEqual(["2099-08-02"]);
   });
+});
+
+describe("admin analytics ranges", () => {
+  // Production 2026-11-10: picking "All" threw "Invalid time value" (Number("all") is NaN).
+  it("every range loads, and All starts at launch", async () => {
+    for (const range of ["7", "30", "90", "all"] as const) {
+      const data = await getAnalytics(range, new Date("2026-11-10T03:00:00Z"));
+      expect(data.range).toBe(range);
+      expect(data.from).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+    const all = await getAnalytics("all", new Date("2026-11-10T03:00:00Z"));
+    const week = await getAnalytics("7", new Date("2026-11-10T03:00:00Z"));
+    expect(all.from <= week.from).toBe(true);
+  }, 60_000);
 });

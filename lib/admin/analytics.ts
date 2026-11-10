@@ -92,8 +92,9 @@ export async function getAnalytics(range: Range, now = new Date()): Promise<Anal
   const closed = latestClosedDate(now);
   const launch = launchDate();
   // Never before launch: earlier days are empty by definition.
-  const start = addDays(today, -(Number(range) - 1));
-  const from = range === "all" || start < launch ? launch : start;
+  // "all" has no day count (Number("all") is NaN, and addDays(NaN) throws), so it starts at launch.
+  const start = range === "all" ? launch : addDays(today, -(Number(range) - 1));
+  const from = start < launch ? launch : start;
 
   const { data: rows, error } = await db.from("daily_metrics").select("puzzle_date, metrics").gte("puzzle_date", from).lte("puzzle_date", closed).order("puzzle_date");
   if (error) throw error;

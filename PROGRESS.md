@@ -203,7 +203,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 _Newest first._
 
-- 2026-11-10: Cross-device fixes on branch `fix-cross-device` (waiting for Dani's OK to deploy): today's game now follows you to another device, and session refresh is centralised in `proxy.ts` (the admin layout, /api/events and /api/contact were dropping refreshed tokens, silently signing people out). Stats/final screen no longer say "save your streak" to signed-in players (DECISIONS 2026-11-10 "Cross-device fixes").
+- 2026-11-10: Cross-device fixes, LIVE on production (merge 18b6e9e, smoke-checked): today's game now follows you to another device, and session refresh is centralised in `proxy.ts` (the admin layout, /api/events and /api/contact were dropping refreshed tokens, silently signing people out). Stats/final screen no longer say "save your streak" to signed-in players (DECISIONS 2026-11-10 "Cross-device fixes").
+- 2026-11-10: Fix on branch `fix-analytics-all-range` (waiting for Dani's OK to deploy): admin Analytics "All" range threw "Invalid time value" (Number("all") is NaN, so the date maths failed before the "all" check). It now starts at launch. Integration test covers every range.
 
 - 2026-11-10: Search: changel.app verified in Google Search Console with the sitemap submitted, and added to Bing Webmaster Tools (Dani). Keep `public/google45efaf38ccaf1332.html`: removing it un-verifies the property.
 
