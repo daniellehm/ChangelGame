@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **M6 in progress** on branch `m6-virality-launch`. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **All M6 tasks are built** on branch `m6-virality-launch`; waiting for Dani to review the preview and approve the merge. Two acceptance items need things only Dani can do: Anthropic credit (60 days of puzzles), and one real unfurl test on changel.app after the merge. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
