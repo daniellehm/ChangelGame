@@ -8,6 +8,8 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { MAX_TOTAL } from "@/lib/config";
 import { decodeShareCode } from "@/lib/game/share";
+import { rateLimit } from "@/lib/api/ratelimit";
+import { clientIp } from "@/lib/supabase/request";
 import type { TierId } from "@/lib/scoring";
 
 /** Token colours (app/globals.css); Satori can't read CSS variables. */
@@ -39,6 +41,9 @@ function Squares({ tiers }: { tiers: TierId[] }) {
 }
 
 export async function GET(req: Request) {
+  // Only cache misses get here, but each new code costs a render: cap per IP.
+  const limited = await rateLimit("og", clientIp(req) ?? "unknown");
+  if (limited) return limited;
   const shared = decodeShareCode(new URL(req.url).searchParams.get("r"));
   const image = (
     <div style={{ width: 1200, height: 630, display: "flex", background: C.bg, padding: 48, fontFamily: "Bricolage", color: C.ink }}>

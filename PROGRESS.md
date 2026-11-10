@@ -53,7 +53,11 @@
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
-- [ ] M6 (moved from M3 by Dani): Cloudflare Turnstile site key + secret (invisible widget, domains `changel.app`, `localhost`, `*.vercel.app`)
+- [ ] **Cloudflare Turnstile keys** (free; needed before launch to stop bot sign-ups):
+  1. dash.cloudflare.com → sign up or log in → **Turnstile** → **Add widget**.
+  2. Name `changel`; hostnames `changel.app`, `www.changel.app`, `localhost`; widget mode **Invisible**; pre-clearance: No.
+  3. Add the **Site key** in Vercel as `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and the **Secret key** as `TURNSTILE_SECRET` (Sensitive), Production + Preview. Tell Claude when done; Claude adds them to `.env.local` from Vercel and tests.
+  4. Preview URLs (`*.vercel.app`) aren't allowed as a hostname pattern, so previews would fail Turnstile: Claude will only set the keys for Production unless you add each preview host.
 - [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
 - [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
@@ -176,7 +180,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.4 Analytics events + `visits` + `daily_metrics` cron. (Migration `analytics`; `lib/analytics/{server,client,metrics}.ts`; `POST /api/events`; visits on page load; metrics in the cleanup cron; tests: unit + integration analytics.)
 - [x] 6.5 Admin Analytics page (Recharts, CSV export). (`/admin/analytics`, `GET /api/admin/analytics`, `lib/admin/analytics.ts`, migration `analytics_live`; AEST toggle deferred, DECISIONS.)
 - [x] 6.6 Sentry client + server. (Inert until a DSN is set: `instrumentation.ts`, lazy `instrumentation-client.ts`.)
-- [ ] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output.
+- [x] 6.7 Turnstile hardening, rate-limit review, CI grep for the service-role key in build output. (Turnstile inert until keys are set; new `session`/`account`/`og` limits; `npm run build` fails on a leaked secret.)
 - [ ] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play).
 - [ ] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist.
 

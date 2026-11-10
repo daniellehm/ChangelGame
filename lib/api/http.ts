@@ -17,6 +17,8 @@ export type ErrorCode =
   | "email_taken"
   | "email_failed"
   | "forbidden"
+  | "turnstile_required"
+  | "turnstile_failed"
   | "not_found"
   | "internal_error";
 

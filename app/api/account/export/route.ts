@@ -2,10 +2,13 @@
 import { apiError } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
 import { adminClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/api/ratelimit";
 
 export async function GET(req: Request) {
   const { user, sb } = await sessionUser(req);
   if (!user) return apiError("unauthorized", "Sign in first.", 401);
+  const limited = await rateLimit("account", user.id);
+  if (limited) return limited;
   const db = adminClient();
   const [{ data: auth }, { data: player }, { data: plays }, { data: reports }] = await Promise.all([
     db.auth.admin.getUserById(user.id),

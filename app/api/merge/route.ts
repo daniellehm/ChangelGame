@@ -7,10 +7,13 @@ import { apiError } from "@/lib/api/http";
 import { sessionUser } from "@/lib/api/auth";
 import { clearCookie, MERGE_COOKIE, readCookie } from "@/lib/auth/cookies";
 import { consumeMergeToken, mergeInto } from "@/lib/auth/merge";
+import { rateLimit } from "@/lib/api/ratelimit";
 
 export async function POST(req: Request) {
   const { user, sb } = await sessionUser(req);
   if (!user || user.isAnonymous) return apiError("unauthorized", "Sign in first.", 401);
+  const limited = await rateLimit("account", user.id);
+  if (limited) return limited;
   const token = readCookie(req, MERGE_COOKIE);
   if (!token) return apiError("invalid_request", "Nothing to merge.", 400);
   const anonId = await consumeMergeToken(token);

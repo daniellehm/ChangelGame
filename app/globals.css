@@ -337,3 +337,6 @@ html[data-returning] #intro{visibility:hidden}
 .report-actions{display:flex;gap:8px;margin-top:8px}
 .report-done{font-size:13px;color:var(--muted);margin:0 0 8px}
 .corrected{font-size:13px;font-weight:700;margin:0 0 6px}
+
+/* Cloudflare Turnstile: invisible unless Cloudflare needs an interaction (lib/game/turnstile-client.ts). */
+.turnstile-host{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60}

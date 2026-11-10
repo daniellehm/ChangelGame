@@ -518,3 +518,21 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - No source-map upload yet (it needs a Sentry auth token in the build). Stack traces show minified names until it's added.
 
 **Why:** SPEC §11 plus the JS budget. It's inert until Dani creates the Sentry project.
+
+## 2026-11-10: M6 6.7: Turnstile, rate-limit review, secret check
+
+**Decision:**
+- **Turnstile** applies only when a NEW anonymous player would be created and `TURNSTILE_SECRET` is set:
+  1. `POST /api/session` answers 403 `turnstile_required`.
+  2. The browser loads Cloudflare's script on demand (`lib/game/turnstile-client.ts`, a separate chunk) and runs an invisible "interaction-only" widget. It's shown at the bottom of the screen only if Cloudflare wants a click.
+  3. The browser retries with the token; the server verifies it at `siteverify` (with the player's IP) and then applies our per-IP limit.
+
+  Returning players with a session never load Turnstile. If it fails, the game falls back to local play (SPEC §5). Test runs (test clock on, never production) skip it. Without keys, nothing changes.
+- **Rate-limit review** (every `app/api` route):
+  - New limits: `session` 30/hour per IP for new players (on top of Supabase's per-IP limit; mobile carriers share IPs, so not lower), `account` 10/10 min per player for export, delete and merge, and `og` 60/min per IP (each new share code costs a render).
+  - Unchanged: all other public routes already had limits. Admin and cron routes are guarded by `ADMIN_EMAILS` and `CRON_SECRET`. Sign-out needs none.
+- **Secret check:** `npm run build` = `next build` + `scripts/check-bundle-secrets.mjs`.
+  - It scans `.next/static` for the values of the service key, Anthropic, Resend, cron, Upstash and Turnstile secrets, and for anything shaped like a Supabase service-role key (`sb_secret_…`, a `service_role` JWT).
+  - It fails the build, so a leak stops the Vercel deploy. It was verified to fail on a planted leak.
+
+**Why:** SPEC §11 security.

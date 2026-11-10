@@ -34,11 +34,20 @@ let sessionInFlight: Promise<boolean> | null = null;
  */
 export function ensureSession(tz: string): Promise<boolean> {
   if (!sessionInFlight) {
-    sessionInFlight = call("/api/session", { method: "POST", body: JSON.stringify({ tz }) })
-      .then((r) => r.status === 200)
-      .finally(() => {
-        sessionInFlight = null;
-      });
+    sessionInFlight = (async () => {
+      const r = await call("/api/session", { method: "POST", body: JSON.stringify({ tz }) });
+      if (r.status === 200) return true;
+      // A brand-new player needs a Turnstile token (SPEC §11); get one and retry once.
+      if (r.status === 403 && errCode(r.body) === "turnstile_required") {
+        const { getTurnstileToken } = await import("./turnstile-client");
+        const turnstile = await getTurnstileToken();
+        if (!turnstile) return false; // falls back to local play
+        return (await call("/api/session", { method: "POST", body: JSON.stringify({ tz, turnstile }) })).status === 200;
+      }
+      return false;
+    })().finally(() => {
+      sessionInFlight = null;
+    });
   }
   return sessionInFlight;
 }
