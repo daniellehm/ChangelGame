@@ -608,3 +608,13 @@ The numbers themselves are already guarded by the source quote and the blind cro
   - For an older puzzle it says "That was an earlier puzzle. Today's is waiting." with "Play today's".
   - It closes with ×, Escape or a tap outside, and the dialog itself takes focus (no focus ring on touch).
 - **Admin portal:** `app/admin/layout.tsx` checks the session server-side, and anyone who isn't on `ADMIN_EMAILS` (signed out, anonymous, or another account) gets the normal **404**, with no "admin" page, sign-in prompt or menu. Dani signs in on /account first. `/api/admin/*` keeps its own 401/403 checks. The E2E test server uses `ADMIN_EMAILS=e2e-admin@example.com` (playwright.config).
+
+## 2026-11-10: "Top 15% today" and the score graph (Dani)
+
+**Decision:**
+- **Final screen:** under the title, it shows where your total sits among today's finished games, plus a 20-bar graph (25-point buckets) with your bar in `--up` and "YOU" above it.
+  - **Top half:** "Top X% today", where X = (games above yours + 1) ÷ games, rounded up, minimum 1%.
+  - **Bottom half:** "Better than Y% of players today", so it never reads as a put-down.
+  - **Under 20 finished games:** "Too early to compare: N players so far today."
+- **Data:** `score_distribution(date)` (migration) returns finished games per total. `GET /api/crowd` returns it as `scores` alongside the round stats, so there's no extra request; CDN-cached for 60 s.
+- **Built in plain HTML/CSS** (no chart library in the game bundle). The share text is unchanged (SPEC §10's exact format).

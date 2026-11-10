@@ -9,6 +9,7 @@ import { isWindowOpen } from "../dates";
 import { adminClient } from "../supabase/admin";
 import { ensureRerun } from "./rerun";
 import type { RoundCrowd } from "../game/crowd";
+import type { ScoreDistribution } from "../game/standing";
 
 export interface StoredPuzzle {
   date: string;
@@ -141,4 +142,12 @@ export async function roundCrowd(date: string): Promise<RoundCrowd[]> {
     nailed: r.nailed,
     avg_points: Number(r.avg_points),
   }));
+}
+
+/** How everyone scored on a puzzle day (finished games per total), for "Top 15% today". */
+export async function scoreDistribution(date: string): Promise<ScoreDistribution> {
+  const { data, error } = await adminClient().rpc("score_distribution", { p_date: date });
+  if (error) throw error;
+  const d = (data ?? { n: 0, counts: {} }) as { n: number | string; counts: Record<string, number> };
+  return { n: Number(d.n), counts: d.counts ?? {} };
 }

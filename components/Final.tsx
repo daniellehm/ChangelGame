@@ -13,6 +13,8 @@ import { finalTitle, TIERS, totalOf } from "@/lib/scoring";
 import { useCountUp } from "./motion";
 import { SaveStreak } from "./SaveStreak";
 import { ShareButton } from "./ShareButton";
+import { ScoreGraph } from "./ScoreGraph";
+import type { ScoreDistribution } from "@/lib/game/standing";
 
 interface Props {
   puzzle: Puzzle;
@@ -30,6 +32,8 @@ interface Props {
   onToast: (message: string) => void;
   /** The round the crowd did worst on today (SPEC §10), once there are enough plays. */
   trap?: string | null;
+  /** Today's finished totals, for "Top 15% today" and the score graph. */
+  scores?: ScoreDistribution | null;
 }
 
 function useCountdown(): string {
@@ -51,7 +55,7 @@ function useCountdown(): string {
   return text;
 }
 
-export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, note, onToast, trap = null }: Props) {
+export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, onSaved, note, onToast, trap = null, scores = null }: Props) {
   const [saveExpanded, setSaveExpanded] = useState(saveOpen);
   const total = totalOf(results.map((r) => r.points));
   const shown = useCountUp(total, animate, 900);
@@ -78,6 +82,7 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
         ))}
       </div>
       <div className="title" id="finalTitle">{finalTitle(total)}</div>
+      <ScoreGraph total={total} scores={scores} />
       <div className="rows" id="finalRows">
         {results.map((r) => {
           const round = puzzle.rounds[r.position - 1];
