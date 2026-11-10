@@ -5,7 +5,7 @@ import { ROUNDS } from "@/lib/config";
 import { daysBetween, deviceTimeZone, localDate } from "@/lib/dates";
 import { createApiSource, PuzzleLoadError, type LoadErrorKind } from "@/lib/game/api-source";
 import { beginPlay, ensureSession, fetchMe, submitGuess, type ServerStats } from "@/lib/game/session-client";
-import { refreshFromAccount, syncPending } from "@/lib/game/sync";
+import { pullAccountPlay, refreshFromAccount, syncPending } from "@/lib/game/sync";
 import {
   getActiveDate,
   isComplete,
@@ -58,6 +58,8 @@ interface State {
   errorKind: LoadErrorKind | null;
   /** Authoritative stats from /api/me (server mode). */
   serverStats: ServerStats | null;
+  /** The server confirmed there is no session (so "Save your streak" applies). */
+  noSession: boolean;
 }
 
 interface PlayInfo {
@@ -83,11 +85,12 @@ type Action =
   | { type: "puzzleUpdated"; puzzle: Puzzle }
   | { type: "modeLocal" }
   | { type: "serverStats"; stats: ServerStats }
+  | { type: "noSession" }
   | { type: "next" };
 
 const initial: State = {
   phase: "boot", puzzle: null, tz: "UTC", startedAt: null, results: [], mode: null, playId: null,
-  idx: 0, guess: 0, pending: false, justFinished: false, errorKind: null, serverStats: null,
+  idx: 0, guess: 0, pending: false, justFinished: false, errorKind: null, serverStats: null, noSession: false,
 };
 
 /** Where a play with `results` should be: the next unplayed round (or the last one when all 5 are in). */
@@ -123,7 +126,9 @@ function reducer(s: State, a: Action): State {
     case "modeLocal":
       return { ...s, mode: "local", playId: null };
     case "serverStats":
-      return { ...s, serverStats: a.stats };
+      return { ...s, serverStats: a.stats, noSession: false };
+    case "noSession":
+      return { ...s, noSession: true };
     case "next":
       if (s.idx + 1 < ROUNDS) return { ...s, idx: s.idx + 1, guess: 0 };
       return { ...s, phase: "final", justFinished: true };
@@ -187,7 +192,13 @@ async function boot(source: GameSource, opts: { preferIntro?: boolean } = {}): P
   const existing = loadPlay(today);
   if (existing) return fromPlay(await refreshRanges(source, existing));
 
-  const puzzle = await source.loadPuzzle(today);
+  // In parallel: today's puzzle, and whether this account already played today on another device.
+  const [puzzle, me] = await Promise.all([source.loadPuzzle(today), fetchMe(today, tz).catch(() => null)]);
+  const fromAccount = await pullAccountPlay(puzzle, tz, me).catch(() => null);
+  if (fromAccount) {
+    if (!isComplete(fromAccount)) setActiveDate(today);
+    return fromPlay(fromAccount);
+  }
   // Returning players skip the intro and go straight to round 1 (SPEC §9).
   const phase: Phase = !opts.preferIntro && isReturningPlayer() ? "round" : "intro";
   return { puzzle, tz, startedAt: null, results: [], mode: null, playId: null, phase };
@@ -243,6 +254,8 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
   const loadServerStats = useCallback(async (date: string, tz: string) => {
     const stats = await fetchMe(date, tz);
     if (stats) dispatch({ type: "serverStats", stats });
+    // Definitely no session (the server said so): only then offer "Save your streak" (Dani 2026-11-10).
+    else if (stats === null) dispatch({ type: "noSession" });
   }, []);
 
   const load = useCallback(
@@ -277,7 +290,8 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
       // The pre-paint script (app/page.tsx) hid the intro; React owns visibility from here.
       delete document.documentElement.dataset.returning;
       window.scrollTo(0, 0);
-      if (b.phase === "final" && b.mode === "server") void loadServerStats(b.puzzle.date, b.tz);
+      // Check the account on the final screen whichever way the game was played (local plays too).
+      if (b.phase === "final") void loadServerStats(b.puzzle.date, b.tz);
     },
     [source, loadServerStats],
   );
@@ -403,7 +417,7 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
       setActiveDate(null);
     }
     dispatch({ type: "locked", result });
-    if (done && mode === "server") void loadServerStats(s.puzzle.date, s.tz);
+    if (done) void loadServerStats(s.puzzle.date, s.tz);
     if (done && mode === "local") void syncPending(s.tz);
   };
 
@@ -458,7 +472,8 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
             stats={stats}
             animate={s.justFinished && motion}
             // Button for anyone without an account; the form opens itself from the 2nd game (SPEC §5). Never blocks play.
-            offerSave={s.serverStats ? s.serverStats.anonymous : true}
+            // Signed in: never ask to save. Unknown (check failed): don't nag either.
+            offerSave={s.serverStats ? s.serverStats.anonymous : s.noSession}
             saveOpen={stats.played >= 2}
             onSaved={async (note) => {
               // The account's games are the record: reload today's result from it,

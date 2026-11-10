@@ -35,7 +35,8 @@ export function StatsView({ launch }: { launch: string }) {
       setData({ stats, today, summary });
       // Server stats win when there's a session (SPEC §4); local stays as the fallback.
       void fetchMe(today, tz).then((me) => {
-        setSignedIn(!!me && !me.anonymous);
+        // Only a definite answer changes the note: a failed check (undefined) shows neither message.
+        if (me !== undefined) setSignedIn(!!me && !me.anonymous);
         if (me && me.games_played >= summary.played) {
           setData({
             stats,

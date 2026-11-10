@@ -647,3 +647,23 @@ Dani liked all three in the comparison artifact.
 **Decision:**
 - **Structured data:** JSON-LD on the home page (schema.org): a `WebSite` (site name "Changel") and a `VideoGame` + `WebApplication`. It's free (`isAccessibleForFree`, price 0), a trivia/puzzle game in a web browser, single player, English, with the default share image.
 - **Manifest** (`app/manifest.ts`): name and short name "Changel", standalone display, paper background and theme colour, and icons at 192 px, 512 px and a maskable 512 px, generated from the logo by `scripts/make-icons.mjs` (rerun it if the logo changes). The existing `apple-icon.png` covers iOS "Add to Home Screen".
+
+## 2026-11-10: Cross-device fixes (Dani: "played today, logged in on another device, it says I haven't"; "logged in but Stats tells me to log in")
+
+**Causes:**
+1. **The missing game:** after signing in, a device only pulled the account's games for days it already had a game stored for. A fresh device had none for today, so it showed the intro.
+2. **The phantom sign-out:** when the access token has expired, the first server code that reads the session swaps the refresh token for a new pair, and the old one stops working.
+   - The admin layout (a Server Component, which can't set cookies), `/api/events` and `/api/contact` did that swap without sending the new cookies back. The browser then held a dead refresh token and was signed out a little later.
+   - Separately, Stats and the final screen treated a *failed* account check as "not signed in".
+
+**Decision:**
+- **`proxy.ts`** (Next 16 proxy, Supabase's recommended pattern) runs before `/api/*` and `/admin/*`.
+  - With a Supabase auth cookie present, it calls `getClaims()` once, refreshing only if expired, and writes the new cookies to the response *and* the request, so everything after sees a fresh session.
+  - It skips public routes (cron, og, puzzle, crowd) and visitors without a session. `/api/events` and `/api/contact` also pass refreshed cookies on now.
+- **Game boot:** with no game stored for today, the game asks `/api/me` (in parallel with the puzzle). If the account has a play for today with answers, it loads it via `/api/play` (resume) and stores it here, finished or at the next round. It never creates a play or a session.
+- **`fetchMe`** now returns null for "definitely no session" (204/401) and undefined for "couldn't tell". Stats shows "add your email" only on a definite no.
+- **Final screen:** always checks the account (local plays too). "Save your streak" appears only when the server confirms there's no session; signed-in players never see it, and a failed check doesn't nag.
+- **Tests:**
+  - `session-refresh` (integration): an expired session goes through the proxy and comes back with new long-lived HTTP-only tokens, and the account is still signed in.
+  - `cross-device` (E2E): finished and half-done games move to a second device.
+  - The anonymous test now expects the automatic resume.

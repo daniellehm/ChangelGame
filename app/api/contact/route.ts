@@ -17,9 +17,9 @@ export async function POST(req: Request) {
   const ok = Response.json({ ok: true }, { status: 201, headers: { "Cache-Control": "no-store" } });
   if (parsed.data.website) return ok; // honeypot
   try {
-    const { user } = await sessionUser(req);
+    const { user, sb } = await sessionUser(req);
     await saveContact(parsed.data, user?.id ?? null);
-    return ok;
+    return sb.applyCookies(ok); // pass on refreshed session cookies
   } catch (e) {
     console.error("POST /api/contact failed", e);
     return apiError("internal_error", "Couldn't send that. Try again in a minute.", 500);

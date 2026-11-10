@@ -23,7 +23,8 @@ export async function POST(req: Request) {
   const limited = await rateLimit("events", clientIp(req) ?? "unknown");
   if (limited) return limited;
   if (isBot(req.headers.get("user-agent"))) return new Response(null, { status: 204 }); // tests, crawlers
-  const { user } = await sessionUser(req);
+  const { user, sb } = await sessionUser(req);
   await recordEvent({ name: parsed.data.name, props: parsed.data.props ?? {}, puzzleDate: parsed.data.date, userId: user?.id ?? null, headers: req.headers });
-  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+  // Always pass on refreshed session cookies, or the browser keeps a dead refresh token.
+  return sb.applyCookies(new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } }));
 }

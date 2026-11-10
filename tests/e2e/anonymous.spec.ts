@@ -59,9 +59,9 @@ test("anonymous player: play, resume, finish, share, next day streak 2", async (
   // Refresh mid-game: resumes at round 3 from the SERVER's record.
   await page.evaluate(() => localStorage.clear()); // prove it's not just the local mirror
   await page.reload();
-  // With local storage gone the intro shows; Play resumes the existing server play.
-  await page.locator("#startBtn").click();
+  // With local storage gone, the game asks the server and resumes the existing play at round 3 by itself.
   await expect(page.locator("#cat")).toHaveText(/round 3 of 5/i);
+  await expect(page.locator("#startBtn")).toHaveCount(0);
   await expect(page.locator("#progress i.done")).toHaveCount(2);
 
   for (let i = 2; i < 5; i++) {
