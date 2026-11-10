@@ -5,7 +5,7 @@ import { MAX_TOTAL } from "@/lib/config";
 import { formatCountdown, nextLocalMidnight } from "@/lib/dates";
 import { multLabel } from "@/lib/format";
 import { epsilon } from "@/lib/range";
-import { shareText } from "@/lib/game/share";
+import { shareTeaser, shareText, shareUrl } from "@/lib/game/share";
 import type { StatsSummary } from "@/lib/game/storage";
 import type { Puzzle, RoundResult } from "@/lib/game/types";
 import { finalTitle, TIERS, totalOf } from "@/lib/scoring";
@@ -86,7 +86,7 @@ export function Final({ puzzle, results, stats, animate, offerSave, saveOpen, on
         <div><b id="stStreak">{stats.streak}</b><small>streak</small></div>
         <div><b id="stBest">{stats.best}</b><small>best</small></div>
       </div>
-      <ShareButton text={shareText(puzzle.number, total, tiers)} onToast={onToast} />
+      <ShareButton text={shareText(puzzle.number, total, tiers)} teaser={shareTeaser(puzzle.number, total, tiers)} url={shareUrl({ number: puzzle.number, total, tiers })} onToast={onToast} />
       {offerSave && (
         <div className="final-save">
           {saveExpanded ? (

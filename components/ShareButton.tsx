@@ -3,26 +3,52 @@
 import { useRef, useState } from "react";
 
 interface Props {
+  /** Exact share text (SPEC §10), copied to the clipboard. */
   text: string;
+  /** The text without its link line, for the share sheet (which adds `url`). */
+  teaser: string;
+  /** `https://changel.app/?r=<code>`: unfurls as this result's image. */
+  url: string;
   onToast: (message: string) => void;
+  /** Called with how it was shared (for analytics). */
+  onShared?: (method: "share_sheet" | "clipboard" | "manual") => void;
+}
+
+/** Phones and tablets: the OS share sheet. Desktops copy instead (SPEC §10). Checked on click, not render. */
+function canUseShareSheet(): boolean {
+  if (typeof navigator === "undefined" || typeof navigator.share !== "function") return false;
+  return typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches === true;
 }
 
 /**
- * Prototype behaviour: copy to clipboard, else show the text in a selectable
- * box. (M6 adds navigator.share on mobile, SPEC §10.)
+ * Share sheet on mobile; elsewhere copy to the clipboard with a "Copied" toast;
+ * if both fail, show the text in a selectable box (the prototype's fallback).
  */
-export function ShareButton({ text, onToast }: Props) {
+export function ShareButton({ text, teaser, url, onToast, onShared }: Props) {
   const [fallback, setFallback] = useState(false);
   const boxRef = useRef<HTMLTextAreaElement>(null);
 
-  const share = async () => {
+  const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
       onToast("Copied to clipboard");
+      onShared?.("clipboard");
     } catch {
       setFallback(true);
       onToast("Copy the text below");
+      onShared?.("manual");
       requestAnimationFrame(() => boxRef.current?.select());
+    }
+  };
+
+  const share = async () => {
+    if (!canUseShareSheet()) return copy();
+    try {
+      await navigator.share({ text: teaser, url });
+      onShared?.("share_sheet");
+    } catch (e) {
+      // Closing the sheet isn't an error; anything else falls back to copying.
+      if ((e as Error)?.name !== "AbortError") await copy();
     }
   };
 

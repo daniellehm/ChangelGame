@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). Next: UI tweaks (branch `ui-tweaks`, done), then **M6**. **`main` is merged locally but not pushed: waiting for Dani's OK to deploy to production.** Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **M6 in progress** on branch `m6-virality-launch`. Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -169,7 +169,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 **Milestone accepted when:** Lighthouse mobile ≥ 95, the share link unfurls correctly in iMessage/WhatsApp/X, and 60 days of verified puzzles are scheduled.
 
-- [ ] 6.1 Share sheet (`navigator.share`) + `?r=` code + landing.
+- [x] 6.1 Share sheet (`navigator.share`) + `?r=` code + landing. (`lib/game/share.ts` encode/decode, `ShareButton` sheet-or-copy, home page reads `?r=` for OG tags + the intro's friend line; tests: unit share, E2E `share.spec.ts`.)
 - [ ] 6.2 `/api/og` images (1200×630).
 - [ ] 6.3 Crowd stats line on reveal (≥ 50 plays) + "Today's trap" on the final screen.
 - [ ] 6.4 Analytics events + `visits` + `daily_metrics` cron.

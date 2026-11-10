@@ -421,3 +421,15 @@ The numbers themselves are already guarded by the source quote and the blind cro
 - **Copy:** questions don't always end in the present (e.g. 2009, 2012), so "One number from the past. How big is it now?" became "A real number from one year. How big was it years later?". The How to Play page and its description were changed the same way.
 
 **Why:** Dani's call on look and feel (a visual departure from the M4 screens, approved by her).
+
+## 2026-11-10: M6 6.1: share sheet and `?r=` links
+
+**Decision:**
+- **`?r=` code** `<number base36>-<total base36>-<5 digits>` (e.g. `c-ac-01040`): the puzzle number, the total and each round's result. The total isn't an answer, and the OG image needs it. Malformed or impossible codes are ignored, e.g. a total that doesn't fit the rounds' results.
+- **Phones** (a share API and a coarse pointer): Share opens the OS share sheet with the first two lines of the share text plus `url: https://changel.app/?r=<code>`, so the chat unfurls this result's image. Closing the sheet does nothing; any other failure copies instead.
+- **Desktops** copy the exact SPEC §10 text, which still ends in plain `changel.app` (the spec's exact format). Only the share sheet carries the `?r=` link.
+- **Landing:** the home page reads `?r=` on the server. It sets the OG/Twitter title and `og:image` = `/api/og?r=<code>`, and shows "A friend scored N 🟩🟨… Can you beat it?" on the intro. A returning player opening a shared link sees the intro too, so the challenge isn't skipped. If the friend played a different puzzle, it says "A friend playing #N scored … Try today's."
+- **The home page is now rendered per request** (it reads the query string). Re-check speed in 6.9; it was static before.
+- `metadataBase` is `https://changel.app`.
+
+**Why:** SPEC §10 asks for one-tap sharing that unfurls with the result; these are the simplest shapes that do it.

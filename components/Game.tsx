@@ -25,6 +25,7 @@ import type { GameSource, Puzzle, RoundResult } from "@/lib/game/types";
 import { Final } from "./Final";
 import { Header } from "./Header";
 import { Intro } from "./Intro";
+import type { SharedResult } from "@/lib/game/share";
 import { LoadError } from "./LoadError";
 import { Round } from "./Round";
 import { useReducedMotion } from "./motion";
@@ -219,7 +220,8 @@ const toSummary = (s: ServerStats, local: StatsSummary): StatsSummary => ({
   average: s.avg_total ?? 0,
 });
 
-export function Game({ launch }: { launch: string }) {
+/** `friend`: a shared result from `?r=` (SPEC §10), decoded by the page on the server. */
+export function Game({ launch, friend = null }: { launch: string; friend?: SharedResult | null }) {
   const source = useMemo(() => createApiSource(), []);
   const [s, dispatch] = useReducer(reducer, initial);
   const motion = !useReducedMotion();
@@ -277,8 +279,9 @@ export function Game({ launch }: { launch: string }) {
   );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    // A shared link shows the intro (with the friend's score) even to returning players.
+    void load({ preferIntro: !!friend });
+  }, [load, friend]);
 
   // New local day: load the new puzzle unless mid-game (SPEC §4).
   const phase = s.phase;
@@ -397,7 +400,7 @@ export function Game({ launch }: { launch: string }) {
       <div className="wrap">
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
-          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot" || s.pending} />
+          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} friend={friend} onPlay={start} disabled={s.phase === "boot" || s.pending} />
         )}
         {s.phase === "error" && s.errorKind && (
           <LoadError

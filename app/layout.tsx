@@ -5,6 +5,7 @@ import { bricolage, jetbrainsMono } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://changel.app"),
   title: "Changel — how much did it change?",
   description: "The daily game about how much the world changed.",
 };

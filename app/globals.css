@@ -164,6 +164,8 @@ html[data-returning] #intro{visibility:hidden}
 .dist{display:flex;height:14px;border-radius:7px;overflow:hidden;border:2px solid var(--ink);margin:8px 0 6px}
 .dist i{display:block;height:100%}
 .dist-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--font-mono-stack);font-size:11px;color:var(--muted);margin-bottom:6px}
+.intro p.friend{color:var(--ink);border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:0 0 14px;background:var(--bg);font-size:15px;line-height:1.4}
+.intro p.friend b{font-family:var(--font-mono-stack)}
 .strip{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:8px 0 4px}
 .strip i{aspect-ratio:1;border-radius:5px;background:var(--line);display:block}
 .strip i.played,.strip button.played{background:var(--ink)}
