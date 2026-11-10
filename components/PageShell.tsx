@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { launchDate } from "@/lib/config";
 import { Header } from "./Header";
+import { LegalLinks } from "./LegalLinks";
 
 /** Layout for non-game pages: same header and width as the game. */
 export function PageShell({ children }: { children: ReactNode }) {
@@ -10,9 +11,7 @@ export function PageShell({ children }: { children: ReactNode }) {
       <Header launch={launchDate()} />
       <section className="card page">{children}</section>
       <Link href="/" className="btn back">Back to today&apos;s Changel</Link>
-      <p className="legal-links">
-        <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
-      </p>
+      <LegalLinks />
     </div>
   );
 }

@@ -580,3 +580,14 @@ The numbers themselves are already guarded by the source quote and the blind cro
 
   Lighthouse ≥ 95 stays the acceptance measure.
 - **Domain:** changel.app serves HTTPS with HSTS (2 years); `www.` and `http://` 308-redirect to `https://changel.app`.
+
+## 2026-11-10: Privacy & terms on one page; a contact form instead of an email (Dani)
+
+**Decision:**
+- **`/privacy` is "Privacy & terms":** both sections on one page (`#privacy`, `#terms`), and `/terms` redirects permanently to `/privacy#terms`. It names no operator (no person or company) and gives no email address.
+- **Links:** not in the menu. They sit at the foot of every page as "Privacy & terms · Contact" (`components/LegalLinks.tsx`). That includes the game's intro and final screens, but not mid-round.
+- **Contact form** (`/contact`): topic (question or idea, data copy or correction, delete my data, bug, other), a message (5–2,000 characters), and an optional email used only for a reply.
+  - A honeypot field drops naive bots quietly, and it's limited to 5 per 10 minutes per IP.
+  - If the sender has a session, their player id is attached, so data or deletion requests can be matched to their games without an email.
+  - Messages are stored in `contact_messages` (migration `contact_messages`; service role only) and shown in **Admin → Messages** (new / done), with a "Messages" tile on the admin home.
+- **Privacy text:** data requests and complaints go through the form ("leave an email so we can send it"). Contact messages are deleted within a year of being handled.

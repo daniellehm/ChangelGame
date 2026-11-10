@@ -60,8 +60,7 @@
   4. Preview URLs (`*.vercel.app`) aren't allowed as a hostname pattern, so previews would fail Turnstile: Claude will only set the keys for Production unless you add each preview host.
 - [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
 - [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
-- [ ] **hello@changel.app must receive mail** (it's the contact on Privacy and Terms). Options: Resend inbound, or a free forwarder (ImprovMX, or Cloudflare Email Routing). Claude can set the DNS records in Vercel once you pick one and create its account.
-- [ ] **Read /privacy and /terms** (a plain-language draft, not legal advice). Confirm: governing law New South Wales; whether to name the operator (e.g. your name or a company); anything you'd add.
+- [ ] **Read /privacy** (Privacy & terms, one page; a plain-language draft, not legal advice). No operator named and no email (Dani 2026-11-10); contact is the form at /contact → Admin → Messages. Confirm governing law New South Wales.
 - [ ] Launch: `LAUNCH_DATE`, and whether puzzle #1 is themed (spec open question)
 - [ ] Launch (Claude does it, with Dani's OK, since it's a delete): remove the dev seed puzzles 2026-11-09…12
 
@@ -186,6 +185,8 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [x] 6.8 Privacy + terms pages, SEO (title, meta, OG/Twitter, sitemap, /how-to-play). (`/privacy`, `/terms`, `robots.ts`, `sitemap.ts`, title template; E2E `seo.spec.ts`.)
 - [x] 6.9 Lighthouse ≥ 95 + bundle budget; domain + DNS; launch checklist. (Mobile 95–97 performance, 100 accessibility on every page; AA contrast; `npm run build` enforces secrets + JS budget; domain verified.)
 
+- [x] Extra (Dani 2026-11-10): Privacy & terms combined into one page, linked at the foot of pages (not the menu); contact form → Admin → Messages instead of an email address.
+
 **M6 acceptance:**
 - [x] Lighthouse mobile ≥ 95: verified locally on a production build. Re-check on changel.app after the merge.
 - [ ] The share link unfurls in iMessage, WhatsApp and X: the tags and image are tested. Unfurlers can't open previews (Vercel login), so this needs one real test on changel.app after the merge.
@@ -197,7 +198,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 - [ ] Supabase backups: the project is on the **free plan (no restorable backups)**. Options: Pro ($25/month, daily backups), or a nightly `pg_dump` by Claude to private storage.
 - [x] Auth emails branded (M4). Google OAuth: not used (email only, Dani 2026-11-09).
 - [ ] 60 days scheduled (needs Anthropic credit), and a real admin alert email tested (Claude can send one test to releasedani@gmail.com on request).
-- [ ] Turnstile keys set (Needs from Dani), Sentry DSN (optional), hello@changel.app receiving mail.
+- [ ] Turnstile keys set (Needs from Dani), Sentry DSN (optional).
 - [ ] Submit to Listdle, Alldle, Playlin, Dle Hunt on launch day.
 
 ---

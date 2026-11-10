@@ -31,6 +31,8 @@ export const LIMITS = {
   session: { tokens: 30, window: "60 m" },
   /** Account export / delete / merge per player: rare. */
   account: { tokens: 10, window: "10 m" },
+  /** Contact form messages per IP. */
+  contact: { tokens: 5, window: "10 m" },
   /** Share images per IP. Only cache misses reach the function; each new code costs a render. */
   og: { tokens: 60, window: "1 m" },
 } as const;

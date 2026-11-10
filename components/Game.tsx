@@ -25,6 +25,7 @@ import type { GameSource, Puzzle, RoundResult } from "@/lib/game/types";
 import { Final } from "./Final";
 import { Header } from "./Header";
 import { Intro } from "./Intro";
+import { LegalLinks } from "./LegalLinks";
 import type { SharedResult } from "@/lib/game/share";
 import { crowdLine, todaysTrap, type RoundCrowd } from "@/lib/game/crowd";
 import { LoadError } from "./LoadError";
@@ -468,6 +469,8 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
             })()}
           />
         )}
+        {/* Privacy & terms and Contact live here, not in the menu (Dani 2026-11-10); hidden mid-round. */}
+        {s.phase !== "round" && <LegalLinks />}
       </div>
       <Toast message={toast.message} show={toast.show} />
     </>

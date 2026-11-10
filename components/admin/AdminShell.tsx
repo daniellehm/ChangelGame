@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 export const ADMIN_NAV = [
   { href: "/admin", label: "Home" },
   { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/messages", label: "Messages" },
   { href: "/admin/upcoming", label: "Upcoming" },
   { href: "/admin/flagged", label: "Flagged" },
   { href: "/admin/bank", label: "Bank" },

@@ -32,6 +32,13 @@ export default function AdminHome() {
                 </Link>
               </li>
               <li>
+                <Link href="/admin/messages">
+                  <span className="tile-n">{o.queues.messages}</span>
+                  <span>Messages</span>
+                  {o.queues.messages > 0 && <span className="badge">new</span>}
+                </Link>
+              </li>
+              <li>
                 <Link href="/admin/flagged">
                   <span className="tile-n">{o.queues.flagged}</span>
                   <span>Flagged</span>

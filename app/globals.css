@@ -344,3 +344,13 @@ html[data-returning] #intro{visibility:hidden}
 .legal-links a{color:var(--ink-2)}
 .prose-list{padding-left:20px;line-height:1.5}
 .prose-list li{margin:6px 0}
+.contact-form{display:grid;gap:12px;margin-top:10px}
+.contact-form label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700}
+.contact-form select,.contact-form input,.contact-form textarea{font:inherit;font-weight:400;border:2px solid var(--ink);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink);min-height:44px}
+.contact-form .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.msgs{list-style:none;padding:0;margin:0}
+.msg-body{white-space:pre-wrap;margin:8px 0}
+.page h3{font-size:17px;margin:18px 0 6px}
+.page section{margin-top:22px}
+.legal-jump{font-size:14px}
+.legal-jump a{color:var(--ink)}
