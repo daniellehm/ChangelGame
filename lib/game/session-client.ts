@@ -118,10 +118,16 @@ export interface ServerPlay {
   rounds: Array<{ position: number; points: number; tier: TierId; prompt: string }>;
 }
 
-/** Server stats (SPEC §4: the client never trusts its own streak when online). */
-export async function fetchMe(date: string, tz: string): Promise<ServerStats | null> {
+/**
+ * Server stats (SPEC §4: the client never trusts its own streak when online).
+ * null = definitely no session (204/401); undefined = couldn't tell (network, server error,
+ * rate limit), so callers mustn't treat it as "signed out".
+ */
+export async function fetchMe(date: string, tz: string): Promise<ServerStats | null | undefined> {
   const r = await call(`/api/me?date=${encodeURIComponent(date)}&tz=${encodeURIComponent(tz)}`, { method: "GET", headers: {} });
-  return r.status === 200 && r.body ? (r.body as unknown as ServerStats) : null;
+  if (r.status === 200 && r.body) return r.body as unknown as ServerStats;
+  if (r.status === 204 || r.status === 401) return null;
+  return undefined;
 }
 
 /** Like fetchMe, but tells "no session" (null) apart from errors (undefined). */

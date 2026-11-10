@@ -5,8 +5,9 @@
  */
 import { ROUNDS } from "../config";
 import { addDays, daysBetween, localDate } from "../dates";
-import { beginPlay, ensureSession, syncLocalPlay } from "./session-client";
-import { getActiveDate, isComplete, loadPlay, replaceCompleted, savePlay, storedPlayDates, unsyncedLocalPlays } from "./storage";
+import { beginPlay, ensureSession, syncLocalPlay, type ServerStats } from "./session-client";
+import { getActiveDate, isComplete, loadPlay, replaceCompleted, savePlay, storedPlayDates, unsyncedLocalPlays, type StoredPlay } from "./storage";
+import type { Puzzle } from "./types";
 
 /** Upload finished local-only plays once a session exists. Quiet on failure. */
 export async function syncPending(tz: string): Promise<void> {
@@ -54,4 +55,31 @@ export async function refreshFromAccount(tz: string): Promise<void> {
     savePlay(play);
     replaceCompleted(play);
   }
+}
+
+/**
+ * This device has no game for the puzzle's date, but the signed-in account may have played it
+ * on another device (Dani 2026-11-10: "I did today's Changel, logged in on another device and
+ * it says I haven't"). If `me` (GET /api/me) lists a play for that date, load it from the server,
+ * finished or half-done, and store it here. Never creates a play or a session. Null if there's
+ * nothing to pull.
+ */
+export async function pullAccountPlay(puzzle: Puzzle, tz: string, me: ServerStats | null | undefined): Promise<StoredPlay | null> {
+  if (!me?.recent?.some((p) => p.date === puzzle.date)) return null;
+  const r = await beginPlay(puzzle.date, tz); // resumes the account's existing play
+  if (!r.ok || r.answered.length === 0) return null; // started but nothing answered: play normally
+  const play: StoredPlay = {
+    v: 1,
+    puzzle,
+    tz,
+    started_at: r.startedAt,
+    completed_at: r.answered.length >= ROUNDS ? new Date().toISOString() : null,
+    results: r.answered,
+    mode: "server",
+    play_id: r.playId,
+    synced: true,
+  };
+  savePlay(play);
+  replaceCompleted(play);
+  return play;
 }
