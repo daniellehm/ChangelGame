@@ -59,25 +59,25 @@ const SCENES: Scene[] = [
     },
   },
   {
-    // Multiplying dots: double every ~7 s until the screen is full (about a minute), then stay
-    // full, twinkling, with a few "newborn" dots glowing at any moment.
+    // Multiplying dots: start with a visible handful (~3% of the screen's dots), double every
+    // 6 s until full (~30 s), then stay full, twinkling, with occasional orange "newborns".
     init(w, h) {
       const r = rng(42);
       const n = Math.min(2400, Math.round((w * h) / 380));
       return Array.from({ length: n }, () => ({ x: r() * w, y: r() * h, phase: r() * Math.PI * 2 }));
     },
     draw(ctx, _w, _h, t, dots: Dot[]) {
-      const doublings = Math.log2(dots.length / 4);
-      const n = Math.min(dots.length, Math.floor(4 * Math.pow(2, Math.min(doublings, t / 7))));
+      const start = Math.max(30, Math.round(dots.length * 0.03));
+      const n = Math.min(dots.length, Math.floor(start * Math.pow(2, t / 6)));
       const growing = n < dots.length;
       for (let i = 0; i < n; i++) {
         const d = dots[i]!;
         // While growing, the newest eighth glows; once full, dots take turns glowing.
         const glow = growing ? i >= n * 0.88 : Math.sin(t * 0.35 + d.phase * 7) > 0.985;
         const twinkle = growing ? 1 : 0.75 + 0.25 * Math.sin(t * 0.6 + d.phase);
-        ctx.fillStyle = glow ? rgba(UP, 0.16) : rgba(INK, 0.075 * twinkle);
+        ctx.fillStyle = glow ? rgba(UP, 0.2) : rgba(INK, 0.1 * twinkle);
         ctx.beginPath();
-        ctx.arc(d.x, d.y, 2.2, 0, Math.PI * 2);
+        ctx.arc(d.x, d.y, 2.6, 0, Math.PI * 2);
         ctx.fill();
       }
     },

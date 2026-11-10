@@ -635,5 +635,9 @@ Dani liked all three in the comparison artifact.
 - **Preview override:** `?bg=skyline|dots|lines` forces a scene, and `?bgt=SECONDS` fast-forwards it.
 - **They run indefinitely** (Dani: "it builds up then disappears; it should go much longer"):
   - **Skyline:** each building grows over 1–2.5 min, then is rebuilt, at staggered times, so the city is always standing.
-  - **Dots:** they double every ~7 s until full (~1 min), then stay full, twinkling, with occasional orange "newborns".
+  - **Dots:** they start with a visible handful (~3% of the screen's dots, at least 30), double every 6 s until full (~30 s), then stay full, twinkling, with occasional orange "newborns". At first they started with 4 tiny dots, which looked like no background at all.
   - **Trend lines:** at least 8 slots (more on wide screens), spread evenly down the screen. Each line draws over ~35–55 s, holds, then fades as a new one starts in its slot.
+
+## 2026-11-10: Logo mark drawn as SVG (Dani: "the logo is distorted on mobile")
+
+**Decision:** the header's ⇅ mark is now an inline SVG (`components/LogoMark.tsx`, the same paths as `app/icon.svg`) in both the game and admin headers. The "⇅" character isn't in the site's fonts (DECISIONS M1), so phones drew it in a fallback font with their own metrics. The share text keeps the character, since it's plain text.
