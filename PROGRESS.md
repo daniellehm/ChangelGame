@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **M6 merged to `main` and live (2026-11-10, Dani's OK).** Production smoke check passed: all pages, the `/terms` redirect, robots/sitemap, crowd API, share tags and the 1200×630 OG image, and Turnstile now required for new players. Waiting on Dani for: a real-browser Turnstile test (private window → Play), a real WhatsApp/iMessage unfurl test, and Anthropic credit (then fill 15–16 Nov and build up 60 days). Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **M6 merged to `main` and live (2026-11-10, Dani's OK).** Production smoke check passed: all pages, the `/terms` redirect, robots/sitemap, crowd API, share tags and the 1200×630 OG image, and Turnstile now required for new players. Turnstile verified in production (2026-11-10: Dani's phone in a private window created a server player at 03:34 UTC, and its visit was counted: AU, mobile). Waiting on Dani for a real WhatsApp/iMessage unfurl test. Anthropic credit is deferred by Dani (the nightly job fails until then; expect the 2-failed-nights alert email). Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -53,7 +53,7 @@
 
 **Later (not blocking yet, listed so nothing surprises us):**
 - [x] M2: Supabase secret key in `.env.local` (done 2026-11-09, verified working)
-- [x] **Cloudflare Turnstile keys** set by Dani in Vercel, Production only (2026-11-10): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Config), `TURNSTILE_SECRET` (Secret). Goes live with the M6 merge; test a brand-new player on changel.app then.
+- [x] **Cloudflare Turnstile keys** set by Dani in Vercel, Production only (2026-11-10): `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Config), `TURNSTILE_SECRET` (Secret). Live and verified with a real new player (2026-11-10).
 - [ ] **Sentry** (optional but recommended): create a free account at sentry.io → new project, platform "Next.js", name `changel`. Copy its DSN and add it in Vercel (project changel → Settings → Environment Variables, all environments) as both `SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`, or tell Claude it's there. Until then errors only appear in Vercel logs. (Plausible/PostHog: not needed, analytics are first-party.)
 - [ ] Approve deleting 27 test rows in `events` (made by my test runs on 2026-11-10 00:44–00:47 UTC, before tests were excluded); otherwise they count in 10 Nov's analytics. SQL: `delete from events where created_at between '2026-11-10 00:44:00+00' and '2026-11-10 00:47:00+00';`
 - [ ] **Read /privacy** (Privacy & terms, one page; a plain-language draft, not legal advice). No operator named and no email (Dani 2026-11-10); contact is the form at /contact → Admin → Messages. Confirm governing law New South Wales.
