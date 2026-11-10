@@ -36,6 +36,30 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   };
 }
 
+/**
+ * Structured data (schema.org) so search engines know what this is: a free daily web game.
+ * WebSite gives the result its site name; VideoGame + WebApplication describe the game.
+ */
+const STRUCTURED_DATA = JSON.stringify([
+  { "@context": "https://schema.org", "@type": "WebSite", name: "Changel", url: "https://changel.app/" },
+  {
+    "@context": "https://schema.org",
+    "@type": ["VideoGame", "WebApplication"],
+    name: "Changel",
+    url: "https://changel.app/",
+    description: "Guess how much the world changed: five real numbers a day. Each round shows a real figure from the past; slide to guess how many times bigger or smaller it got.",
+    image: "https://changel.app/api/og",
+    genre: ["Trivia", "Puzzle"],
+    gamePlatform: "Web browser",
+    applicationCategory: "GameApplication",
+    operatingSystem: "Any",
+    playMode: "SinglePlayer",
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  },
+]);
+
 export default async function Home({ searchParams }: Props) {
   const shared = await sharedFrom(searchParams);
   // Count the visit (SPEC §8) after the response is sent, so it never slows the page.
@@ -43,6 +67,7 @@ export default async function Home({ searchParams }: Props) {
   runAfter(() => recordVisit(h, !!shared));
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: STRUCTURED_DATA }} />
       {!shared && <script dangerouslySetInnerHTML={{ __html: RETURNING_SCRIPT }} />}
       <Game launch={launchDate()} friend={shared} />
     </>

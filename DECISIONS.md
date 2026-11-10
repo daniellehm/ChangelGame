@@ -641,3 +641,9 @@ Dani liked all three in the comparison artifact.
 ## 2026-11-10: Logo mark drawn as SVG (Dani: "the logo is distorted on mobile")
 
 **Decision:** the header's ⇅ mark is now an inline SVG (`components/LogoMark.tsx`, the same paths as `app/icon.svg`) in both the game and admin headers. The "⇅" character isn't in the site's fonts (DECISIONS M1), so phones drew it in a fallback font with their own metrics. The share text keeps the character, since it's plain text.
+
+## 2026-11-10: Structured data and web app manifest (Dani)
+
+**Decision:**
+- **Structured data:** JSON-LD on the home page (schema.org): a `WebSite` (site name "Changel") and a `VideoGame` + `WebApplication`. It's free (`isAccessibleForFree`, price 0), a trivia/puzzle game in a web browser, single player, English, with the default share image.
+- **Manifest** (`app/manifest.ts`): name and short name "Changel", standalone display, paper background and theme colour, and icons at 192 px, 512 px and a maskable 512 px, generated from the logo by `scripts/make-icons.mjs` (rerun it if the logo changes). The existing `apple-icon.png` covers iOS "Add to Home Screen".
