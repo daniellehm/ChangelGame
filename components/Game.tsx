@@ -26,6 +26,7 @@ import { Final } from "./Final";
 import { Header } from "./Header";
 import { Intro } from "./Intro";
 import { LegalLinks } from "./LegalLinks";
+import { FriendPopup } from "./FriendPopup";
 import type { SharedResult } from "@/lib/game/share";
 import { crowdLine, todaysTrap, type RoundCrowd } from "@/lib/game/crowd";
 import { LoadError } from "./LoadError";
@@ -297,8 +298,11 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
   }, [crowdKey]);
   const dayCrowd = crowd && crowd.date === s.puzzle?.date ? crowd.rounds : null;
 
+  // The friend's shared result, as a pop-up once per visit (Dani 2026-11-10).
+  const [showFriend, setShowFriend] = useState(true);
+
   useEffect(() => {
-    // A shared link shows the intro (with the friend's score) even to returning players.
+    // A shared link shows the intro (with the friend's pop-up) even to returning players.
     void load({ preferIntro: !!friend });
   }, [load, friend]);
 
@@ -419,7 +423,7 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
       <div className="wrap">
         <Header launch={launch} puzzle={s.puzzle ? { number: s.puzzle.number, date: s.puzzle.date } : null} />
         {(s.phase === "boot" || s.phase === "intro") && (
-          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} friend={friend} onPlay={start} disabled={s.phase === "boot" || s.pending} />
+          <Intro theme={s.puzzle?.theme ?? null} number={s.puzzle?.number ?? null} onPlay={start} disabled={s.phase === "boot" || s.pending} />
         )}
         {s.phase === "error" && s.errorKind && (
           <LoadError
@@ -471,6 +475,17 @@ export function Game({ launch, friend = null }: { launch: string; friend?: Share
         )}
         {/* Privacy & terms and Contact live here, not in the menu (Dani 2026-11-10); hidden mid-round. */}
         {s.phase !== "round" && <LegalLinks />}
+        {friend && showFriend && (s.phase === "boot" || s.phase === "intro") && (
+          <FriendPopup
+            friend={friend}
+            today={s.puzzle?.number ?? null}
+            onClose={() => setShowFriend(false)}
+            onPlay={() => {
+              setShowFriend(false);
+              if (s.phase === "intro" && !s.pending) start();
+            }}
+          />
+        )}
       </div>
       <Toast message={toast.message} show={toast.show} />
     </>

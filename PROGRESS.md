@@ -2,7 +2,7 @@
 
 ## Current status
 
-**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **M6 merged to `main` and live (2026-11-10, Dani's OK).** Production smoke check passed: all pages, the `/terms` redirect, robots/sitemap, crowd API, share tags and the 1200×630 OG image, and Turnstile now required for new players. Turnstile verified in production (2026-11-10: Dani's phone in a private window created a server player at 03:34 UTC, and its visit was counted: AU, mobile). Waiting on Dani for a real WhatsApp/iMessage unfurl test. Anthropic credit is deferred by Dani (the nightly job fails until then; expect the 2-failed-nights alert email). Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
+**M5 (content pipeline + admin) approved by Dani and merged to `main` (2026-11-10).** The nightly content cron now runs on production (02:00 UTC). M5 and the UI tweaks are live on changel.app (pushed 2026-11-10 with Dani's OK). **M6 merged to `main` and live (2026-11-10, Dani's OK).** Production smoke check passed: all pages, the `/terms` redirect, robots/sitemap, crowd API, share tags and the 1200×630 OG image, and Turnstile now required for new players. Turnstile verified in production (2026-11-10: Dani's phone in a private window created a server player at 03:34 UTC, and its visit was counted: AU, mobile). WhatsApp/iMessage unfurl verified by Dani (card with score). Follow-up on branch `ui-friend-spacing`: friend pop-up on shared links, and /admin is a 404 unless signed in as an admin (waiting for Dani's OK to deploy). Anthropic credit is deferred by Dani (the nightly job fails until then; expect the 2-failed-nights alert email). Claude spend this month: about $6.70 of the $50 cap. **The Anthropic account is out of credit** (see Needs from Dani), so the nightly job will fail until it's topped up.
 
 ## Needs from Dani
 
@@ -185,7 +185,7 @@ Magic link, Google, upgrade in place, merge-token flow, account page with export
 
 **M6 acceptance:**
 - [x] Lighthouse mobile ≥ 95: verified locally on a production build. Re-check on changel.app after the merge.
-- [ ] The share link unfurls in iMessage, WhatsApp and X: tags and image verified on changel.app (2026-11-10). Waiting on Dani's real phone test.
+- [x] The share link unfurls in iMessage, WhatsApp and X: verified on changel.app (tags + image) and by Dani on her phone (2026-11-10).
 - [ ] 60 days of verified puzzles scheduled: blocked by Anthropic credit. Now: 9–14 Nov, with 15–16 Nov empty.
 
 **Launch checklist** (SPEC §12):

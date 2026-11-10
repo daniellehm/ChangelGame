@@ -167,8 +167,6 @@ html[data-returning] #intro{visibility:hidden}
 .crowd{font-family:var(--font-mono-stack);font-size:13px;color:var(--ink-2);margin:12px 0 14px;min-height:1.4em;text-align:center}
 .trap{font-size:15px;margin:4px 0 12px;padding:10px 12px;border:2px dashed var(--ink);border-radius:12px}
 .trap span{font-weight:800}
-.intro p.friend{color:var(--ink);border:2px solid var(--ink);border-radius:12px;padding:10px 12px;margin:0 0 14px;background:var(--bg);font-size:15px;line-height:1.4}
-.intro p.friend b{font-family:var(--font-mono-stack)}
 .strip{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:8px 0 4px}
 .strip i{aspect-ratio:1;border-radius:5px;background:var(--line);display:block}
 .strip i.played,.strip button.played{background:var(--ink)}
@@ -354,3 +352,6 @@ html[data-returning] #intro{visibility:hidden}
 .page section{margin-top:22px}
 .legal-jump{font-size:14px}
 .legal-jump a{color:var(--ink)}
+.friend-grid{display:flex;gap:6px;font-size:30px;line-height:1;margin:14px 0 8px}
+.friend-ask{font-size:17px;font-weight:700;margin:0 0 16px}
+.friend-pop:focus{outline:none}

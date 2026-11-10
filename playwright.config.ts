@@ -40,7 +40,7 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     // Pins the server clock to the browser's mocked clock via a header (lib/api/clock.ts).
     // Rate limiting off: the test suite makes far more requests per minute from localhost than a player.
-    env: { ALLOW_TEST_CLOCK: "1", UPSTASH_REDIS_REST_URL: "", UPSTASH_REDIS_REST_TOKEN: "", CHANGEL_NO_ALERT_EMAIL: "1" },
+    env: { ALLOW_TEST_CLOCK: "1", UPSTASH_REDIS_REST_URL: "", UPSTASH_REDIS_REST_TOKEN: "", CHANGEL_NO_ALERT_EMAIL: "1", ADMIN_EMAILS: "e2e-admin@example.com" },
     // Never reuse: a server started without ALLOW_TEST_CLOCK would make date-window tests flaky.
     reuseExistingServer: false,
     timeout: 120_000,

@@ -60,29 +60,38 @@ test("closing the share sheet does nothing; a share-sheet error falls back to co
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^Changel #2 ⇅ \d+\/500\n.{5,10}\nchangel\.app$/u);
 });
 
-test("a shared link shows the friend's score on the intro and unfurls as their result", async ({ page }) => {
+test("a shared link opens a pop-up with the friend's score (Play starts the game) and unfurls as their result", async ({ page }) => {
   const code = encodeShareCode({ number: 2, total: 372, tiers: ["nailed", "close", "nailed", "wrong", "nailed"] });
   await page.goto(`/?r=${code}`);
-  await expect(page.locator("#friendLine")).toContainText("A friend scored 372");
-  await expect(page.locator("#friendLine")).toContainText("Can you beat it?");
-  await expect(page.locator("#startBtn")).toBeVisible();
+  const pop = page.getByRole("dialog");
+  await expect(pop.locator("#friendTitle")).toHaveText("372/500");
+  await expect(pop.getByText("A friend played Changel #2")).toBeVisible();
+  await expect(pop.locator("#friendLine")).toHaveText("Can you beat it?");
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", `https://changel.app/api/og?r=${code}`);
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Changel #2 ⇅ 372/500");
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  await expect(page.locator("#startBtn")).toHaveText("Play #2"); // puzzle loaded behind the pop-up
+  await pop.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(pop).toHaveCount(0);
+  await expect(page.locator("#slider")).toBeVisible(); // round 1 started
 });
 
-test("a returning player opening a shared link still sees the intro with the friend's score", async ({ page }) => {
+test("a returning player opening an older shared link sees the pop-up; × closes it and leaves the intro", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("changel:v1:stats", JSON.stringify({ v: 1, plays: [{ date: "2026-11-09", number: 1, tz: "Australia/Sydney", total: 300, tiers: ["meh", "meh", "close", "meh", "close"] }] })));
   const code = encodeShareCode({ number: 1, total: 300, tiers: ["meh", "meh", "close", "meh", "close"] });
   await page.goto(`/?r=${code}`);
-  await expect(page.locator("#friendLine")).toContainText("A friend playing #1 scored 300");
-  await expect(page.locator("#friendLine")).toContainText("Try today's.");
+  const pop = page.getByRole("dialog");
+  await expect(page.locator("#startBtn")).toHaveText("Play #2");
+  await expect(pop.locator("#friendLine")).toHaveText("That was an earlier puzzle. Today's is waiting.");
+  await expect(pop.getByRole("button", { name: "Play today's" })).toBeVisible();
+  await pop.getByRole("button", { name: "Close" }).click();
+  await expect(pop).toHaveCount(0);
   await expect(page.locator("#startBtn")).toBeVisible();
 });
 
 test("a bad ?r= code is ignored", async ({ page }) => {
   await page.goto("/?r=c-0-00000");
   await expect(page.locator("#startBtn")).toBeVisible();
-  await expect(page.locator("#friendLine")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", "https://changel.app/api/og"); // the default card
 });
